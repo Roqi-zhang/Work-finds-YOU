@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=1280" />
+<title>01 Home · Dial Home · A</title>
+<link rel="stylesheet" href="./_shared.css" />
+<script src="./_shared.js"></script>
+<style>
+  .hero {
+    display: grid;
+    grid-template-columns: 6fr 6fr;
+    gap: 48px;
+    align-items: stretch;
+    min-height: 620px;
+  }
+  .hero .l { display: flex; flex-direction: column; justify-content: space-between; }
+  .hero h1 {
+    font-size: 104px; font-weight: 500; letter-spacing: -0.035em; line-height: 0.9;
+    color: var(--ink-strong);
+  }
+  .hero .zh {
+    font-size: 22px; letter-spacing: 0.02em; margin-top: 28px; color: var(--ink); max-width: 22ch;
+  }
+  .hero .en-sub { font-size: 13px; opacity: .6; margin-top: 8px; letter-spacing: 0.02em; }
+  .hero .meta { display: flex; justify-content: space-between; align-items: end; }
+  .hero .meta .caption { font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase; }
+
+  /* dial */
+  .dial-wrap {
+    position: relative; display: flex; align-items: center; justify-content: center;
+  }
+  .dial {
+    width: 560px; height: 560px; position: relative;
+  }
+  .dial svg { display: block; width: 100%; height: 100%; overflow: visible; }
+  .dial .ring { fill: none; stroke: var(--line); stroke-width: 0.5; }
+  .dial .tickline { stroke: var(--line); stroke-width: 0.5; }
+  .dial .tick-label {
+    font-size: 11px; letter-spacing: 0.22em; text-transform: uppercase; fill: var(--ink);
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+  }
+  .dial .tick-title {
+    font-size: 15px; fill: var(--ink-strong); letter-spacing: 0.02em;
+  }
+  .dial .tick-node {
+    fill: var(--paper); stroke: var(--ink); stroke-width: 0.5;
+    cursor: pointer; transition: all .4s var(--ease);
+  }
+  .dial .tick-group:hover .tick-node { fill: var(--ink-strong); stroke: var(--ink-strong); }
+  .dial .tick-group:hover .tick-title { font-weight: 500; }
+  .dial .dial-rotor { transform-origin: 280px 280px; transition: transform var(--dur) var(--ease); }
+  .dial:hover .dial-rotor { transform: rotate(6deg); }
+
+  /* center CTA */
+  .cta {
+    position: absolute; inset: 0; margin: auto;
+    width: 168px; height: 168px; border-radius: 50%;
+    border: 0.5px solid var(--ink); display: flex; align-items: center; justify-content: center;
+    flex-direction: column; gap: 8px; background: var(--paper);
+    cursor: pointer; transition: all .4s var(--ease);
+  }
+  .cta:hover { background: var(--ink-strong); color: var(--paper); }
+  .cta .k { font-size: 10px; letter-spacing: 0.24em; text-transform: uppercase; opacity: .6; }
+  .cta .t { font-size: 20px; letter-spacing: 0.02em; color: var(--ink-strong); }
+  .cta:hover .t, .cta:hover .k { color: var(--paper); opacity: 1; }
+
+  /* bottom trio */
+  .trio {
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    border-top: 0.5px solid var(--line);
+    margin-top: 80px;
+  }
+  .trio > div {
+    padding: 32px 32px 8px 0; border-right: 0.5px solid var(--line);
+    display: flex; flex-direction: column; gap: 12px;
+  }
+  .trio > div:last-child { border-right: 0; padding-right: 0; }
+  .trio .num { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 11px; letter-spacing: 0.22em; opacity: .55; }
+  .trio h3 { font-size: 22px; font-weight: 500; letter-spacing: -0.01em; color: var(--ink-strong); }
+  .trio p { font-size: 13px; opacity: .8; max-width: 34ch; }
+
+  /* marquee */
+  .marquee {
+    margin-top: 48px; border-top: 0.5px solid var(--line); border-bottom: 0.5px solid var(--line);
+    padding: 14px 0; overflow: hidden; white-space: nowrap;
+    font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 11px; letter-spacing: 0.22em; text-transform: uppercase;
+  }
+  .marquee span { display: inline-block; padding-right: 64px; animation: slide 22s linear infinite; }
+  @keyframes slide { to { transform: translateX(-50%); } }
+</style>
+</head>
+<body>
+<main class="page">
+  <header class="topbar">
+    <div class="logo">Work Finds You / 工作找你</div>
+    <nav>
+      <a href="./home.html" class="on">01 Home</a>
+      <a href="./profile.html">02 Profile</a>
+      <a href="./match.html">03 Match</a>
+      <a href="./compare.html">04 Compare</a>
+      <a href="./delivery.html">05 Delivery</a>
+    </nav>
+    <div class="right">
+      <span class="caption">2026 · 07 · 12</span>
+      <button class="theme-toggle"></button>
+    </div>
+  </header>
+
+  <section class="hero">
+    <div class="l">
+      <div>
+        <div class="caption">01 · AI 求职决策工作台</div>
+        <h1 style="margin-top:24px;">Work<br/>Finds You.</h1>
+        <div class="zh">选对方向，工作找你。</div>
+        <div class="en-sub">Choose the direction, let the work come to you.</div>
+      </div>
+      <div class="meta">
+        <div>
+          <div class="caption">Loading</div>
+          <div class="moon" style="margin-top:10px;"><i></i><i></i><i></i><i></i><i></i></div>
+        </div>
+        <div style="text-align:right;">
+          <div class="caption">Version</div>
+          <div style="font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; margin-top:6px;">v0.1 · SWISS</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="dial-wrap">
+      <div class="dial">
+        <svg viewBox="0 0 560 560">
+          <g class="dial-rotor">
+            <!-- outer arcs -->
+            <circle class="ring" cx="280" cy="280" r="256" />
+            <circle class="ring" cx="280" cy="280" r="200" />
+            <circle class="ring" cx="280" cy="280" r="140" />
+            <!-- 5 ticks along top half arc from -140deg to -40deg -->
+          </g>
+
+          <!-- tick groups (static, non-rotating for readability) -->
+          <g class="tick-group" data-i="1">
+            <line class="tickline" x1="280" y1="24" x2="280" y2="80" />
+            <text class="tick-label" x="280" y="18" text-anchor="middle">01</text>
+            <circle class="tick-node" cx="280" cy="80" r="8" />
+            <text class="tick-title" x="280" y="112" text-anchor="middle">CANDIDATE / 画像</text>
+          </g>
+          <g class="tick-group" data-i="2" transform="rotate(-40 280 280)">
+            <line class="tickline" x1="280" y1="24" x2="280" y2="80" />
+            <text class="tick-label" x="280" y="18" text-anchor="middle" transform="rotate(40 280 18)">02</text>
+            <circle class="tick-node" cx="280" cy="80" r="8" />
+          </g>
+          <g class="tick-group" data-i="3" transform="rotate(40 280 280)">
+            <line class="tickline" x1="280" y1="24" x2="280" y2="80" />
+            <circle class="tick-node" cx="280" cy="80" r="8" />
+          </g>
+          <g class="tick-group" data-i="4" transform="rotate(-80 280 280)">
+            <line class="tickline" x1="280" y1="24" x2="280" y2="80" />
+            <circle class="tick-node" cx="280" cy="80" r="8" />
+          </g>
+          <g class="tick-group" data-i="5" transform="rotate(80 280 280)">
+            <line class="tickline" x1="280" y1="24" x2="280" y2="80" />
+            <circle class="tick-node" cx="280" cy="80" r="8" />
+          </g>
+
+          <!-- labels around dial (outer) -->
+          <text class="tick-label" x="120" y="140" text-anchor="middle">02</text>
+          <text class="tick-label" x="440" y="140" text-anchor="middle">03</text>
+          <text class="tick-label" x="60" y="300" text-anchor="middle">04</text>
+          <text class="tick-label" x="500" y="300" text-anchor="middle">05</text>
+
+          <text class="tick-title" x="120" y="164" text-anchor="middle" style="font-size:12px;">PROFILE</text>
+          <text class="tick-title" x="440" y="164" text-anchor="middle" style="font-size:12px;">MATCH</text>
+          <text class="tick-title" x="60" y="324" text-anchor="middle" style="font-size:12px;">COMPARE</text>
+          <text class="tick-title" x="500" y="324" text-anchor="middle" style="font-size:12px;">DELIVERY</text>
+        </svg>
+
+        <a class="cta" href="./profile.html">
+          <span class="k">CTA</span>
+          <span class="t">开始分析</span>
+          <span class="k">Start →</span>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <div class="marquee">
+    <span>平均决策时间 ↓ 62%   ·   匹配维度 24   ·   已聚合岗位 12,480   ·   月相 loading 已就绪   ·   Swiss Grid v0.1   ·   </span>
+    <span>平均决策时间 ↓ 62%   ·   匹配维度 24   ·   已聚合岗位 12,480   ·   月相 loading 已就绪   ·   Swiss Grid v0.1   ·   </span>
+  </div>
+
+  <section class="trio">
+    <div>
+      <span class="num">01</span>
+      <h3>建立你的画像</h3>
+      <p>上传简历或手动填写，10 花瓣能力模型即刻成形，作为后续所有匹配的坐标系。</p>
+    </div>
+    <div>
+      <span class="num">02</span>
+      <h3>匹配一份岗位</h3>
+      <p>贝塞尔连线直观呈现候选人与岗位之间的匹配点、风险点、可迁移能力。</p>
+    </div>
+    <div>
+      <span class="num">03</span>
+      <h3>对比、投递、复盘</h3>
+      <p>轨道池横向对比、时间线日志式追踪投递状态，形成可复用的决策闭环。</p>
+    </div>
+  </section>
+</main>
+<a class="preview-crumb" href="./index.html">← Previews</a>
+</body>
+</html>

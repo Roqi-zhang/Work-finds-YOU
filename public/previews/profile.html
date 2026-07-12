@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=1280" />
+<title>02 Profile · Petal Model · A</title>
+<link rel="stylesheet" href="./_shared.css" />
+<script src="./_shared.js"></script>
+<style>
+  .layout { display: grid; grid-template-columns: 3fr 9fr; gap: 48px; align-items: start; }
+  .side { display: flex; flex-direction: column; gap: 40px; position: sticky; top: 32px; }
+  .side h1 { font-size: 56px; font-weight: 500; letter-spacing: -0.03em; line-height: 0.95; color: var(--ink-strong); }
+  .side p { font-size: 13px; opacity: .8; max-width: 32ch; }
+  .steps { display: flex; flex-direction: column; gap: 14px; margin-top: 24px; }
+  .step { display: flex; gap: 14px; align-items: baseline; font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; opacity: .5; }
+  .step.on { opacity: 1; color: var(--ink-strong); }
+  .step .n { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 10px; }
+  .actions { display: flex; gap: 16px; margin-top: 40px; }
+  .btn { border: 0.5px solid var(--ink); padding: 12px 22px; font-size: 12px; letter-spacing: 0.2em; text-transform: uppercase; transition: all .3s var(--ease); border-radius: 999px; }
+  .btn:hover { background: var(--ink-strong); color: var(--paper); border-color: var(--ink-strong); }
+  .btn.ghost { border-color: var(--line); }
+
+  .stage {
+    position: relative; height: 720px;
+    border-left: 0.5px solid var(--line);
+    padding-left: 48px;
+  }
+  .stage-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 24px; }
+  .stage-head .caption { }
+  .stage-head .mode { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 11px; letter-spacing: 0.16em; }
+
+  .petal-wrap { position: relative; height: 620px; display: flex; align-items: center; justify-content: center; }
+  .petal-svg { width: 620px; height: 620px; }
+  .petal-svg .ring { fill: none; stroke: var(--line); stroke-width: 0.5; }
+
+  .petal { fill: var(--paper); stroke: var(--ink); stroke-width: 0.5; transition: fill .5s var(--ease); }
+  .petal.lit { fill: var(--ink-strong); }
+  .petal-label { font-size: 11px; fill: var(--ink); letter-spacing: 0.06em; }
+  .petal-score { font-size: 10px; fill: var(--ink); opacity: .6; font-family: "JetBrains Mono", ui-monospace, monospace; }
+
+  .upload {
+    position: absolute; inset: 0; margin: auto; width: 200px; height: 200px; border-radius: 50%;
+    border: 0.5px dashed var(--ink); display: flex; align-items: center; justify-content: center;
+    flex-direction: column; gap: 10px; background: var(--paper);
+    cursor: pointer; transition: all .4s var(--ease);
+  }
+  .upload:hover { border-style: solid; }
+  .upload .t { font-size: 15px; color: var(--ink-strong); }
+  .upload .s { font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; opacity: .55; }
+
+  .legend {
+    position: absolute; right: 0; top: 24px; width: 220px;
+    display: flex; flex-direction: column; gap: 16px;
+  }
+  .legend .g { border-top: 0.5px solid var(--line); padding-top: 10px; }
+  .legend .g h4 { font-size: 11px; letter-spacing: 0.22em; text-transform: uppercase; margin-bottom: 8px; }
+  .legend .g ul { list-style: none; display: flex; flex-direction: column; gap: 4px; font-size: 12px; opacity: .8; }
+  .legend .g li { display: flex; justify-content: space-between; }
+  .legend .g li span:last-child { font-family: "JetBrains Mono", ui-monospace, monospace; opacity: .6; }
+</style>
+</head>
+<body>
+<main class="page">
+  <header class="topbar">
+    <div class="logo">Work Finds You / 工作找你</div>
+    <nav>
+      <a href="./home.html">01 Home</a>
+      <a href="./profile.html" class="on">02 Profile</a>
+      <a href="./match.html">03 Match</a>
+      <a href="./compare.html">04 Compare</a>
+      <a href="./delivery.html">05 Delivery</a>
+    </nav>
+    <div class="right">
+      <span class="caption">Step 01 / 03</span>
+      <button class="theme-toggle"></button>
+    </div>
+  </header>
+
+  <section class="layout">
+    <aside class="side">
+      <div class="caption">02 · Candidate Profile</div>
+      <h1>你的能力<br/>是一朵花。</h1>
+      <p>上传简历或手动填写，5 项专业能力 · 3 项通用能力 · 2 项偏好维度将围绕中心圆展开为 10 片花瓣。每一片可点击进入编辑抽屉，不打断整体视图。</p>
+
+      <div class="steps">
+        <div class="step on"><span class="n">01</span> 上传简历 / 手动填写</div>
+        <div class="step"><span class="n">02</span> 校对花瓣数值</div>
+        <div class="step"><span class="n">03</span> 进入匹配</div>
+      </div>
+
+      <div class="actions">
+        <button class="btn ghost">← 返回</button>
+        <a class="btn" href="./match.html">下一步 →</a>
+      </div>
+
+      <div style="margin-top:auto;">
+        <div class="caption" style="margin-bottom:10px;">Parser</div>
+        <div class="moon"><i></i><i></i><i></i><i></i><i></i></div>
+      </div>
+    </aside>
+
+    <section class="stage">
+      <div class="stage-head">
+        <span class="caption">Ability Petal Model · 10 dimensions</span>
+        <span class="mode">MODE / STATIC PREVIEW</span>
+      </div>
+
+      <div class="petal-wrap">
+        <svg class="petal-svg" viewBox="-310 -310 620 620">
+          <circle class="ring" r="140" />
+          <circle class="ring" r="220" />
+          <circle class="ring" r="290" />
+
+          <!-- 10 petals as ellipses rotated -->
+          <g id="petals"></g>
+        </svg>
+
+        <div class="upload">
+          <div class="t">Drop CV</div>
+          <div class="s">or type manually</div>
+        </div>
+
+        <div class="legend">
+          <div class="g">
+            <h4>Professional · 5</h4>
+            <ul>
+              <li><span>System Design</span><span>82</span></li>
+              <li><span>Frontend Craft</span><span>76</span></li>
+              <li><span>Data Modeling</span><span>68</span></li>
+              <li><span>DevOps</span><span>54</span></li>
+              <li><span>AI/ML</span><span>61</span></li>
+            </ul>
+          </div>
+          <div class="g">
+            <h4>Transferable · 3</h4>
+            <ul>
+              <li><span>Communication</span><span>78</span></li>
+              <li><span>Leadership</span><span>65</span></li>
+              <li><span>Product Sense</span><span>72</span></li>
+            </ul>
+          </div>
+          <div class="g">
+            <h4>Preference · 2</h4>
+            <ul>
+              <li><span>Remote</span><span>90</span></li>
+              <li><span>Team Size ≤ 20</span><span>—</span></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+  </section>
+</main>
+<a class="preview-crumb" href="./index.html">← Previews</a>
+
+<script>
+  // draw 10 petals around center
+  (function () {
+    const labels = ["SYS","FE","DATA","OPS","AI","COMM","LEAD","PROD","REMOTE","TEAM"];
+    const scores = [82,76,68,54,61,78,65,72,90,60];
+    const g = document.getElementById("petals");
+    const lit = new Set([0,1,4,5,7,8]); // partial fill for demo
+    labels.forEach((lbl, i) => {
+      const angle = (360 / labels.length) * i - 90;
+      const el = document.createElementNS("http://www.w3.org/2000/svg","g");
+      el.setAttribute("transform", `rotate(${angle})`);
+      const petal = document.createElementNS("http://www.w3.org/2000/svg","ellipse");
+      petal.setAttribute("cx","0");
+      petal.setAttribute("cy","-210");
+      petal.setAttribute("rx","32");
+      petal.setAttribute("ry","78");
+      petal.setAttribute("class","petal" + (lit.has(i) ? " lit" : ""));
+      el.appendChild(petal);
+      const t1 = document.createElementNS("http://www.w3.org/2000/svg","text");
+      t1.setAttribute("class","petal-label");
+      t1.setAttribute("text-anchor","middle");
+      t1.setAttribute("x","0");
+      t1.setAttribute("y","-206");
+      t1.setAttribute("transform",`rotate(${-angle} 0 -210)`);
+      t1.setAttribute("fill", lit.has(i) ? "var(--paper)" : "var(--ink)");
+      t1.textContent = lbl;
+      el.appendChild(t1);
+      const t2 = document.createElementNS("http://www.w3.org/2000/svg","text");
+      t2.setAttribute("class","petal-score");
+      t2.setAttribute("text-anchor","middle");
+      t2.setAttribute("x","0");
+      t2.setAttribute("y","-188");
+      t2.setAttribute("transform",`rotate(${-angle} 0 -188)`);
+      t2.setAttribute("fill", lit.has(i) ? "var(--paper)" : "var(--ink)");
+      t2.textContent = scores[i];
+      el.appendChild(t2);
+      g.appendChild(el);
+    });
+  })();
+</script>
+</body>
+</html>
