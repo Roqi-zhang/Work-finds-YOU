@@ -136,11 +136,8 @@
           </svg>
 
           <label class="upload" id="uploadZone" for="cvFile">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="0.8" stroke-linecap="round" stroke-linejoin="round" style="opacity:.5">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-              <polyline points="17 8 12 3 7 8"></polyline>
-              <line x1="12" y1="3" x2="12" y2="15"></line>
-            </svg>
+            <div class="t" id="uploadTitle">Drop CV</div>
+            <div class="s" id="uploadHint">click or drag · PDF / Word / Image</div>
             <input id="cvFile" type="file" accept=".pdf,.doc,.docx,image/*" hidden />
           </label>
         </div>
@@ -237,14 +234,14 @@
     function handle(file) {
       if (!file) return;
       if (!accept.test(file.name)) {
-        if (title) title.textContent = "Unsupported";
-        if (hint) hint.textContent = "PDF / Word / Image only";
+        title.textContent = "Unsupported";
+        hint.textContent = "PDF / Word / Image only";
         fileReady = false; buildBtn.disabled = true;
         return;
       }
       const kb = file.size / 1024;
-      if (title) title.textContent = file.name.length > 18 ? file.name.slice(0, 16) + "…" : file.name;
-      if (hint) hint.textContent = (kb > 1024 ? (kb / 1024).toFixed(1) + " MB" : Math.round(kb) + " KB") + " · ready";
+      title.textContent = file.name.length > 18 ? file.name.slice(0, 16) + "…" : file.name;
+      hint.textContent = (kb > 1024 ? (kb / 1024).toFixed(1) + " MB" : Math.round(kb) + " KB") + " · ready";
       fileReady = true;
       analyzed = false;
       buildBtn.disabled = false;
@@ -280,7 +277,7 @@
       buildBtn.classList.add("loading");
       buildBtn.innerHTML = '分析中<span class="dot"></span><span class="dot"></span><span class="dot"></span>';
       stage.classList.add("analyzing");
-      if (hint) hint.textContent = "PARSING · EXTRACTING · SCORING";
+      hint.textContent = "PARSING · EXTRACTING · SCORING";
 
       setTimeout(() => {
         // Simulated analysis result
@@ -288,7 +285,7 @@
         paintPetals(scores);
         renderFourProfiles(scores);
         stage.classList.remove("analyzing");
-        if (hint) hint.textContent = "ANALYSIS COMPLETE";
+        hint.textContent = "ANALYSIS COMPLETE";
         buildBtn.classList.remove("loading");
         buildBtn.textContent = "进入匹配 →";
         analyzed = true;
