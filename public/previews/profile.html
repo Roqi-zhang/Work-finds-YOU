@@ -200,6 +200,50 @@
       g.appendChild(el);
     });
   })();
+
+  // Upload interactions: click (via label) + drag & drop
+  (function () {
+    const zone = document.getElementById("uploadZone");
+    const input = document.getElementById("cvFile");
+    const title = document.getElementById("uploadTitle");
+    const hint = document.getElementById("uploadHint");
+    if (!zone || !input) return;
+
+    const accept = /\.(pdf|docx?|png|jpe?g|webp|gif|bmp|heic|tiff?)$/i;
+
+    function handle(file) {
+      if (!file) return;
+      if (!accept.test(file.name)) {
+        title.textContent = "Unsupported";
+        hint.textContent = "PDF / Word / Image only";
+        return;
+      }
+      const kb = file.size / 1024;
+      title.textContent = file.name.length > 18 ? file.name.slice(0, 16) + "…" : file.name;
+      hint.textContent = (kb > 1024 ? (kb / 1024).toFixed(1) + " MB" : Math.round(kb) + " KB") + " · parsing…";
+    }
+
+    input.addEventListener("change", (e) => handle(e.target.files && e.target.files[0]));
+
+    ["dragenter", "dragover"].forEach((ev) =>
+      zone.addEventListener(ev, (e) => { e.preventDefault(); zone.style.borderStyle = "solid"; zone.style.background = "var(--paper)"; })
+    );
+    ["dragleave", "drop"].forEach((ev) =>
+      zone.addEventListener(ev, (e) => { e.preventDefault(); zone.style.borderStyle = "dashed"; })
+    );
+    zone.addEventListener("drop", (e) => {
+      const file = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+      handle(file);
+    });
+
+    // Whole-page drop also routes here
+    window.addEventListener("dragover", (e) => e.preventDefault());
+    window.addEventListener("drop", (e) => {
+      e.preventDefault();
+      const file = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+      if (file) handle(file);
+    });
+  })();
 </script>
 </body>
 </html>
