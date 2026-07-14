@@ -42,17 +42,13 @@
 
   .legend {
     width: 100%;
-    max-width: 920px;
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
+    display: flex;
     justify-content: center;
-    gap: 48px 64px;
+    gap: 48px;
     margin-top: 32px;
-    margin-left: auto;
-    margin-right: auto;
     padding-bottom: 32px;
   }
-  .legend .g { width: 100%; border-top: 0.5px solid var(--line); padding-top: 10px; }
+  .legend .g { width: 220px; border-top: 0.5px solid var(--line); padding-top: 10px; }
   .legend .g h4 { font-size: 11px; letter-spacing: 0.22em; text-transform: uppercase; margin-bottom: 8px; }
   .legend .g ul { list-style: none; display: flex; flex-direction: column; gap: 4px; font-size: 12px; opacity: .8; }
   .legend .g li { display: flex; justify-content: space-between; }
@@ -303,6 +299,8 @@
         },
       ];
       legend.innerHTML = "";
+      legend.style.flexWrap = "wrap";
+      legend.style.gap = "32px 48px";
       groups.forEach((g, i) => {
         const div = document.createElement("div");
         div.className = "g fade";
