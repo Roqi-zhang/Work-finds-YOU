@@ -21,7 +21,7 @@
   .btn.ghost { border-color: var(--line); }
 
   .stage {
-    position: relative; height: 720px;
+    position: relative;
     border-left: 0.5px solid var(--line);
     padding-left: 48px;
   }
@@ -29,6 +29,7 @@
   .stage-head .caption { }
   .stage-head .mode { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 11px; letter-spacing: 0.16em; }
 
+  .petal-stage { display: flex; flex-direction: column; align-items: center; }
   .petal-wrap { position: relative; height: 620px; display: flex; align-items: center; justify-content: center; }
   .petal-svg { width: 620px; height: 620px; }
   .petal-svg .ring { fill: none; stroke: var(--line); stroke-width: 0.5; }
@@ -49,10 +50,14 @@
   .upload .s { font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; opacity: .55; }
 
   .legend {
-    position: absolute; right: 0; top: 24px; width: 220px;
-    display: flex; flex-direction: column; gap: 16px;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    gap: 48px;
+    margin-top: 32px;
+    padding-bottom: 32px;
   }
-  .legend .g { border-top: 0.5px solid var(--line); padding-top: 10px; }
+  .legend .g { width: 220px; border-top: 0.5px solid var(--line); padding-top: 10px; }
   .legend .g h4 { font-size: 11px; letter-spacing: 0.22em; text-transform: uppercase; margin-bottom: 8px; }
   .legend .g ul { list-style: none; display: flex; flex-direction: column; gap: 4px; font-size: 12px; opacity: .8; }
   .legend .g li { display: flex; justify-content: space-between; }
@@ -105,19 +110,21 @@
         <span class="mode">MODE / STATIC PREVIEW</span>
       </div>
 
-      <div class="petal-wrap">
-        <svg class="petal-svg" viewBox="-310 -310 620 620">
-          <circle class="ring" r="140" />
-          <circle class="ring" r="220" />
-          <circle class="ring" r="290" />
+      <div class="petal-stage">
+        <div class="petal-wrap">
+          <svg class="petal-svg" viewBox="-310 -310 620 620">
+            <circle class="ring" r="140" />
+            <circle class="ring" r="220" />
+            <circle class="ring" r="290" />
 
-          <!-- 10 petals as ellipses rotated -->
-          <g id="petals"></g>
-        </svg>
+            <!-- 10 petals as ellipses rotated -->
+            <g id="petals"></g>
+          </svg>
 
-        <div class="upload">
-          <div class="t">Drop CV</div>
-          <div class="s">or type manually</div>
+          <div class="upload">
+            <div class="t">Drop CV</div>
+            <div class="s">or type manually</div>
+          </div>
         </div>
 
         <div class="legend">
