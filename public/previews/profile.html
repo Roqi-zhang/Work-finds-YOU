@@ -121,10 +121,11 @@
             <g id="petals"></g>
           </svg>
 
-          <div class="upload">
-            <div class="t">Drop CV</div>
-            <div class="s">or type manually</div>
-          </div>
+          <label class="upload" id="uploadZone" for="cvFile">
+            <div class="t" id="uploadTitle">Drop CV</div>
+            <div class="s" id="uploadHint">click or drag · PDF / Word / Image</div>
+            <input id="cvFile" type="file" accept=".pdf,.doc,.docx,image/*" hidden />
+          </label>
         </div>
 
         <div class="legend">
