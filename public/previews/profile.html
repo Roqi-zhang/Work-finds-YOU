@@ -15,7 +15,7 @@
   .step { display: flex; gap: 14px; align-items: baseline; font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; opacity: .5; }
   .step.on { opacity: 1; color: var(--ink-strong); }
   .step .n { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 10px; }
-  .actions { display: flex; gap: 16px; margin-top: 40px; flex-wrap: wrap; }
+  .actions { display: flex; gap: 16px; margin-top: 40px; }
   .btn { border: 0.5px solid var(--ink); padding: 12px 22px; font-size: 12px; letter-spacing: 0.2em; text-transform: uppercase; transition: all .3s var(--ease); border-radius: 999px; }
   .btn:hover { background: var(--ink-strong); color: var(--paper); border-color: var(--ink-strong); }
   .btn.ghost { border-color: var(--line); }
@@ -39,6 +39,16 @@
   .petal-label { font-size: 11px; fill: var(--ink); letter-spacing: 0.06em; }
   .petal-score { font-size: 10px; fill: var(--ink); opacity: .6; font-family: "JetBrains Mono", ui-monospace, monospace; }
 
+  .upload {
+    position: absolute; inset: 0; margin: auto; width: 200px; height: 200px; border-radius: 50%;
+    border: 0.5px dashed var(--ink); display: flex; align-items: center; justify-content: center;
+    flex-direction: column; gap: 10px; background: var(--paper);
+    cursor: pointer; transition: all .4s var(--ease);
+    padding: 28px; box-sizing: border-box;
+  }
+  .upload:hover { border-style: solid; }
+  .upload .t { font-size: 15px; color: var(--ink-strong); text-align: center; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .upload .s { font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; opacity: .55; text-align: center; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
   .legend {
     width: 100%;
@@ -99,10 +109,8 @@
 
       <div class="actions">
         <button class="btn ghost" onclick="history.back()">← 返回</button>
-        <button class="btn" id="uploadBtn">上传简历</button>
         <button class="btn" id="buildBtn" disabled>建立画像</button>
       </div>
-      <input id="cvFile" type="file" accept=".pdf,.doc,.docx,image/*" hidden />
 
       <div style="margin-top:auto;">
         <div class="caption" style="margin-bottom:10px;">Parser</div>
@@ -127,6 +135,11 @@
             <g id="petals"></g>
           </svg>
 
+          <label class="upload" id="uploadZone" for="cvFile">
+            <div class="t" id="uploadTitle">Drop CV</div>
+            <div class="s" id="uploadHint">click or drag · PDF / Word / Image</div>
+            <input id="cvFile" type="file" accept=".pdf,.doc,.docx,image/*" hidden />
+          </label>
         </div>
 
         <div class="legend" id="legend">
@@ -206,8 +219,10 @@
 
   // ============ Upload + build-profile flow ============
   (function () {
+    const zone = document.getElementById("uploadZone");
     const input = document.getElementById("cvFile");
-    const uploadBtn = document.getElementById("uploadBtn");
+    const title = document.getElementById("uploadTitle");
+    const hint = document.getElementById("uploadHint");
     const buildBtn = document.getElementById("buildBtn");
     const stage = document.querySelector(".petal-stage");
     const legend = document.getElementById("legend");
@@ -219,13 +234,16 @@
     function handle(file) {
       if (!file) return;
       if (!accept.test(file.name)) {
-        uploadBtn.textContent = "Unsupported";
+        title.textContent = "Unsupported";
+        hint.textContent = "PDF / Word / Image only";
         fileReady = false; buildBtn.disabled = true;
         return;
       }
+      const kb = file.size / 1024;
+      title.textContent = file.name.length > 18 ? file.name.slice(0, 16) + "…" : file.name;
+      hint.textContent = (kb > 1024 ? (kb / 1024).toFixed(1) + " MB" : Math.round(kb) + " KB") + " · ready";
       fileReady = true;
       analyzed = false;
-      uploadBtn.textContent = "已上传";
       buildBtn.disabled = false;
       buildBtn.textContent = "建立画像";
       buildBtn.classList.remove("loading");
@@ -233,7 +251,22 @@
 
     input.addEventListener("change", (e) => handle(e.target.files && e.target.files[0]));
 
-    uploadBtn.addEventListener("click", () => input.click());
+    ["dragenter", "dragover"].forEach((ev) =>
+      zone.addEventListener(ev, (e) => { e.preventDefault(); zone.style.borderStyle = "solid"; })
+    );
+    ["dragleave", "drop"].forEach((ev) =>
+      zone.addEventListener(ev, (e) => { e.preventDefault(); zone.style.borderStyle = "dashed"; })
+    );
+    zone.addEventListener("drop", (e) => {
+      const file = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+      handle(file);
+    });
+    window.addEventListener("dragover", (e) => e.preventDefault());
+    window.addEventListener("drop", (e) => {
+      e.preventDefault();
+      const file = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+      if (file) handle(file);
+    });
 
     // ============ Build profile click ============
     buildBtn.addEventListener("click", () => {
@@ -244,7 +277,7 @@
       buildBtn.classList.add("loading");
       buildBtn.innerHTML = '分析中<span class="dot"></span><span class="dot"></span><span class="dot"></span>';
       stage.classList.add("analyzing");
-      
+      hint.textContent = "PARSING · EXTRACTING · SCORING";
 
       setTimeout(() => {
         // Simulated analysis result
@@ -252,7 +285,7 @@
         paintPetals(scores);
         renderFourProfiles(scores);
         stage.classList.remove("analyzing");
-        
+        hint.textContent = "ANALYSIS COMPLETE";
         buildBtn.classList.remove("loading");
         buildBtn.textContent = "进入匹配 →";
         analyzed = true;
