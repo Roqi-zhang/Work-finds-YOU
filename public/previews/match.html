@@ -400,23 +400,33 @@
   </section>
 
   <section class="screen" id="s5" style="display:block; min-height:auto; padding:80px 0;">
-    <div class="k">04 · 证据展开</div>
-    <h2 style="font-size:64px; font-weight:500; letter-spacing:-0.03em; line-height:.95; color:var(--ink-strong); margin:16px 0 40px;">为什么<br/>是这个结论。</h2>
+    <div class="k">04 · 资料来源 · 分析思路</div>
+    <h2 style="font-size:64px; font-weight:500; letter-spacing:-0.03em; line-height:.95; color:var(--ink-strong); margin:16px 0 40px;">资料来源与<br/>分析思路。</h2>
 
     <div class="ev" id="ev">
       <button class="ev-toggle" id="evToggle" aria-expanded="false">
-        <span>展开证据 · Evidence / Scores / Reasoning / Sources</span>
+        <span>展开 · Sources / Pipeline / Scores / Reasoning Trace</span>
         <span class="car">↓</span>
       </button>
       <div class="ev-body">
         <div class="ev-block">
-          <div class="k">详细证据</div>
-          <div class="cera">
-            <div class="r"><span class="kk">Conclusion</span><span class="vv">建议补齐工程链路证据后再投，属于「改完再投」。</span></div>
-            <div class="r"><span class="kk">Evidence</span><span class="vv">简历第 2 段提到「负责发布流程优化」但无量化结果；JD 第 4 条要求「owns deployment pipeline & on-call」。</span></div>
-            <div class="r"><span class="kk">Reasoning</span><span class="vv">硬性能力已覆盖 6/8 维度，缺口集中在可验证性而非能力本身，属于表达问题，改动成本低。</span></div>
-            <div class="r"><span class="kk">Impact</span><span class="vv">补齐后预计匹配分 78 → 86，胜算等级由「中」升至「中高」。</span></div>
-            <div class="r"><span class="kk">Action</span><span class="vv">按「投前 3 步」执行，预计耗时 2–3 小时，建议 48 小时内投递。</span></div>
+          <div class="k">资料来源</div>
+          <div class="srcs">
+            <a href="#"><span>岗位 JD 原文 · Senior Frontend Engineer, Payments</span><span class="k">2026-07-28</span></a>
+            <a href="#"><span>公司公开信息 · 团队规模与技术博客</span><span class="k">2026-07-26</span></a>
+            <a href="#"><span>同类岗位对照 · 4 个同级 JD 的能力要求交集</span><span class="k">2026-07-25</span></a>
+            <a href="#"><span>你的画像快照 · Profile v3</span><span class="k">2026-07-30</span></a>
+          </div>
+        </div>
+
+        <div class="ev-block">
+          <div class="k">分析步骤</div>
+          <div class="steps">
+            <div class="r"><span class="n">01</span><span class="s">解析 JD</span><span>抽取硬性要求 8 条、软性偏好 5 条，标注可验证性。</span></div>
+            <div class="r"><span class="n">02</span><span class="s">解析画像</span><span>读取 Profile v3 的 8 维能力分与证据引用位置。</span></div>
+            <div class="r"><span class="n">03</span><span class="s">维度对齐</span><span>将 JD 要求逐条映射到 8 个能力维度，标记命中 / 部分命中 / 缺失。</span></div>
+            <div class="r"><span class="n">04</span><span class="s">打分</span><span>按维度权重加权得出匹配分，并输出扣分归因。</span></div>
+            <div class="r"><span class="n">05</span><span class="s">生成建议</span><span>由扣分归因反推「投前 3 步」，每步绑定其对应缺口 ID。</span></div>
           </div>
         </div>
 
@@ -435,29 +445,18 @@
         </div>
 
         <div class="ev-block">
-          <div class="k">每个花瓣的推理</div>
-          <div class="reason">
-            <div class="r"><span class="n">专业技能</span><span>React / TS 深度与 JD 技术栈完全一致，且有开源贡献佐证。</span></div>
-            <div class="r"><span class="n">系统设计</span><span>有从 0 到 1 的前端架构决策记录，符合岗位对 owner 的期待。</span></div>
-            <div class="r"><span class="n">执行交付</span><span>三段经历均有明确上线结果，交付确定性高。</span></div>
-            <div class="r"><span class="n">产品理解</span><span>能从指标反推方案，但缺少支付/金融领域上下文。</span></div>
-            <div class="r"><span class="n">协作沟通</span><span>跨团队协作有描述，未体现跨时区异步协作经验。</span></div>
-            <div class="r"><span class="n">学习成长</span><span>技术栈迭代频率健康，自学路径清晰。</span></div>
-            <div class="r"><span class="n">工程素养</span><span>无 CI/CD、监控、on-call 的可验证证据，为主要扣分项。</span></div>
-            <div class="r"><span class="n">动机稳定性</span><span>近 3 段平均在职 14 个月，且团队规模偏好与岗位不符。</span></div>
-          </div>
-        </div>
-
-        <div class="ev-block">
-          <div class="k">外部岗位信息来源</div>
-          <div class="srcs">
-            <a href="#"><span>岗位 JD 原文 · Senior Frontend Engineer, Payments</span><span class="k">2026-07-28</span></a>
-            <a href="#"><span>公司公开信息 · 团队规模与技术博客</span><span class="k">2026-07-26</span></a>
-            <a href="#"><span>同类岗位对照 · 4 个同级 JD 的能力要求交集</span><span class="k">2026-07-25</span></a>
-            <a href="#"><span>你的画像快照 · Profile v3</span><span class="k">2026-07-30</span></a>
+          <div class="k">推理记录</div>
+          <div class="trace" id="trace" data-src-id="model.trace">
+            <div class="r"><span class="k">11:02:14</span><span class="s">parse_jd</span><span>抽取 13 条要求，其中 4 条标记为硬性且可验证。</span></div>
+            <div class="r"><span class="k">11:02:19</span><span class="s">align_dimensions</span><span>6/8 维度命中，缺口集中于「工程素养」。</span></div>
+            <div class="r"><span class="k">11:02:23</span><span class="s">score</span><span>加权匹配分 78，主要扣分项 −8 / −6。</span></div>
+            <div class="r"><span class="k">11:02:27</span><span class="s">strategy</span><span>生成 3 条行动建议，预计补齐后 86。</span></div>
+            <div class="empty" style="margin-top:16px;">以上为占位记录 · 接入模型后此处直接渲染真实 reasoning trace</div>
           </div>
         </div>
       </div>
+    </div>
+
     </div>
 
     <div class="cta-row" style="margin-top:48px;">
