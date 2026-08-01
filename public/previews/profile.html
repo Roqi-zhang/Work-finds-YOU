@@ -396,13 +396,13 @@
         const c2x = sx + dx * 0.72 + sway * 0.3, c2y = sy + dy * 0.82 + 18 + rnd(6) * 20;
 
         // starting curl (small open loop, like the reference doodle)
-        const r = 4.2 + rnd(7) * 1.6;
+        const r = 3.6 + rnd(7) * 1.4;
         const curl = document.createElementNS(SVGNS, "path");
         curl.setAttribute("class", "note-line");
         curl.setAttribute("d",
-          `M ${sx + (right ? 7 : -7)} ${sy - 3} c ${right ? -5 : 5} ${-r} ${right ? -2 * r : 2 * r} ${-r * 0.4} ` +
-          `${right ? -r * 1.4 : r * 1.4} ${r * 1.1} c ${right ? r * 0.6 : -r * 0.6} ${r * 0.9} ${right ? r * 1.6 : -r * 1.6} ${r * 0.2} ${sx - (sx + (right ? 7 : -7))} ${sy - (sy - 3)}`);
+          `M ${sx} ${sy} a ${r} ${r} 0 1 ${right ? 1 : 0} ${right ? -r * 0.5 : r * 0.5} ${-r * 1.9}`);
         g.appendChild(curl);
+
 
         const line = document.createElementNS(SVGNS, "path");
         line.setAttribute("class", "note-line");
