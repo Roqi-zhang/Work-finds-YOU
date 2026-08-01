@@ -317,12 +317,12 @@
 
     picks.forEach((d) => {
       const ref = petalRefs[d.i];
-      const s = d.score == null ? 0.6 : d.score;
-      const r1 = R0 + 30 + s * 23 + 46;
-      const rad = (ref.angle * Math.PI) / 180;
-      const x = Math.cos(rad) * r1, y = Math.sin(rad) * r1;
-      const dir = x >= 0 ? 1 : -1;
-      const tx = x + dir * 34, ty = y + (y >= 0 ? 14 : -10);
+      const rad = (ref.dir * Math.PI) / 180;
+      const rTip = tipRadius(d.score) + 46;       // just outside the label block
+      const x = Math.cos(rad) * rTip, y = Math.sin(rad) * rTip;
+      const dir = x >= -1 ? 1 : -1;
+      const tx = x + dir * 30, ty = y + (y >= 0 ? 16 : -12);
+
 
       const g = document.createElementNS(SVGNS, "g");
       g.setAttribute("class", "note");
