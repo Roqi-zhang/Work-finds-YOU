@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=1280" />
-<title>02 Profile · Ability Flower · A</title>
+<title>03 Job Profile · Role Ability Flower · A</title>
 <link rel="stylesheet" href="./_shared.css" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -152,27 +152,27 @@
     <div class="logo">Work Finds You / 工作找你</div>
     <nav>
       <a href="./home.html">01 Home</a>
-      <a href="./profile.html" class="on">02 Profile</a>
-      <a href="./jobprofile.html">03 Job</a>
+      <a href="./profile.html">02 Profile</a>
+      <a href="./jobprofile.html" class="on">03 Job</a>
       <a href="./match.html">04 Match</a>
       <a href="./compare.html">05 Compare</a>
       <a href="./delivery.html">06 Delivery</a>
     </nav>
     <div class="right">
-      <span class="caption">Step 01 / 03</span>
+      <span class="caption">Step 02 / 03</span>
       <button class="theme-toggle"></button>
     </div>
   </header>
 
   <section class="layout">
     <aside class="side">
-      <div class="caption">02 · Candidate Profile</div>
-      <h1>创建属于你的<br/>能力花</h1>
-      <p>上传简历，8 项胜任力维度将生长为这朵花的花瓣。花瓣越舒展代表该能力越突出；证据不足时只开虚线小瓣，不记 0 分。</p>
+      <div class="caption">03 · Job Profile</div>
+      <h1>解析岗位的<br/>理想能力花</h1>
+      <p>上传岗位 JD，8 项胜任力维度将生长为这个岗位的理想能力花。花瓣越舒展代表该岗位越看重这项能力；JD 未提及时只开虚线小瓣，不记 0 分。</p>
 
       <div class="steps">
-        <div class="step on" id="s1"><span class="n">01</span> 上传简历</div>
-        <div class="step" id="s2"><span class="n">02</span> 建立画像</div>
+        <div class="step on" id="s1"><span class="n">01</span> 上传 JD</div>
+        <div class="step" id="s2"><span class="n">02</span> 建立岗位画像</div>
         <div class="step" id="s3"><span class="n">03</span> 进入匹配</div>
       </div>
 
@@ -188,7 +188,7 @@
 
     <section class="stage">
       <div class="stage-head">
-        <span class="caption">Ability Flower · 8 competencies</span>
+        <span class="caption">Role Ability Flower · 8 competencies</span>
         <span class="mode" id="stateTag">STATE / EMPTY</span>
       </div>
 
@@ -203,10 +203,10 @@
           </svg>
 
           <div class="rcard" id="rcard">
-            <div class="rname" id="rName">resume.pdf</div>
+            <div class="rname" id="rName">jd.png</div>
             <div class="rtag">[R]</div>
             <div class="lines" id="rLines"></div>
-            <div class="rmeta"><span id="rMeta">PDF · 1.2 MB</span><span>CV</span></div>
+            <div class="rmeta"><span id="rMeta">PNG · 480 KB</span><span>JD</span></div>
             
             <div class="scan"></div>
           </div>
@@ -223,7 +223,7 @@
 
         <div class="stage-actions">
           <div class="btnrow">
-            <button class="btn ghost" id="redoBtn" hidden>重新建立画像</button>
+            <button class="btn ghost" id="redoBtn" hidden>重新建立岗位画像</button>
             <button class="btn" id="mainBtn">上传简历</button>
           </div>
           <span class="hintline" id="hintLine">click or drag · PDF / Word / Image</span>
@@ -440,10 +440,10 @@
       state = next;
       stageEl.dataset.state = next;
       const map = {
-        empty:     ["STATE / EMPTY", "Let your flower bloom", "上传简历", "click or drag · PDF / Word / Image"],
-        ready:     ["STATE / READY", "RESUME READY · WAITING TO BLOOM", "建立画像", ""],
+        empty:     ["STATE / EMPTY", "Let your flower bloom", "上传 JD", "click or drag · PDF / Word / Image"],
+        ready:     ["STATE / READY", "JD READY · WAITING TO BLOOM", "建立岗位画像", ""],
         analysing: ["STATE / LOADING", "ANALYSING…", "分析中", "PARSING · EXTRACTING · SCORING"],
-        bloomed:   ["STATE / SUCCESS · 1 LOW-CONFIDENCE", "YOUR FLOWER HAS BLOOMED", "下一步 →", "hover 花瓣查看证据与得分理由"],
+        bloomed:   ["STATE / SUCCESS · 1 LOW-CONFIDENCE", "THE ROLE FLOWER HAS BLOOMED", "进入匹配 →", "hover 花瓣查看岗位要求与权重理由"],
       }[next];
       stateTag.textContent = map[0];
       stateLine.textContent = map[1];
@@ -509,12 +509,12 @@
 
     backBtn.addEventListener("click", () => {
       if (state === "bloomed" || state === "analysing") {
-        confirmDialog("Discard profile?", "返回将清空当前简历与已生成的能力花，是否继续？", "确认返回", () => history.back());
+        confirmDialog("Discard job profile?", "返回将清空当前 JD 与已生成的岗位能力花，是否继续？", "确认返回", () => history.back());
       } else history.back();
     });
 
     redoBtn.addEventListener("click", () => {
-      confirmDialog("Rebuild profile?", "重新建立画像将清空当前结果，需要重新上传简历，是否继续？", "确认重建", () => {
+      confirmDialog("Rebuild job profile?", "重新建立岗位画像将清空当前结果，需要重新上传 JD，是否继续？", "确认重建", () => {
         reset();
         input.click();
       });
@@ -522,7 +522,7 @@
 
     mainBtn.addEventListener("click", () => {
       if (state === "empty") { input.click(); return; }
-      if (state === "bloomed") { location.href = "./jobprofile.html"; return; }
+      if (state === "bloomed") { location.href = "./match.html"; return; }
       if (state !== "ready") return;
 
       setState("analysing");
