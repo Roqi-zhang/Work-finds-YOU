@@ -292,19 +292,22 @@
 
   // ============ stamens (drawn at bloom) ============
   function drawStamens() {
+    // short hair-lines ringing the flower heart (the centre disc covers r < 100)
     stamenRoot.innerHTML = "";
-    for (let i = 0; i < 14; i++) {
-      const a = (Math.PI * 2 / 14) * i;
-      const r0 = 18, r1 = 52 + jitter(i, 16);
+    const n = 40;
+    for (let i = 0; i < n; i++) {
+      const a = (Math.PI * 2 / n) * i;
+      const r0 = 101, r1 = 110 + jitter(i, 9);
       const path = document.createElementNS(SVGNS, "path");
       path.setAttribute("class", "stamen");
       const x0 = Math.cos(a) * r0, y0 = Math.sin(a) * r0;
       const x1 = Math.cos(a) * r1, y1 = Math.sin(a) * r1;
-      const cx = Math.cos(a + 0.35) * r1 * 0.7, cy = Math.sin(a + 0.35) * r1 * 0.7;
+      const cx = Math.cos(a + 0.06) * ((r0 + r1) / 2), cy = Math.sin(a + 0.06) * ((r0 + r1) / 2);
       path.setAttribute("d", `M ${x0} ${y0} Q ${cx} ${cy} ${x1} ${y1}`);
       stamenRoot.appendChild(path);
     }
   }
+
 
   // ============ handwritten annotations ============
   function drawNotes(data) {
