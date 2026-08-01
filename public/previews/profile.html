@@ -340,60 +340,72 @@
     stamenRoot.appendChild(p);
   });
 
-  // ---- stem + leaf (traced) ----
+  // ---- short stem + leaf (flower head is the focus) ----
   [
-    "M 352 400 C 349 470 352 520 356 566 C 350 640 344 700 352 760 C 360 812 380 840 388 886",
-    "M 357 566 C 372 548 392 538 410 536 C 398 570 380 606 362 634",
+    "M 352 400 C 349 452 352 500 356 552",
+    "M 356 548 C 370 530 390 520 408 518 C 396 546 380 572 360 592",
   ].forEach((d) => {
     const p = document.createElementNS(SVGNS, "path");
     p.setAttribute("class", "flower-line grow"); p.setAttribute("d", d);
     stemRoot.appendChild(p);
   });
 
-  // ---- handwritten annotations ----
+  // ---- handwritten annotations · one per petal ----
   function drawNotes(data) {
     notesRoot.innerHTML = "";
-    const placed = [];
-    data.map((d, i) => ({ ...d, i })).filter((d) => d.note).slice(0, 3).forEach((d) => {
-      const ref = refs[d.i];
-      const box = ref.p.getBBox();
-      const ax = box.x + box.width / 2, ay = box.y + box.height / 2;
-      const right = ax >= C[0];
-      const tx = right ? Math.max(ax + 90, 540) : Math.min(ax - 90, 214);
-      let ty = ay + (ay > C[1] ? 40 : -46);
-      // keep handwritten notes from stacking on top of each other
-      while (placed.some((q) => q.right === right && Math.abs(q.ty - ty) < 40)) ty += 42;
-      placed.push({ right, ty });
+    const items = data.map((d, i) => {
+      const box = refs[i].p.getBBox();
+      return { ...d, i, ax: box.x + box.width / 2, ay: box.y + box.height / 2 };
+    });
 
+    const sides = { right: [], left: [] };
+    items.forEach((it) => sides[it.ax >= C[0] ? "right" : "left"].push(it));
+    // balance both columns so notes never pile up on one side
+    while (sides.right.length > 4) sides.left.push(sides.right.pop());
+    while (sides.left.length > 4) sides.right.push(sides.left.pop());
 
-      const g = document.createElementNS(SVGNS, "g");
-      g.setAttribute("class", "note");
+    ["left", "right"].forEach((side) => {
+      const right = side === "right";
+      const list = sides[side].sort((a, b) => a.ay - b.ay);
+      const top = 252, bottom = 566;
+      const step = list.length > 1 ? (bottom - top) / (list.length - 1) : 0;
 
-      const t = document.createElementNS(SVGNS, "text");
-      t.setAttribute("class", "note-text");
-      t.setAttribute("x", tx); t.setAttribute("y", ty);
-      t.setAttribute("text-anchor", right ? "start" : "end");
-      t.textContent = d.note + (d.score == null ? "" : " " + d.score + "/5");
-      g.appendChild(t);
+      list.forEach((d, k) => {
+        const rnd = (n) => ((Math.sin((d.i + 1) * 12.9898 + n * 78.233) * 43758.5453) % 1 + 1) % 1;
+        const ty = top + step * k + (rnd(1) - 0.5) * 16;
+        const tx = (right ? 476 : 236) + (rnd(2) - 0.5) * 26;
+        const rot = (rnd(3) - 0.5) * 4;
 
-      // hand-drawn hooked arrow from the note to the petal
-      const sx = tx + (right ? -8 : 8), sy = ty + 10;
-      const ex = ax + (right ? 14 : -14), ey = ay + (ay > C[1] ? 10 : -8);
-      const mx = (sx + ex) / 2 + (right ? 14 : -14), my = (sy + ey) / 2 + (ay > C[1] ? 22 : -22);
-      const line = document.createElementNS(SVGNS, "path");
-      line.setAttribute("class", "note-line");
-      line.setAttribute("d", `M ${sx} ${sy} Q ${mx} ${my} ${ex} ${ey}`);
-      g.appendChild(line);
+        const g = document.createElementNS(SVGNS, "g");
+        g.setAttribute("class", "note");
 
-      const ang = Math.atan2(ey - my, ex - mx);
-      const head = document.createElementNS(SVGNS, "path");
-      head.setAttribute("class", "note-line");
-      head.setAttribute("d",
-        `M ${ex - Math.cos(ang - 0.45) * 11} ${ey - Math.sin(ang - 0.45) * 11} L ${ex} ${ey} ` +
-        `L ${ex - Math.cos(ang + 0.45) * 11} ${ey - Math.sin(ang + 0.45) * 11}`);
-      g.appendChild(head);
+        const t = document.createElementNS(SVGNS, "text");
+        t.setAttribute("class", "note-text");
+        t.setAttribute("x", tx); t.setAttribute("y", ty);
+        t.setAttribute("text-anchor", right ? "start" : "end");
+        t.setAttribute("transform", `rotate(${rot.toFixed(2)} ${tx} ${ty})`);
+        t.textContent = (d.note || DIMS[d.i].label) + (d.score == null ? " 证据不足" : " " + d.score + "/5");
+        g.appendChild(t);
 
-      notesRoot.appendChild(g);
+        // hand-drawn hooked arrow from the note to its petal
+        const sx = tx + (right ? -10 : 10), sy = ty + 6;
+        const ex = d.ax + (right ? 16 : -16), ey = d.ay;
+        const mx = (sx + ex) / 2 + (right ? 12 : -12), my = (sy + ey) / 2 + (ey > sy ? 18 : -18);
+        const line = document.createElementNS(SVGNS, "path");
+        line.setAttribute("class", "note-line");
+        line.setAttribute("d", `M ${sx} ${sy} Q ${mx} ${my} ${ex} ${ey}`);
+        g.appendChild(line);
+
+        const ang = Math.atan2(ey - my, ex - mx);
+        const head = document.createElementNS(SVGNS, "path");
+        head.setAttribute("class", "note-line");
+        head.setAttribute("d",
+          `M ${ex - Math.cos(ang - 0.45) * 9} ${ey - Math.sin(ang - 0.45) * 9} L ${ex} ${ey} ` +
+          `L ${ex - Math.cos(ang + 0.45) * 9} ${ey - Math.sin(ang + 0.45) * 9}`);
+        g.appendChild(head);
+
+        notesRoot.appendChild(g);
+      });
     });
   }
 
