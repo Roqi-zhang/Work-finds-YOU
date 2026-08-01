@@ -337,13 +337,18 @@
   // ---- handwritten annotations ----
   function drawNotes(data) {
     notesRoot.innerHTML = "";
+    const placed = [];
     data.map((d, i) => ({ ...d, i })).filter((d) => d.note).slice(0, 3).forEach((d) => {
       const ref = refs[d.i];
       const box = ref.p.getBBox();
       const ax = box.x + box.width / 2, ay = box.y + box.height / 2;
       const right = ax >= C[0];
       const tx = right ? Math.max(ax + 90, 540) : Math.min(ax - 90, 214);
-      const ty = ay + (ay > C[1] ? 40 : -46);
+      let ty = ay + (ay > C[1] ? 40 : -46);
+      // keep handwritten notes from stacking on top of each other
+      while (placed.some((q) => q.right === right && Math.abs(q.ty - ty) < 40)) ty += 42;
+      placed.push({ right, ty });
+
 
       const g = document.createElementNS(SVGNS, "g");
       g.setAttribute("class", "note");
