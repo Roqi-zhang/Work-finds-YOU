@@ -464,7 +464,7 @@
         p.style.animationDelay = (0.9 + i * 0.2) + "s";
       });
     }
-    drawNotes(data);
+    notesRoot.innerHTML = "";
   }
   paint(DIMS.map((_, i) => ({ score: 2.5, seed: i })), false);
 
