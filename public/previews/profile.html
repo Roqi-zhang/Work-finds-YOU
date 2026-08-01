@@ -66,10 +66,11 @@
   /* ---------- handwritten annotations ---------- */
   .note-text {
     font-family: "Caveat", "Zhi Mang Xing", "Bradley Hand", "Segoe Script", "Xingkai SC", "Hanzipen SC", cursive;
-    font-size: 19px; fill: var(--ink-strong);
+    font-size: 13.5px; fill: var(--ink); opacity: .45; letter-spacing: .04em;
   }
 
-  .note-line { stroke: var(--ink-strong); stroke-width: 0.9; fill: none; stroke-linecap: round; opacity: .6; }
+  .note-line { stroke: var(--ink); stroke-width: 0.7; fill: none; stroke-linecap: round; stroke-linejoin: round; opacity: .35; }
+
   .note { opacity: 0; transition: opacity .6s var(--ease); }
   .bloomed .note { opacity: 1; }
 
@@ -103,8 +104,9 @@
   .state-line { font-size: 11px; letter-spacing: .22em; text-transform: uppercase; opacity: .55; margin-top: 6px; min-height: 16px; }
   .state-line.script { font-family: "Parisienne", "Caveat", cursive; font-size: 38px; letter-spacing: 0; text-transform: none;
                        opacity: .8; color: var(--ink-strong); line-height: 1.2; margin-top: 2px; }
-  .stage-actions { display: flex; gap: 14px; align-items: center; margin-top: 22px; }
+  .stage-actions { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; margin-top: 22px; }
   .hintline { font-size: 10px; letter-spacing: .18em; text-transform: uppercase; opacity: .4; }
+
 
   /* hover evidence card */
   .tip {
@@ -187,7 +189,7 @@
 
       <div class="petal-stage" id="petalStage" data-state="empty">
         <div class="visual" id="visual">
-          <svg class="flower-svg" id="flowerSvg" viewBox="150 195 410 420">
+          <svg class="flower-svg" id="flowerSvg" viewBox="112 200 506 344">
             <g id="backPetals"></g>
             <g id="frontPetals"></g>
             <g id="stamens"></g>
@@ -340,15 +342,9 @@
     stamenRoot.appendChild(p);
   });
 
-  // ---- short stem + leaf (flower head is the focus) ----
-  [
-    "M 352 400 C 349 452 352 500 356 552",
-    "M 356 548 C 370 530 390 520 408 518 C 396 546 380 572 360 592",
-  ].forEach((d) => {
-    const p = document.createElementNS(SVGNS, "path");
-    p.setAttribute("class", "flower-line grow"); p.setAttribute("d", d);
-    stemRoot.appendChild(p);
-  });
+  // ---- stem + leaf removed: the flower head is the only subject ----
+  stemRoot.innerHTML = "";
+
 
   // ---- handwritten annotations · one per petal ----
   function drawNotes(data) {
@@ -367,13 +363,13 @@
     ["left", "right"].forEach((side) => {
       const right = side === "right";
       const list = sides[side].sort((a, b) => a.ay - b.ay);
-      const top = 252, bottom = 566;
+      const top = 232, bottom = 508;
       const step = list.length > 1 ? (bottom - top) / (list.length - 1) : 0;
 
       list.forEach((d, k) => {
         const rnd = (n) => ((Math.sin((d.i + 1) * 12.9898 + n * 78.233) * 43758.5453) % 1 + 1) % 1;
-        const ty = top + step * k + (rnd(1) - 0.5) * 16;
-        const tx = (right ? 476 : 236) + (rnd(2) - 0.5) * 26;
+        const ty = top + step * k + (rnd(1) - 0.5) * 12;
+        const tx = (right ? 486 : 226) + (rnd(2) - 0.5) * 18;
         const rot = (rnd(3) - 0.5) * 4;
 
         const g = document.createElementNS(SVGNS, "g");
@@ -389,26 +385,42 @@
           : ((d.note || DIMS[d.i].label) + " " + d.score + "/5");
         g.appendChild(t);
 
-        // hand-drawn hooked arrow from the note to its petal
-        const sx = tx + (right ? -10 : 10), sy = ty + 6;
-        const ex = d.ax + (right ? 16 : -16), ey = d.ay;
-        const mx = (sx + ex) / 2 + (right ? 12 : -12), my = (sy + ey) / 2 + (ey > sy ? 18 : -18);
+        // free hand-drawn hooked arrow: little loop at the start, loose cubic sweep
+        const sx = tx + (right ? -12 : 12), sy = ty + 7;
+        // pull the target slightly back toward the flower heart so arrows don't crowd the outline
+        const ex = d.ax + (C[0] - d.ax) * 0.25;
+        const ey = d.ay + (C[1] - d.ay) * 0.25;
+        const dx = ex - sx, dy = ey - sy;
+        const sway = (rnd(4) - 0.5) * 46 + (right ? -26 : 26);
+        const c1x = sx + dx * 0.28 + sway * 0.6, c1y = sy + dy * 0.18 - 26 - rnd(5) * 22;
+        const c2x = sx + dx * 0.72 + sway * 0.3, c2y = sy + dy * 0.82 + 18 + rnd(6) * 20;
+
+        // starting curl (small open loop, like the reference doodle)
+        const r = 3.6 + rnd(7) * 1.4;
+        const curl = document.createElementNS(SVGNS, "path");
+        curl.setAttribute("class", "note-line");
+        curl.setAttribute("d",
+          `M ${sx} ${sy} a ${r} ${r} 0 1 ${right ? 1 : 0} ${right ? -r * 0.5 : r * 0.5} ${-r * 1.9}`);
+        g.appendChild(curl);
+
+
         const line = document.createElementNS(SVGNS, "path");
         line.setAttribute("class", "note-line");
-        line.setAttribute("d", `M ${sx} ${sy} Q ${mx} ${my} ${ex} ${ey}`);
+        line.setAttribute("d", `M ${sx} ${sy} C ${c1x} ${c1y} ${c2x} ${c2y} ${ex} ${ey}`);
         g.appendChild(line);
 
-        const ang = Math.atan2(ey - my, ex - mx);
+        const ang = Math.atan2(ey - c2y, ex - c2x);
         const head = document.createElementNS(SVGNS, "path");
         head.setAttribute("class", "note-line");
         head.setAttribute("d",
-          `M ${ex - Math.cos(ang - 0.45) * 9} ${ey - Math.sin(ang - 0.45) * 9} L ${ex} ${ey} ` +
-          `L ${ex - Math.cos(ang + 0.45) * 9} ${ey - Math.sin(ang + 0.45) * 9}`);
+          `M ${ex - Math.cos(ang - 0.40) * 9.5} ${ey - Math.sin(ang - 0.40) * 9.5} L ${ex} ${ey} ` +
+          `L ${ex - Math.cos(ang + 0.62) * 6} ${ey - Math.sin(ang + 0.62) * 6}`);
         g.appendChild(head);
 
         notesRoot.appendChild(g);
       });
     });
+
   }
 
   // ---- paint ----
