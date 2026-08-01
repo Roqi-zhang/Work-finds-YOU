@@ -481,9 +481,46 @@
       if (f) handle(f);
     });
 
+    // re-upload: clicking the resume card opens the picker again (no visible button)
+    rcard.addEventListener("click", () => { if (state === "ready") { input.value = ""; input.click(); } });
+
+    // ---- reset back to the empty state ----
+    function reset() {
+      stageEl.classList.remove("blooming", "bloomed");
+      legend.innerHTML = "";
+      input.value = "";
+      paint(DIMS.map((_, i) => ({ score: 2.5, seed: i })), false);
+      setState("empty");
+    }
+
+    // ---- confirm dialog ----
+    let onConfirm = null;
+    function confirmDialog(title, body, okText, cb) {
+      dlgTitle.textContent = title; dlgBody.textContent = body; dlgOk.textContent = okText;
+      onConfirm = cb; mask.classList.add("on");
+    }
+    function closeDialog() { mask.classList.remove("on"); onConfirm = null; }
+    dlgCancel.addEventListener("click", closeDialog);
+    mask.addEventListener("click", (e) => { if (e.target === mask) closeDialog(); });
+    document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeDialog(); });
+    dlgOk.addEventListener("click", () => { const cb = onConfirm; closeDialog(); if (cb) cb(); });
+
+    backBtn.addEventListener("click", () => {
+      if (state === "bloomed" || state === "analysing") {
+        confirmDialog("Discard profile?", "返回将清空当前简历与已生成的能力花，是否继续？", "确认返回", () => history.back());
+      } else history.back();
+    });
+
+    redoBtn.addEventListener("click", () => {
+      confirmDialog("Rebuild profile?", "重新建立画像将清空当前结果，需要重新上传简历，是否继续？", "确认重建", () => {
+        reset();
+        input.click();
+      });
+    });
+
     mainBtn.addEventListener("click", () => {
       if (state === "empty") { input.click(); return; }
-      if (state === "bloomed") { location.href = "./match.html"; return; }
+      if (state === "bloomed") { location.href = "./jobprofile.html"; return; }
       if (state !== "ready") return;
 
       setState("analysing");
