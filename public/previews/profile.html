@@ -45,17 +45,18 @@
   .visual.dragging { border-color: var(--ink); border-style: solid; }
 
   .flower-svg {
-    position: absolute; height: 540px; width: auto; overflow: visible;
+    position: absolute; height: 560px; width: auto; overflow: visible;
     transition: opacity .45s var(--ease), transform .45s var(--ease), filter .6s var(--ease);
   }
 
-  .petal { fill: var(--paper); stroke: var(--ink); stroke-width: 1.1; stroke-linejoin: round; stroke-linecap: round;
+  .petal { fill: var(--paper); stroke: var(--ink); stroke-width: 0.9; stroke-linejoin: round; stroke-linecap: round;
+           opacity: .88;
            transition: stroke .3s var(--ease), stroke-width .3s var(--ease), opacity .4s var(--ease); cursor: pointer; }
-  .petal-g.weak .petal { stroke-dasharray: 4 5; opacity: .75; }
+  .petal-g.weak .petal { stroke-dasharray: 4 5; opacity: .6; }
   .petal-g.dim  .petal { stroke: var(--line); }
-  .petal-g:hover .petal { stroke: var(--ink-strong); stroke-width: 1.9; }
-  .flower-line { fill: none; stroke: var(--ink); stroke-width: 1.1; stroke-linecap: round; stroke-linejoin: round; }
-  .stamen { fill: none; stroke: var(--ink); stroke-width: 1; stroke-linecap: round; }
+  .petal-g:hover .petal { stroke: var(--ink-strong); stroke-width: 1.6; opacity: 1; }
+  .flower-line { fill: none; stroke: var(--ink); stroke-width: 0.9; stroke-linecap: round; stroke-linejoin: round; opacity: .8; }
+  .stamen { fill: none; stroke: var(--ink); stroke-width: 0.8; stroke-linecap: round; opacity: .8; }
 
   /* draw-on bloom */
   .grow { stroke-dasharray: var(--len); stroke-dashoffset: var(--len); }
@@ -65,10 +66,10 @@
   /* ---------- handwritten annotations ---------- */
   .note-text {
     font-family: "Caveat", "Zhi Mang Xing", "Bradley Hand", "Segoe Script", "Xingkai SC", "Hanzipen SC", cursive;
-    font-size: 20px; fill: var(--ink-strong);
+    font-size: 19px; fill: var(--ink-strong);
   }
 
-  .note-line { stroke: var(--ink-strong); stroke-width: 1; fill: none; stroke-linecap: round; opacity: .7; }
+  .note-line { stroke: var(--ink-strong); stroke-width: 0.9; fill: none; stroke-linecap: round; opacity: .6; }
   .note { opacity: 0; transition: opacity .6s var(--ease); }
   .bloomed .note { opacity: 1; }
 
