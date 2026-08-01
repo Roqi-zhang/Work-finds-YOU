@@ -384,7 +384,9 @@
         t.setAttribute("x", tx); t.setAttribute("y", ty);
         t.setAttribute("text-anchor", right ? "start" : "end");
         t.setAttribute("transform", `rotate(${rot.toFixed(2)} ${tx} ${ty})`);
-        t.textContent = (d.note || DIMS[d.i].label) + (d.score == null ? " 证据不足" : " " + d.score + "/5");
+        t.textContent = d.score == null
+          ? (DIMS[d.i].label + " 证据不足")
+          : ((d.note || DIMS[d.i].label) + " " + d.score + "/5");
         g.appendChild(t);
 
         // hand-drawn hooked arrow from the note to its petal
