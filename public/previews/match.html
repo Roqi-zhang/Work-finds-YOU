@@ -75,6 +75,44 @@
   .btn { border: 0.5px solid var(--ink); padding: 12px 22px; font-size: 12px; letter-spacing: 0.2em; text-transform: uppercase; border-radius: 999px; transition: all .3s var(--ease); }
   .btn:hover { background: var(--ink-strong); color: var(--paper); }
 
+  /* 01 decision fields */
+  .verdict { font-size: 22px; line-height: 1.5; color: var(--ink-strong); max-width: 32ch; margin-top: 8px; }
+  .fields { display: grid; grid-template-columns: 1fr 1fr; gap: 0; margin-top: 32px; border-top: 0.5px solid var(--line); }
+  .fields .f { padding: 16px 0; border-bottom: 0.5px solid var(--line); }
+  .fields .f:nth-child(odd) { padding-right: 24px; border-right: 0.5px solid var(--line); }
+  .fields .f:nth-child(even) { padding-left: 24px; }
+  .fields .fn { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase; opacity: .55; }
+  .fields .fv { font-size: 26px; letter-spacing: -0.02em; color: var(--ink-strong); margin-top: 8px; }
+  .fields .fv small { font-size: 12px; letter-spacing: 0.16em; text-transform: uppercase; opacity: .5; margin-left: 8px; }
+
+  /* 04 evidence accordion */
+  .ev { grid-column: 1 / -1; }
+  .ev-toggle {
+    width: 100%; display: flex; align-items: center; justify-content: space-between;
+    padding: 22px 0; border-top: 0.5px solid var(--line); border-bottom: 0.5px solid var(--line);
+    font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 11px; letter-spacing: 0.24em; text-transform: uppercase;
+    color: var(--ink-strong); transition: opacity .3s var(--ease);
+  }
+  .ev-toggle:hover { opacity: .6; }
+  .ev-toggle .car { transition: transform .4s var(--ease); }
+  .ev.open .ev-toggle .car { transform: rotate(180deg); }
+  .ev-body { max-height: 0; overflow: hidden; transition: max-height .6s var(--ease); }
+  .ev.open .ev-body { max-height: 3200px; }
+  .ev-block { padding: 40px 0; border-bottom: 0.5px solid var(--line); display: grid; grid-template-columns: 200px 1fr; gap: 48px; }
+  .ev-block > .k { padding-top: 4px; }
+  .cera { display: flex; flex-direction: column; gap: 18px; }
+  .cera .r { display: grid; grid-template-columns: 110px 1fr; gap: 20px; align-items: baseline; font-size: 14px; }
+  .cera .r .kk { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; opacity: .55; }
+  .cera .r .vv { max-width: 56ch; opacity: .9; }
+  .srcs { display: flex; flex-direction: column; }
+  .srcs a { display: grid; grid-template-columns: 1fr auto; gap: 20px; padding: 12px 0; border-bottom: 0.5px solid var(--line); font-size: 13px; opacity: .8; }
+  .srcs a:hover { opacity: 1; color: var(--ink-strong); }
+  .reason { display: flex; flex-direction: column; }
+  .reason .r { display: grid; grid-template-columns: 140px 1fr; gap: 20px; padding: 12px 0; border-bottom: 0.5px solid var(--line); font-size: 13px; }
+  .reason .r .n { text-transform: uppercase; letter-spacing: 0.14em; opacity: .6; font-size: 11px; }
+  .tags { margin-top: 10px; display: flex; gap: 8px; }
+  .tags span { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; border: 0.5px solid var(--line); border-radius: 999px; padding: 4px 10px; opacity: .7; }
+
   /* progress dots on the right side */
   .progress {
     position: fixed; right: 28px; top: 50%; transform: translateY(-50%); z-index: 20;
@@ -87,6 +125,7 @@
     content: ""; width: 6px; height: 6px; border-radius: 50%; border: 0.5px solid var(--ink);
   }
   .progress a.on::before { background: var(--ink-strong); border-color: var(--ink-strong); }
+
 </style>
 </head>
 <body>
