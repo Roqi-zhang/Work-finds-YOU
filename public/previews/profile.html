@@ -433,7 +433,7 @@
         empty:     ["STATE / EMPTY", "Let your flower bloom", "上传简历", "click or drag · PDF / Word / Image"],
         ready:     ["STATE / READY", "RESUME READY · WAITING TO BLOOM", "建立画像", ""],
         analysing: ["STATE / LOADING", "ANALYSING…", "分析中", "PARSING · EXTRACTING · SCORING"],
-        bloomed:   ["STATE / SUCCESS · 1 LOW-CONFIDENCE", "YOUR FLOWER HAS BLOOMED", "进入匹配 →", "hover 花瓣查看证据与得分理由"],
+        bloomed:   ["STATE / SUCCESS · 1 LOW-CONFIDENCE", "YOUR FLOWER HAS BLOOMED", "下一步 →", "hover 花瓣查看证据与得分理由"],
       }[next];
       stateTag.textContent = map[0];
       stateLine.textContent = map[1];
@@ -442,6 +442,7 @@
       hintLine.textContent = map[3];
       mainBtn.classList.toggle("loading", next === "analysing");
       if (next === "analysing") mainBtn.innerHTML = '分析中<span class="dot"></span><span class="dot"></span><span class="dot"></span>';
+      redoBtn.hidden = next !== "bloomed";
       document.getElementById("s1").classList.toggle("on", next === "empty");
       document.getElementById("s2").classList.toggle("on", next === "ready" || next === "analysing");
       document.getElementById("s3").classList.toggle("on", next === "bloomed");
