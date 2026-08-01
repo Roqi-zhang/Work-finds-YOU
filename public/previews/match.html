@@ -113,6 +113,36 @@
   .tags { margin-top: 10px; display: flex; gap: 8px; }
   .tags span { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; border: 0.5px solid var(--line); border-radius: 999px; padding: 4px 10px; opacity: .7; }
 
+  /* per-conclusion evidence fold */
+  .fold { margin-top: 12px; }
+  .fold > .ft {
+    width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    padding: 8px 0; border-top: 0.5px solid var(--line);
+    font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase;
+    opacity: .55; transition: opacity .3s var(--ease);
+  }
+  .fold > .ft:hover { opacity: 1; color: var(--ink-strong); }
+  .fold > .ft .car { transition: transform .4s var(--ease); }
+  .fold.open > .ft { opacity: 1; color: var(--ink-strong); }
+  .fold.open > .ft .car { transform: rotate(180deg); }
+  .fold > .fb { max-height: 0; overflow: hidden; transition: max-height .5s var(--ease); }
+  .fold.open > .fb { max-height: 800px; }
+  .fold .fb-in { padding: 12px 0 16px; display: flex; flex-direction: column; gap: 10px; }
+  .fold .fr { display: grid; grid-template-columns: 96px 1fr; gap: 16px; align-items: baseline; font-size: 13px; }
+  .fold .fr .fk { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; opacity: .5; }
+  .fold .fr .fv { opacity: .85; max-width: 52ch; }
+  .fields .fold { margin-top: 14px; }
+
+  /* 04 analysis steps + reasoning trace */
+  .steps { display: flex; flex-direction: column; }
+  .steps .r { display: grid; grid-template-columns: 40px 160px 1fr; gap: 20px; padding: 12px 0; border-bottom: 0.5px solid var(--line); font-size: 13px; }
+  .steps .r .n, .steps .r .s { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; opacity: .55; }
+  .trace { border: 0.5px dashed var(--line); padding: 20px; }
+  .trace .empty { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; opacity: .45; }
+  .trace .r { display: grid; grid-template-columns: 90px 150px 1fr; gap: 16px; padding: 10px 0; border-bottom: 0.5px solid var(--line); font-size: 12px; opacity: .8; }
+  .trace .r:last-child { border-bottom: 0; }
+
+
   /* progress dots on the right side */
   .progress {
     position: fixed; right: 28px; top: 50%; transform: translateY(-50%); z-index: 20;
