@@ -220,7 +220,10 @@
         <div class="state-line" id="stateLine">LET YOUR FLOWER BLOOM</div>
 
         <div class="stage-actions">
-          <button class="btn" id="mainBtn">上传简历</button>
+          <div class="btnrow">
+            <button class="btn ghost" id="redoBtn" hidden>重新建立画像</button>
+            <button class="btn" id="mainBtn">上传简历</button>
+          </div>
           <span class="hintline" id="hintLine">click or drag · PDF / Word / Image</span>
           <input id="cvFile" type="file" accept=".pdf,.doc,.docx,image/*" hidden />
         </div>
@@ -230,6 +233,18 @@
     </section>
   </section>
 </main>
+
+<div class="mask" id="mask">
+  <div class="dlg">
+    <h5 id="dlgTitle">Discard profile?</h5>
+    <p id="dlgBody">返回将清空当前简历与已生成的能力花，是否继续？</p>
+    <div class="row">
+      <button class="btn ghost" id="dlgCancel">取消</button>
+      <button class="btn" id="dlgOk">确认返回</button>
+    </div>
+  </div>
+</div>
+
 <a class="preview-crumb" href="./index.html">← Previews</a>
 
 <script>
