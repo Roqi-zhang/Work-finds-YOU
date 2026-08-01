@@ -3,9 +3,13 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=1280" />
-<title>02 Profile · Petal Model · A</title>
+<title>02 Profile · Ability Flower · A</title>
 <link rel="stylesheet" href="./_shared.css" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500&family=Zhi+Mang+Xing&display=swap" rel="stylesheet" />
 <script src="./_shared.js"></script>
+
 <style>
   .layout { display: grid; grid-template-columns: 3fr 9fr; gap: 48px; align-items: start; }
   .side { display: flex; flex-direction: column; gap: 40px; position: sticky; top: 32px; }
@@ -16,72 +20,90 @@
   .step.on { opacity: 1; color: var(--ink-strong); }
   .step .n { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 10px; }
   .actions { display: flex; gap: 16px; margin-top: 40px; }
-  .btn { border: 0.5px solid var(--ink); padding: 12px 22px; font-size: 12px; letter-spacing: 0.2em; text-transform: uppercase; transition: all .3s var(--ease); border-radius: 999px; }
+  .btn { border: 0.5px solid var(--ink); padding: 12px 22px; font-size: 12px; letter-spacing: 0.2em; text-transform: uppercase; transition: all .3s var(--ease); border-radius: 999px; background: transparent; color: var(--ink); }
   .btn:hover { background: var(--ink-strong); color: var(--paper); border-color: var(--ink-strong); }
   .btn.ghost { border-color: var(--line); }
+  .btn[disabled] { opacity: .35; cursor: not-allowed; }
+  .btn[disabled]:hover { background: transparent; color: var(--ink); border-color: var(--line); }
+  .btn.loading { pointer-events: none; }
+  .btn .dot { display: inline-block; width: 4px; height: 4px; border-radius: 50%; background: currentColor; margin-left: 3px; animation: pulse 1.2s var(--ease) infinite; }
+  .btn .dot:nth-child(2){ animation-delay:.15s } .btn .dot:nth-child(3){ animation-delay:.3s }
+  @keyframes pulse { 0%,80%,100%{opacity:.2;transform:translateY(0)} 40%{opacity:1;transform:translateY(-2px)} }
 
-  .stage {
-    position: relative;
-    border-left: 0.5px solid var(--line);
-    padding-left: 48px;
-  }
-  .stage-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 24px; }
+  .stage { position: relative; border-left: 0.5px solid var(--line); padding-left: 48px; }
+  .stage-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 16px; }
   .stage-head .mode { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 11px; letter-spacing: 0.16em; }
 
   .petal-stage { display: flex; flex-direction: column; align-items: center; }
-  .petal-wrap { position: relative; height: 660px; display: flex; align-items: center; justify-content: center; }
-  .petal-svg { width: 660px; height: 660px; overflow: visible; }
 
-  /* ---- organic single-line petals ---- */
-  .petal {
-    fill: none;
-    stroke: var(--ink);
-    stroke-width: 0.5;
-    stroke-linejoin: round;
-    transition: stroke .3s var(--ease), fill .5s var(--ease), stroke-width .3s var(--ease);
-    cursor: pointer;
-    pointer-events: all;
+  /* ---------- main visual area: fixed box, contents swap ---------- */
+  .visual {
+    position: relative; width: 100%; height: 560px;
+    display: flex; align-items: center; justify-content: center;
+    border: 0.5px dashed transparent; transition: border-color .3s var(--ease);
   }
-  .petal-g.dim .petal { stroke: var(--line); }
-  .petal-g:hover .petal { stroke: var(--ink-strong); stroke-width: 1; }
-  .petal-g.weak .petal { stroke-dasharray: 3 4; }
-  .petal-g.empty .petal { stroke: var(--line); stroke-dasharray: 2 5; }
+  .visual.dragging { border-color: var(--ink); border-style: solid; }
 
-  .stamen { stroke: var(--ink); stroke-width: 0.5; fill: none; stroke-linecap: round; opacity: 0; transition: opacity .8s var(--ease); }
-  .bloomed .stamen { opacity: .85; }
-  .stem { stroke: var(--line); stroke-width: 0.5; fill: none; opacity: 0; transition: opacity 1s var(--ease); }
-  .bloomed .stem { opacity: 1; }
+  .flower-svg {
+    position: absolute; height: 540px; width: auto; overflow: visible;
+    transition: opacity .45s var(--ease), transform .45s var(--ease), filter .6s var(--ease);
+  }
 
-  .petal-label { font-size: 11px; fill: var(--ink); letter-spacing: 0.06em; }
-  .petal-score { font-size: 10px; fill: var(--ink); opacity: .55; font-family: "JetBrains Mono", ui-monospace, monospace; }
+  .petal { fill: var(--paper); stroke: var(--ink); stroke-width: 1.1; stroke-linejoin: round; stroke-linecap: round;
+           transition: stroke .3s var(--ease), stroke-width .3s var(--ease), opacity .4s var(--ease); cursor: pointer; }
+  .petal-g.weak .petal { stroke-dasharray: 4 5; opacity: .75; }
+  .petal-g.dim  .petal { stroke: var(--line); }
+  .petal-g:hover .petal { stroke: var(--ink-strong); stroke-width: 1.9; }
+  .flower-line { fill: none; stroke: var(--ink); stroke-width: 1.1; stroke-linecap: round; stroke-linejoin: round; }
+  .stamen { fill: none; stroke: var(--ink); stroke-width: 1; stroke-linecap: round; }
 
-  /* handwritten annotations */
+  /* draw-on bloom */
+  .grow { stroke-dasharray: var(--len); stroke-dashoffset: var(--len); }
+  .blooming .grow { animation: draw 1.15s var(--ease) forwards; }
+  @keyframes draw { to { stroke-dashoffset: 0; } }
+
+  /* ---------- handwritten annotations ---------- */
   .note-text {
-    font-family: "Bradley Hand", "Segoe Script", "Xingkai SC", "Hanzipen SC", "Comic Sans MS", cursive;
-    font-size: 13px; fill: var(--ink-strong);
+    font-family: "Caveat", "Zhi Mang Xing", "Bradley Hand", "Segoe Script", "Xingkai SC", "Hanzipen SC", cursive;
+    font-size: 20px; fill: var(--ink-strong);
   }
-  .note-line { stroke: var(--ink); stroke-width: 0.5; fill: none; opacity: .5; }
+
+  .note-line { stroke: var(--ink-strong); stroke-width: 1; fill: none; stroke-linecap: round; opacity: .7; }
   .note { opacity: 0; transition: opacity .6s var(--ease); }
   .bloomed .note { opacity: 1; }
 
-  /* bloom animation */
-  .petal-g { opacity: 0; }
-  .blooming .petal-g, .bloomed .petal-g { animation: bloom .9s var(--ease) both; }
-  @keyframes bloom { from { opacity: 0; } to { opacity: 1; } }
-  .grow { stroke-dasharray: var(--len); stroke-dashoffset: var(--len); }
-  .blooming .grow, .bloomed .grow { animation: draw 1.1s var(--ease) forwards; }
-  @keyframes draw { to { stroke-dashoffset: 0; } }
-
-  .upload {
-    position: absolute; inset: 0; margin: auto; width: 200px; height: 200px; border-radius: 50%;
-    border: 0.5px dashed var(--ink); display: flex; align-items: center; justify-content: center;
-    flex-direction: column; gap: 10px; background: var(--paper);
-    cursor: pointer; transition: all .4s var(--ease);
-    padding: 28px; box-sizing: border-box;
+  /* ---------- resume card ---------- */
+  .rcard {
+    position: absolute; width: 260px; height: 368px; background: var(--paper);
+    border: 0.5px solid var(--ink); padding: 22px 20px; box-sizing: border-box;
+    display: flex; flex-direction: column; gap: 14px; overflow: hidden;
+    opacity: 0; transform: translateY(14px); pointer-events: none;
+    transition: opacity .45s var(--ease), transform .45s var(--ease);
   }
-  .upload:hover { border-style: solid; }
-  .upload .t { font-size: 15px; color: var(--ink-strong); text-align: center; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .upload .s { font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; opacity: .55; text-align: center; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .rcard .rname { font-size: 12px; letter-spacing: .06em; color: var(--ink-strong);
+                  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-right: 26px; }
+  .rcard .rtag { position: absolute; top: 18px; right: 18px; font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 10px; opacity: .55; }
+  .rcard .lines { display: flex; flex-direction: column; gap: 9px; margin-top: 4px; }
+  .rcard .lines i { display: block; height: 0.5px; background: var(--line); }
+  .rcard .rmeta { margin-top: auto; display: flex; justify-content: space-between; font-size: 10px; letter-spacing: .18em; text-transform: uppercase; opacity: .5; }
+  .rcard .rx { position: absolute; right: 12px; bottom: 12px; font-size: 12px; opacity: .45; cursor: pointer; line-height: 1; padding: 4px; }
+  .rcard .rx:hover { opacity: 1; }
+  .rcard .scan { position: absolute; left: 0; right: 0; top: 0; height: 1px; background: var(--ink); opacity: 0; }
+
+  /* ---------- state machine ---------- */
+  .petal-stage[data-state="empty"] .flower-svg { opacity: .9; }
+  .petal-stage[data-state="ready"] .flower-svg { opacity: 0; transform: translateY(18px) scale(.97); pointer-events: none; }
+  .petal-stage[data-state="ready"] .rcard { opacity: 1; transform: translateY(0); pointer-events: auto; }
+  .petal-stage[data-state="analysing"] .flower-svg { opacity: .14; animation: breathe 2.2s var(--ease) infinite; }
+  .petal-stage[data-state="analysing"] .rcard { opacity: 0; transform: translateY(-10px); transition-duration: 1.6s; }
+  .petal-stage[data-state="analysing"] .rcard .scan { opacity: 1; animation: scan 1.3s var(--ease) infinite; }
+  @keyframes scan { from { top: 0; } to { top: 100%; } }
+  @keyframes breathe { 0%,100% { opacity: .12; } 50% { opacity: .26; } }
+  .petal-stage[data-state="bloomed"] .flower-svg { opacity: 1; }
+
+  .state-line { font-size: 11px; letter-spacing: .22em; text-transform: uppercase; opacity: .55; margin-top: 6px; height: 16px; }
+  .stage-actions { display: flex; gap: 14px; align-items: center; margin-top: 22px; }
+  .hintline { font-size: 10px; letter-spacing: .18em; text-transform: uppercase; opacity: .4; }
 
   /* hover evidence card */
   .tip {
@@ -97,30 +119,14 @@
   .tip .k { font-size: 9px; letter-spacing: 0.22em; text-transform: uppercase; opacity: .5; }
   .tip .v { font-size: 12px; line-height: 1.55; }
 
-  .legend {
-    width: 100%;
-    display: flex;
-    justify-content: center;
-    gap: 48px;
-    margin-top: 32px;
-    padding-bottom: 32px;
-  }
+  .legend { width: 100%; display: flex; flex-wrap: wrap; justify-content: center; gap: 32px 48px; margin-top: 40px; padding-bottom: 32px; }
   .legend .g { width: 220px; border-top: 0.5px solid var(--line); padding-top: 10px; }
   .legend .g h4 { font-size: 11px; letter-spacing: 0.22em; text-transform: uppercase; margin-bottom: 8px; }
   .legend .g ul { list-style: none; display: flex; flex-direction: column; gap: 4px; font-size: 12px; opacity: .8; }
   .legend .g li { display: flex; justify-content: space-between; }
   .legend .g li span:last-child { font-family: "JetBrains Mono", ui-monospace, monospace; opacity: .6; }
-
-  .btn[disabled] { opacity: .35; cursor: not-allowed; }
-  .btn[disabled]:hover { background: transparent; color: var(--ink); border-color: var(--line); }
-  .btn.loading { pointer-events: none; }
-  .btn .dot { display: inline-block; width: 4px; height: 4px; border-radius: 50%; background: currentColor; margin-left: 3px; animation: pulse 1.2s var(--ease) infinite; }
-  .btn .dot:nth-child(2){ animation-delay:.15s } .btn .dot:nth-child(3){ animation-delay:.3s }
-  @keyframes pulse { 0%,80%,100%{opacity:.2;transform:translateY(0)} 40%{opacity:1;transform:translateY(-2px)} }
   .legend .g.fade { animation: fadeUp .5s var(--ease) both; }
   @keyframes fadeUp { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
-
-  .state-note { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; opacity: .5; margin-top: -8px; }
 </style>
 </head>
 <body>
@@ -144,17 +150,16 @@
     <aside class="side">
       <div class="caption">02 · Candidate Profile</div>
       <h1>创建属于你的<br/>能力花</h1>
-      <p>上传简历或手动填写，8 项胜任力维度将围绕花心依次开放为花瓣。花瓣越大代表该能力越突出；证据不足时只开小瓣，不记 0 分。</p>
+      <p>上传简历，8 项胜任力维度将生长为这朵花的花瓣。花瓣越舒展代表该能力越突出；证据不足时只开虚线小瓣，不记 0 分。</p>
 
       <div class="steps">
-        <div class="step on"><span class="n">01</span> 上传简历</div>
-        <div class="step"><span class="n">02</span> 建立画像</div>
-        <div class="step"><span class="n">03</span> 进入匹配</div>
+        <div class="step on" id="s1"><span class="n">01</span> 上传简历</div>
+        <div class="step" id="s2"><span class="n">02</span> 建立画像</div>
+        <div class="step" id="s3"><span class="n">03</span> 进入匹配</div>
       </div>
 
       <div class="actions">
         <button class="btn ghost" onclick="history.back()">← 返回</button>
-        <button class="btn" id="buildBtn" disabled>建立画像</button>
       </div>
 
       <div style="margin-top:auto;">
@@ -165,26 +170,28 @@
 
     <section class="stage">
       <div class="stage-head">
-        <span class="caption">Ability Petal Model · 8 competencies</span>
+        <span class="caption">Ability Flower · 8 competencies</span>
         <span class="mode" id="stateTag">STATE / EMPTY</span>
       </div>
 
-      <div class="petal-stage">
-        <div class="petal-wrap" id="petalWrap">
-          <svg class="petal-svg" viewBox="-330 -330 660 660">
-            <path class="stem" d="M 2 236 C -6 268 14 292 8 322" />
-            <path class="stem" d="M 6 278 C 34 264 56 274 62 288 C 44 300 18 296 6 286 Z" />
-
-            <g id="petals"></g>
+      <div class="petal-stage" id="petalStage" data-state="empty">
+        <div class="visual" id="visual">
+          <svg class="flower-svg" id="flowerSvg" viewBox="190 200 400 720">
+            <g id="backPetals"></g>
+            <g id="frontPetals"></g>
             <g id="stamens"></g>
+            <g id="stemLeaf"></g>
             <g id="notes"></g>
           </svg>
 
-          <label class="upload" id="uploadZone" for="cvFile">
-            <div class="t" id="uploadTitle">Drop CV</div>
-            <div class="s" id="uploadHint">click or drag · PDF / Word / Image</div>
-            <input id="cvFile" type="file" accept=".pdf,.doc,.docx,image/*" hidden />
-          </label>
+          <div class="rcard" id="rcard">
+            <div class="rname" id="rName">resume.pdf</div>
+            <div class="rtag">[R]</div>
+            <div class="lines" id="rLines"></div>
+            <div class="rmeta"><span id="rMeta">PDF · 1.2 MB</span><span>CV</span></div>
+            <div class="rx" id="rRemove" title="移除">×</div>
+            <div class="scan"></div>
+          </div>
 
           <div class="tip" id="tip">
             <h5><span id="tipName"></span><b id="tipScore"></b></h5>
@@ -192,6 +199,14 @@
             <div class="row"><div class="k">Why this score</div><div class="v" id="tipWhy"></div></div>
             <div class="row"><div class="k">Action</div><div class="v" id="tipAct"></div></div>
           </div>
+        </div>
+
+        <div class="state-line" id="stateLine">LET YOUR FLOWER BLOOM</div>
+
+        <div class="stage-actions">
+          <button class="btn" id="mainBtn">上传简历</button>
+          <span class="hintline" id="hintLine">click or drag · PDF / Word / Image</span>
+          <input id="cvFile" type="file" accept=".pdf,.doc,.docx,image/*" hidden />
         </div>
 
         <div class="legend" id="legend"></div>
@@ -214,166 +229,197 @@
     { key:"motive",    label:"动机匹配" },
   ];
 
+  // ---- traced from the reference line-art (image space 750 x 1060) ----
+  const C = [355, 372];                       // flower heart
+  const FRONT = [
+    // 0 skill · top petal
+    [[352,366],[297,270],[350,230],[415,235],[410,300],[392,322]],
+    // 1 business · upper-left petal
+    [[332,362],[297,272],[255,287],[247,365],[276,368]],
+    // 2 analysis · lower-left petal
+    [[268,360],[252,410],[280,437],[315,460],[341,434],[350,392]],
+    // 3 delivery · bottom petal
+    [[352,386],[356,421],[371,481],[415,486],[436,459],[461,435],[416,406]],
+    // 4 comm · right petal
+    [[364,364],[395,320],[440,290],[477,307],[472,337],[505,350],[495,395],[460,427],[416,406]],
+  ];
+  const BACK = [
+    // 5 collab · peeking behind top-right
+    [[408,300],[430,254],[463,250],[474,292],[452,308]],
+    // 6 learning · peeking behind left
+    [[262,356],[226,349],[214,386],[247,403],[270,384]],
+    // 7 motive · peeking behind bottom-right
+    [[441,430],[473,455],[464,492],[426,489],[417,462]],
+  ];
+
   const SVGNS = "http://www.w3.org/2000/svg";
-  const petalsRoot = document.getElementById("petals");
-  const stamenRoot = document.getElementById("stamens");
-  const notesRoot  = document.getElementById("notes");
-  const stage      = document.querySelector(".petal-stage");
-  const wrap       = document.getElementById("petalWrap");
-  const stateTag   = document.getElementById("stateTag");
-  const tip        = document.getElementById("tip");
+  const frontRoot = document.getElementById("frontPetals");
+  const backRoot  = document.getElementById("backPetals");
+  const stamenRoot= document.getElementById("stamens");
+  const stemRoot  = document.getElementById("stemLeaf");
+  const notesRoot = document.getElementById("notes");
+  const stageEl   = document.getElementById("petalStage");
+  const visual    = document.getElementById("visual");
+  const stateTag  = document.getElementById("stateTag");
+  const stateLine = document.getElementById("stateLine");
+  const tip       = document.getElementById("tip");
 
-  const R0 = 104;               // petal root (edge of the centre circle)
-  const jitter = (i, m) => (Math.sin(i * 12.9898) * 43758.5453 % 1) * m;
+  // deterministic pseudo random (same resume → same flower)
+  function rng(seed) { let t = seed >>> 0; return () => { t += 0x6D2B79F5; let r = Math.imul(t ^ (t >>> 15), 1 | t); r ^= r + Math.imul(r ^ (r >>> 7), 61 | r); return ((r ^ (r >>> 14)) >>> 0) / 4294967296; }; }
 
-  // organic one-line petal path, length + width driven by score (0..5, null = weak)
-  const tipRadius = (score) => R0 + 30 + (score == null ? 0.9 : score) * 23;
-
-  function petalPath(i, score) {
-    const s = score == null ? 0.9 : score;
-    const r1 = tipRadius(score);
-    const w  = 22 + s * 4.6 + jitter(i, 3);      // half width
-    const k  = jitter(i + 7, 0.14) - 0.07;       // asymmetry
-    const mid = R0 + (r1 - R0) * 0.42;
-    return [
-      `M 0 ${-R0}`,
-      `C ${-w * (1 + k)} ${-mid} ${-w * 1.22} ${-(r1 - 14)} ${-w * 0.18} ${-r1}`,
-      `C ${w * 0.42} ${-(r1 + 5)} ${w * 1.24} ${-(r1 - 16)} ${w * (1 - k)} ${-mid}`,
-      `C ${w * 0.62} ${-(R0 + 14)} ${w * 0.2} ${-(R0 + 4)} 0 ${-R0}`,
-      "Z",
-    ].join(" ");
+  // closed Catmull-Rom → cubic bezier, keeps the hand-drawn soft lobes
+  function spline(pts) {
+    const n = pts.length, d = [`M ${pts[0][0].toFixed(1)} ${pts[0][1].toFixed(1)}`];
+    for (let i = 0; i < n; i++) {
+      const p0 = pts[(i - 1 + n) % n], p1 = pts[i], p2 = pts[(i + 1) % n], p3 = pts[(i + 2) % n];
+      const c1 = [p1[0] + (p2[0] - p0[0]) / 6, p1[1] + (p2[1] - p0[1]) / 6];
+      const c2 = [p2[0] - (p3[0] - p1[0]) / 6, p2[1] - (p3[1] - p1[1]) / 6];
+      d.push(`C ${c1[0].toFixed(1)} ${c1[1].toFixed(1)} ${c2[0].toFixed(1)} ${c2[1].toFixed(1)} ${p2[0].toFixed(1)} ${p2[1].toFixed(1)}`);
+    }
+    return d.join(" ") + " Z";
   }
 
-  const petalRefs = [];
-  DIMS.forEach((d, i) => {
-    // shape points up, so the group rotation equals the slot index angle
-    const rot = (360 / DIMS.length) * i;
-    const dir = rot - 90;                       // direction in maths coords
-    const g = document.createElementNS(SVGNS, "g");
-    g.setAttribute("class", "petal-g empty");
-    g.setAttribute("transform", `rotate(${rot})`);
-    g.style.animationDelay = (i * 0.11) + "s";
+  // score (0..5 | null) → petal points, scaled radially around the heart + tiny hand jitter
+  function shape(base, score, seed) {
+    const s = score == null ? 1.2 : score;
+    const f = 0.87 + s * 0.052;                 // 2.5 => 1.0 (= the reference outline)
+    const r = rng(seed * 7919 + 13);
+    return base.map((p, i) => {
+      const dx = p[0] - C[0], dy = p[1] - C[1];
+      const dist = Math.hypot(dx, dy);
+      const near = Math.min(1, dist / 60);      // anchor points near the heart
+      const ff = 1 + (f - 1) * near;
+      const j = (r() - 0.5) * 5 * near;
+      const jj = (r() - 0.5) * 5 * near;
+      return [C[0] + dx * ff + j, C[1] + dy * ff + jj];
+    });
+  }
 
+  // ---- build petals ----
+  const refs = [];
+  function makePetal(root, base, index, delay) {
+    const g = document.createElementNS(SVGNS, "g");
+    g.setAttribute("class", "petal-g");
     const p = document.createElementNS(SVGNS, "path");
     p.setAttribute("class", "petal grow");
-    p.setAttribute("d", petalPath(i, null));
+    p.setAttribute("d", spline(shape(base, 2.5, index)));
     g.appendChild(p);
-
-    const t1 = document.createElementNS(SVGNS, "text");
-    t1.setAttribute("class", "petal-label");
-    t1.setAttribute("text-anchor", "middle");
-    g.appendChild(t1);
-
-    const t2 = document.createElementNS(SVGNS, "text");
-    t2.setAttribute("class", "petal-score");
-    t2.setAttribute("text-anchor", "middle");
-    g.appendChild(t2);
-
-    petalsRoot.appendChild(g);
-    petalRefs.push({ g, p, t1, t2, rot, dir, dim: d, index: i });
-    placeLabels(petalRefs[i], null);
-
-    // hover / click → evidence card
-    g.addEventListener("mousemove", (e) => showTip(e, petalRefs[i]));
+    root.appendChild(g);
+    const ref = { g, p, base, index, dim: DIMS[index], delay };
+    refs[index] = ref;
+    g.addEventListener("mousemove", (e) => showTip(e, ref));
     g.addEventListener("mouseleave", () => tip.classList.remove("on"));
-    g.addEventListener("click", (e) => showTip(e, petalRefs[i]));
+    g.addEventListener("click", (e) => showTip(e, ref));
+    return ref;
+  }
+  BACK.forEach((b, i) => makePetal(backRoot, b, 5 + i, 0.05 * i));
+  FRONT.forEach((b, i) => makePetal(frontRoot, b, i, 0.18 + 0.11 * i));
+
+  // ---- stamens (traced fan at the heart) ----
+  [
+    "M 352 384 C 348 372 342 362 336 356", "M 336 356 c -3 -2 -6 0 -5 3 c 1 3 5 3 6 0",
+    "M 350 382 C 344 378 334 376 326 378", "M 326 378 c -4 1 -5 4 -2 6 c 3 2 6 -1 5 -4",
+    "M 354 380 C 356 368 356 358 354 348", "M 354 348 c -1 -3 2 -5 4 -3 c 2 2 1 5 -2 5",
+    "M 357 381 C 362 372 370 365 379 361", "M 379 361 c 3 -1 5 1 4 4 c -2 3 -6 2 -6 -1",
+    "M 358 384 C 366 381 375 381 383 383", "M 383 383 c 3 1 3 4 0 5 c -3 1 -6 -2 -4 -4",
+    "M 349 388 C 340 389 331 393 325 399", "M 325 399 c -2 2 -1 5 2 5 c 3 0 5 -3 3 -5",
+  ].forEach((d) => {
+    const p = document.createElementNS(SVGNS, "path");
+    p.setAttribute("class", "stamen"); p.setAttribute("d", d);
+    stamenRoot.appendChild(p);
   });
 
-  function placeLabels(ref, score) {
-    const ly = -(tipRadius(score) + 20);
-    // both texts share one anchor so the score always sits below the label on screen
-    ref.t1.setAttribute("x", 0); ref.t1.setAttribute("y", ly);
-    ref.t1.setAttribute("transform", `rotate(${-ref.rot} 0 ${ly})`);
-    ref.t1.textContent = ref.dim.label;
-    ref.t2.setAttribute("x", 0); ref.t2.setAttribute("y", ly + 14);
-    ref.t2.setAttribute("transform", `rotate(${-ref.rot} 0 ${ly})`);
-    ref.t2.textContent = score == null ? "证据不足" : score + "/5";
-  }
+  // ---- stem + leaf (traced) ----
+  [
+    "M 352 400 C 349 470 352 520 356 566 C 350 640 344 700 352 760 C 360 812 380 840 388 886",
+    "M 357 566 C 372 548 392 538 410 536 C 398 570 380 606 362 634",
+  ].forEach((d) => {
+    const p = document.createElementNS(SVGNS, "path");
+    p.setAttribute("class", "flower-line grow"); p.setAttribute("d", d);
+    stemRoot.appendChild(p);
+  });
 
-
-  // ============ stamens (drawn at bloom) ============
-  function drawStamens() {
-    // short hair-lines ringing the flower heart (the centre disc covers r < 100)
-    stamenRoot.innerHTML = "";
-    const n = 40;
-    for (let i = 0; i < n; i++) {
-      const a = (Math.PI * 2 / n) * i;
-      const r0 = 101, r1 = 110 + jitter(i, 9);
-      const path = document.createElementNS(SVGNS, "path");
-      path.setAttribute("class", "stamen");
-      const x0 = Math.cos(a) * r0, y0 = Math.sin(a) * r0;
-      const x1 = Math.cos(a) * r1, y1 = Math.sin(a) * r1;
-      const cx = Math.cos(a + 0.06) * ((r0 + r1) / 2), cy = Math.sin(a + 0.06) * ((r0 + r1) / 2);
-      path.setAttribute("d", `M ${x0} ${y0} Q ${cx} ${cy} ${x1} ${y1}`);
-      stamenRoot.appendChild(path);
-    }
-  }
-
-
-  // ============ handwritten annotations ============
+  // ---- handwritten annotations ----
   function drawNotes(data) {
     notesRoot.innerHTML = "";
-    const picks = data
-      .map((d, i) => ({ ...d, i }))
-      .sort((a, b) => (b.note ? 1 : 0) - (a.note ? 1 : 0))
-      .filter((d) => d.note)
-      .slice(0, 3);
-
-    picks.forEach((d) => {
-      const ref = petalRefs[d.i];
-      const rad = (ref.dir * Math.PI) / 180;
-      const rTip = tipRadius(d.score) + 46;       // just outside the label block
-      const x = Math.cos(rad) * rTip, y = Math.sin(rad) * rTip;
-      const dir = x >= -1 ? 1 : -1;
-      const tx = x + dir * 30, ty = y + (y >= 0 ? 16 : -12);
+    const placed = [];
+    data.map((d, i) => ({ ...d, i })).filter((d) => d.note).slice(0, 3).forEach((d) => {
+      const ref = refs[d.i];
+      const box = ref.p.getBBox();
+      const ax = box.x + box.width / 2, ay = box.y + box.height / 2;
+      const right = ax >= C[0];
+      const tx = right ? Math.max(ax + 90, 540) : Math.min(ax - 90, 214);
+      let ty = ay + (ay > C[1] ? 40 : -46);
+      // keep handwritten notes from stacking on top of each other
+      while (placed.some((q) => q.right === right && Math.abs(q.ty - ty) < 40)) ty += 42;
+      placed.push({ right, ty });
 
 
       const g = document.createElementNS(SVGNS, "g");
       g.setAttribute("class", "note");
 
-      const line = document.createElementNS(SVGNS, "path");
-      line.setAttribute("class", "note-line");
-      line.setAttribute("d", `M ${tx - dir * 6} ${ty - 5} Q ${(tx + x) / 2} ${(ty + y) / 2 - 10} ${x} ${y}`);
-      g.appendChild(line);
-
       const t = document.createElementNS(SVGNS, "text");
       t.setAttribute("class", "note-text");
-      t.setAttribute("x", tx);
-      t.setAttribute("y", ty);
-      t.setAttribute("text-anchor", dir > 0 ? "start" : "end");
-      t.textContent = d.note;
+      t.setAttribute("x", tx); t.setAttribute("y", ty);
+      t.setAttribute("text-anchor", right ? "start" : "end");
+      t.textContent = d.note + (d.score == null ? "" : " " + d.score + "/5");
       g.appendChild(t);
+
+      // hand-drawn hooked arrow from the note to the petal
+      const sx = tx + (right ? -8 : 8), sy = ty + 10;
+      const ex = ax + (right ? 14 : -14), ey = ay + (ay > C[1] ? 10 : -8);
+      const mx = (sx + ex) / 2 + (right ? 14 : -14), my = (sy + ey) / 2 + (ay > C[1] ? 22 : -22);
+      const line = document.createElementNS(SVGNS, "path");
+      line.setAttribute("class", "note-line");
+      line.setAttribute("d", `M ${sx} ${sy} Q ${mx} ${my} ${ex} ${ey}`);
+      g.appendChild(line);
+
+      const ang = Math.atan2(ey - my, ex - mx);
+      const head = document.createElementNS(SVGNS, "path");
+      head.setAttribute("class", "note-line");
+      head.setAttribute("d",
+        `M ${ex - Math.cos(ang - 0.45) * 11} ${ey - Math.sin(ang - 0.45) * 11} L ${ex} ${ey} ` +
+        `L ${ex - Math.cos(ang + 0.45) * 11} ${ey - Math.sin(ang + 0.45) * 11}`);
+      g.appendChild(head);
 
       notesRoot.appendChild(g);
     });
   }
 
-  // ============ paint ============
+  // ---- paint ----
   let current = DIMS.map(() => ({ score: null }));
 
-  function paint(data) {
+  function paint(data, animate) {
     current = data;
-    petalRefs.forEach((r, i) => {
-      const d = data[i];
-      r.p.setAttribute("d", petalPath(i, d.score));
-      const len = r.p.getTotalLength();
-      r.p.style.setProperty("--len", len);
+    refs.forEach((r, i) => {
+      const d = data[i] || {};
+      r.p.setAttribute("d", spline(shape(r.base, d.score, i + (d.seed || 0))));
       r.g.setAttribute("class", "petal-g" + (d.score == null ? " weak" : d.score <= 2 ? " dim" : ""));
-      r.g.style.animationDelay = (i * 0.11) + "s";
-      placeLabels(r, d.score);
+      if (animate) {
+        const len = r.p.getTotalLength();
+        r.p.style.setProperty("--len", len);
+        r.p.style.animationDelay = r.delay + "s";
+      }
     });
-    drawStamens();
+    if (animate) {
+      stemRoot.querySelectorAll("path").forEach((p, i) => {
+        p.style.setProperty("--len", p.getTotalLength());
+        p.style.animationDelay = (0.9 + i * 0.2) + "s";
+      });
+    }
     drawNotes(data);
   }
+  paint(DIMS.map((_, i) => ({ score: 2.5, seed: i })), false);
 
   function showTip(e, ref) {
+    if (stageEl.dataset.state !== "bloomed" && stageEl.dataset.state !== "empty") return;
     const d = current[ref.index] || {};
     document.getElementById("tipName").textContent = ref.dim.label;
-    document.getElementById("tipScore").textContent = d.score == null ? "证据不足" : d.score + "/5";
+    document.getElementById("tipScore").textContent = d.evidence ? (d.score == null ? "证据不足" : d.score + "/5") : "—";
     document.getElementById("tipEvi").textContent = d.evidence || "尚未建立画像";
     document.getElementById("tipWhy").textContent = d.why || "上传简历后生成";
     document.getElementById("tipAct").textContent = d.action || "—";
-    const box = wrap.getBoundingClientRect();
+    const box = visual.getBoundingClientRect();
     let x = e.clientX - box.left + 18, y = e.clientY - box.top + 12;
     x = Math.min(x, box.width - 262); y = Math.min(y, box.height - 180);
     tip.style.left = Math.max(0, x) + "px";
@@ -381,80 +427,92 @@
     tip.classList.add("on");
   }
 
-  // ============ Upload + build-profile flow ============
+  // ============ upload → build → bloom ============
   (function () {
-    const zone = document.getElementById("uploadZone");
     const input = document.getElementById("cvFile");
-    const title = document.getElementById("uploadTitle");
-    const hint = document.getElementById("uploadHint");
-    const buildBtn = document.getElementById("buildBtn");
+    const mainBtn = document.getElementById("mainBtn");
+    const hintLine = document.getElementById("hintLine");
     const legend = document.getElementById("legend");
+    const rName = document.getElementById("rName");
+    const rMeta = document.getElementById("rMeta");
+    const rLines = document.getElementById("rLines");
     const accept = /\.(pdf|docx?|png|jpe?g|webp|gif|bmp|heic|tiff?)$/i;
+    let state = "empty";
 
-    let analyzed = false;
+    // filler text lines inside the resume card
+    rLines.innerHTML = Array.from({ length: 14 }, (_, i) =>
+      `<i style="width:${[100, 92, 78, 96, 64, 88, 100, 72, 90, 58, 96, 84, 70, 92][i]}%"></i>`).join("");
+
+    function setState(next) {
+      state = next;
+      stageEl.dataset.state = next;
+      const map = {
+        empty:     ["STATE / EMPTY", "LET YOUR FLOWER BLOOM", "上传简历", "click or drag · PDF / Word / Image"],
+        ready:     ["STATE / READY", "RESUME READY · WAITING TO BLOOM", "建立画像", "点击开始解析简历并生成能力花"],
+        analysing: ["STATE / LOADING", "ANALYSING…", "分析中", "PARSING · EXTRACTING · SCORING"],
+        bloomed:   ["STATE / SUCCESS · 1 LOW-CONFIDENCE", "YOUR FLOWER HAS BLOOMED", "进入匹配 →", "hover 花瓣查看证据与得分理由"],
+      }[next];
+      stateTag.textContent = map[0];
+      stateLine.textContent = map[1];
+      mainBtn.textContent = map[2];
+      hintLine.textContent = map[3];
+      mainBtn.classList.toggle("loading", next === "analysing");
+      if (next === "analysing") mainBtn.innerHTML = '分析中<span class="dot"></span><span class="dot"></span><span class="dot"></span>';
+      document.getElementById("s1").classList.toggle("on", next === "empty");
+      document.getElementById("s2").classList.toggle("on", next === "ready" || next === "analysing");
+      document.getElementById("s3").classList.toggle("on", next === "bloomed");
+    }
 
     function handle(file) {
       if (!file) return;
-      if (!accept.test(file.name)) {
-        title.textContent = "Unsupported";
-        hint.textContent = "PDF / Word / Image only";
-        buildBtn.disabled = true;
-        return;
-      }
+      if (!accept.test(file.name)) { hintLine.textContent = "UNSUPPORTED · PDF / WORD / IMAGE ONLY"; return; }
       const kb = file.size / 1024;
-      title.textContent = file.name.length > 18 ? file.name.slice(0, 16) + "…" : file.name;
-      hint.textContent = (kb > 1024 ? (kb / 1024).toFixed(1) + " MB" : Math.round(kb) + " KB") + " · ready";
-      analyzed = false;
-      buildBtn.disabled = false;
-      buildBtn.textContent = "建立画像";
-      buildBtn.classList.remove("loading");
-      stateTag.textContent = "STATE / READY";
+      rName.textContent = file.name;
+      rMeta.textContent = (file.name.split(".").pop() || "FILE").toUpperCase() + " · " +
+        (kb > 1024 ? (kb / 1024).toFixed(1) + " MB" : Math.round(kb) + " KB");
+      legend.innerHTML = "";
+      setState("ready");
     }
 
     input.addEventListener("change", (e) => handle(e.target.files && e.target.files[0]));
+    document.getElementById("rRemove").addEventListener("click", (e) => {
+      e.stopPropagation(); input.value = ""; setState("empty");
+    });
+
     ["dragenter", "dragover"].forEach((ev) =>
-      zone.addEventListener(ev, (e) => { e.preventDefault(); zone.style.borderStyle = "solid"; })
-    );
+      visual.addEventListener(ev, (e) => { e.preventDefault(); visual.classList.add("dragging"); }));
     ["dragleave", "drop"].forEach((ev) =>
-      zone.addEventListener(ev, (e) => { e.preventDefault(); zone.style.borderStyle = "dashed"; })
-    );
-    zone.addEventListener("drop", (e) => handle(e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]));
+      visual.addEventListener(ev, (e) => { e.preventDefault(); visual.classList.remove("dragging"); }));
+    visual.addEventListener("drop", (e) => handle(e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]));
     window.addEventListener("dragover", (e) => e.preventDefault());
     window.addEventListener("drop", (e) => {
       e.preventDefault();
-      const file = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
-      if (file) handle(file);
+      const f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+      if (f) handle(f);
     });
 
-    buildBtn.addEventListener("click", () => {
-      if (buildBtn.disabled) return;
-      if (analyzed) { location.href = "./match.html"; return; }
+    mainBtn.addEventListener("click", () => {
+      if (state === "empty") { input.click(); return; }
+      if (state === "bloomed") { location.href = "./match.html"; return; }
+      if (state !== "ready") return;
 
-      buildBtn.classList.add("loading");
-      buildBtn.innerHTML = '分析中<span class="dot"></span><span class="dot"></span><span class="dot"></span>';
-      hint.textContent = "PARSING · EXTRACTING · SCORING";
-      stateTag.textContent = "STATE / LOADING";
-      stage.classList.remove("bloomed");
-
+      setState("analysing");
       setTimeout(() => {
         const result = [
-          { score: 4,    evidence: "简历中 3 段 SQL / Figma 主导项目", why: "有可验证的交付物与工具链",   action: "补一段量化结果",       note: "项目证据强" },
-          { score: 3,    evidence: "描述过 GMV / 留存指标",           why: "有指标意识但缺业务推演",     action: "补充业务判断过程" },
-          { score: 4,    evidence: "两次 A/B 实验设计",               why: "能用数据支撑判断",           action: "写清取舍逻辑" },
-          { score: 5,    evidence: "连续 4 个季度按时交付",           why: "长期交付记录完整",           action: "作为主线故事",         note: "可作主线故事" },
-          { score: 3,    evidence: "有对上汇报与文档记录",             why: "书面强、口头证据少",         action: "准备 STAR 口述" },
-          { score: 2,    evidence: "跨团队协作描述较少",               why: "缺少推动他人的具体案例",     action: "补一段跨团队案例",     note: "需补跨团队" },
-          { score: 4,    evidence: "半年内切换两个新领域",             why: "上手速度有实证",             action: "保留" },
-          { score: null, evidence: "未填写偏好与求职动机",             why: "无证据，不计分",             action: "填写偏好备注" },
+          { score: 4,    evidence: "简历中 3 段 SQL / Figma 主导项目", why: "有可验证的交付物与工具链", action: "补一段量化结果",   note: "项目证据强" },
+          { score: 3,    evidence: "描述过 GMV / 留存指标",           why: "有指标意识但缺业务推演",   action: "补充业务判断过程" },
+          { score: 4,    evidence: "两次 A/B 实验设计",               why: "能用数据支撑判断",         action: "写清取舍逻辑" },
+          { score: 5,    evidence: "连续 4 个季度按时交付",           why: "长期交付记录完整",         action: "作为主线故事",     note: "可作主线故事" },
+          { score: 3,    evidence: "有对上汇报与文档记录",             why: "书面强、口头证据少",       action: "准备 STAR 口述" },
+          { score: 2,    evidence: "跨团队协作描述较少",               why: "缺少推动他人的具体案例",   action: "补一段跨团队案例", note: "需补跨团队" },
+          { score: 4,    evidence: "半年内切换两个新领域",             why: "上手速度有实证",           action: "保留" },
+          { score: null, evidence: "未填写偏好与求职动机",             why: "无证据，不计分",           action: "填写偏好备注" },
         ];
-        paint(result);
+        paint(result, true);
+        stageEl.classList.add("blooming");
+        setState("bloomed");
+        stageEl.classList.add("bloomed");
         renderFourProfiles();
-        stage.classList.add("bloomed");
-        hint.textContent = "ANALYSIS COMPLETE";
-        stateTag.textContent = "STATE / SUCCESS · 1 LOW-CONFIDENCE";
-        buildBtn.classList.remove("loading");
-        buildBtn.textContent = "进入匹配 →";
-        analyzed = true;
       }, 2600);
     });
 
@@ -466,8 +524,6 @@
         { title: "04 · Risk Profile · 风险画像",   items: [["稳定性 Stability","平均 2.1y · 稳"],["抗压 Resilience","经历过高强度"],["协作 Collaboration","低冲突 · 开放"],["期望现实度 Realism","合理"]] },
       ];
       legend.innerHTML = "";
-      legend.style.flexWrap = "wrap";
-      legend.style.gap = "32px 48px";
       groups.forEach((g, i) => {
         const div = document.createElement("div");
         div.className = "g fade";
@@ -477,6 +533,8 @@
         legend.appendChild(div);
       });
     }
+
+    setState("empty");
   })();
 </script>
 </body>
