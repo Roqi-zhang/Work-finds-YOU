@@ -406,8 +406,12 @@
       const d = data[i] || {};
       r.p.setAttribute("d", spline(shape(r.base, d.score, i + (d.seed || 0))));
       r.g.setAttribute("class", "petal-g" + (d.score == null ? " weak" : ""));
-      // score → stroke depth (deeper = higher score)
-      r.p.style.setProperty("--sd", d.score == null ? 0.1 : (0.12 + (d.score / 5) * 0.88).toFixed(3));
+      // score → discrete scale [fill%, stroke%, width px]
+      const SCALE = { 1: [6, 25, 0.6], 2: [16, 45, 0.9], 3: [32, 62, 1.2], 4: [55, 80, 1.5], 5: [85, 100, 1.8] };
+      const sc = SCALE[Math.round(d.score)] || [0, 18, 0.5];
+      r.p.style.setProperty("--pf", sc[0]);
+      r.p.style.setProperty("--po", sc[1]);
+      r.p.style.setProperty("--pw", sc[2]);
       if (animate) {
         const len = r.p.getTotalLength();
         r.p.style.setProperty("--len", len);
