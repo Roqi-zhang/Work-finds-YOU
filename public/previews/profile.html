@@ -226,9 +226,11 @@
   const jitter = (i, m) => (Math.sin(i * 12.9898) * 43758.5453 % 1) * m;
 
   // organic one-line petal path, length + width driven by score (0..5, null = weak)
+  const tipRadius = (score) => R0 + 30 + (score == null ? 0.9 : score) * 23;
+
   function petalPath(i, score) {
-    const s = score == null ? 0.6 : score;
-    const r1 = R0 + 30 + s * 23;                 // tip radius
+    const s = score == null ? 0.9 : score;
+    const r1 = tipRadius(score);
     const w  = 22 + s * 4.6 + jitter(i, 3);      // half width
     const k  = jitter(i + 7, 0.14) - 0.07;       // asymmetry
     const mid = R0 + (r1 - R0) * 0.42;
@@ -243,10 +245,12 @@
 
   const petalRefs = [];
   DIMS.forEach((d, i) => {
-    const angle = (360 / DIMS.length) * i - 90;
+    // shape points up, so the group rotation equals the slot index angle
+    const rot = (360 / DIMS.length) * i;
+    const dir = rot - 90;                       // direction in maths coords
     const g = document.createElementNS(SVGNS, "g");
     g.setAttribute("class", "petal-g empty");
-    g.setAttribute("transform", `rotate(${angle})`);
+    g.setAttribute("transform", `rotate(${rot})`);
     g.style.animationDelay = (i * 0.11) + "s";
 
     const p = document.createElementNS(SVGNS, "path");
@@ -265,7 +269,7 @@
     g.appendChild(t2);
 
     petalsRoot.appendChild(g);
-    petalRefs.push({ g, p, t1, t2, angle, dim: d, index: i });
+    petalRefs.push({ g, p, t1, t2, rot, dir, dim: d, index: i });
     placeLabels(petalRefs[i], null);
 
     // hover / click → evidence card
@@ -275,16 +279,16 @@
   });
 
   function placeLabels(ref, score) {
-    const s = score == null ? 0.6 : score;
-    const r1 = R0 + 30 + s * 23;
-    const ly = -(r1 + 18), sy = -(r1 + 33);
+    const ly = -(tipRadius(score) + 20);
+    // both texts share one anchor so the score always sits below the label on screen
     ref.t1.setAttribute("x", 0); ref.t1.setAttribute("y", ly);
-    ref.t1.setAttribute("transform", `rotate(${-ref.angle} 0 ${ly})`);
+    ref.t1.setAttribute("transform", `rotate(${-ref.rot} 0 ${ly})`);
     ref.t1.textContent = ref.dim.label;
-    ref.t2.setAttribute("x", 0); ref.t2.setAttribute("y", sy);
-    ref.t2.setAttribute("transform", `rotate(${-ref.angle} 0 ${sy})`);
-    ref.t2.textContent = score == null ? "—" : score + "/5";
+    ref.t2.setAttribute("x", 0); ref.t2.setAttribute("y", ly + 14);
+    ref.t2.setAttribute("transform", `rotate(${-ref.rot} 0 ${ly})`);
+    ref.t2.textContent = score == null ? "证据不足" : score + "/5";
   }
+
 
   // ============ stamens (drawn at bloom) ============
   function drawStamens() {
