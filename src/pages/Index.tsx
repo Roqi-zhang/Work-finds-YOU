@@ -4,6 +4,7 @@ const PAGES = [
   { key: "index", label: "总览", src: "/previews/index.html" },
   { key: "home", label: "首页 A", src: "/previews/home.html" },
   { key: "profile", label: "画像 A", src: "/previews/profile.html" },
+  { key: "jobprofile", label: "岗位画像", src: "/previews/jobprofile.html" },
   { key: "match", label: "匹配 B", src: "/previews/match.html" },
   { key: "compare", label: "对比 A", src: "/previews/compare.html" },
   { key: "delivery", label: "投递 C", src: "/previews/delivery.html" },
