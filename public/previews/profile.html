@@ -342,15 +342,9 @@
     stamenRoot.appendChild(p);
   });
 
-  // ---- short stem + leaf (flower head is the focus) ----
-  [
-    "M 352 400 C 349 452 352 500 356 552",
-    "M 356 548 C 370 530 390 520 408 518 C 396 546 380 572 360 592",
-  ].forEach((d) => {
-    const p = document.createElementNS(SVGNS, "path");
-    p.setAttribute("class", "flower-line grow"); p.setAttribute("d", d);
-    stemRoot.appendChild(p);
-  });
+  // ---- stem + leaf removed: the flower head is the only subject ----
+  stemRoot.innerHTML = "";
+
 
   // ---- handwritten annotations · one per petal ----
   function drawNotes(data) {
