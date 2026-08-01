@@ -120,12 +120,22 @@
   .tip .k { font-size: 9px; letter-spacing: 0.22em; text-transform: uppercase; opacity: .5; }
   .tip .v { font-size: 12px; line-height: 1.55; }
 
-  .legend { width: 100%; display: flex; flex-wrap: wrap; justify-content: center; gap: 32px 48px; margin-top: 40px; padding-bottom: 32px; }
-  .legend .g { width: 220px; border-top: 0.5px solid var(--line); padding-top: 10px; }
-  .legend .g h4 { font-size: 11px; letter-spacing: 0.22em; text-transform: uppercase; margin-bottom: 8px; }
-  .legend .g ul { list-style: none; display: flex; flex-direction: column; gap: 4px; font-size: 12px; opacity: .8; }
-  .legend .g li { display: flex; justify-content: space-between; }
-  .legend .g li span:last-child { font-family: "JetBrains Mono", ui-monospace, monospace; opacity: .6; }
+  .legend { width: 100%; display: grid; grid-template-columns: repeat(3, 1fr); gap: 40px 48px; margin-top: 48px; padding-bottom: 40px; }
+  .legend .g { border-top: 0.5px solid var(--ink); padding-top: 12px; display: flex; flex-direction: column; gap: 22px; }
+  .legend .g > h4 { font-size: 11px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--ink-strong); }
+  .legend .p { display: flex; flex-direction: column; gap: 7px; }
+  .legend .p .ph { display: flex; justify-content: space-between; align-items: baseline; font-size: 13px; color: var(--ink-strong); }
+  .legend .p .ph em { font-style: normal; font-size: 9px; letter-spacing: .2em; text-transform: uppercase; opacity: .45; margin-left: 8px; }
+  .legend .p .ph b { font-family: "JetBrains Mono", ui-monospace, monospace; font-weight: 400; font-size: 12px; opacity: .7; }
+  .legend .bar { display: flex; gap: 4px; }
+  .legend .bar i { flex: 1; height: 3px; border: 0.5px solid var(--line); }
+  .legend .bar i.on { background: var(--ink); border-color: var(--ink); }
+  .legend .bar.none i { border-style: dashed; }
+  .legend .p dl { display: flex; flex-direction: column; gap: 5px; margin-top: 2px; }
+  .legend .p .r { display: flex; gap: 10px; font-size: 11.5px; line-height: 1.5; }
+  .legend .p .r .k { flex: 0 0 62px; font-size: 9px; letter-spacing: .18em; text-transform: uppercase; opacity: .45; padding-top: 2px; }
+  .legend .p .r .v { opacity: .85; }
+  .legend .p .str { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 9.5px; letter-spacing: .12em; opacity: .5; }
   .legend .g.fade { animation: fadeUp .5s var(--ease) both; }
   @keyframes fadeUp { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
 </style>
