@@ -75,6 +75,44 @@
   .btn { border: 0.5px solid var(--ink); padding: 12px 22px; font-size: 12px; letter-spacing: 0.2em; text-transform: uppercase; border-radius: 999px; transition: all .3s var(--ease); }
   .btn:hover { background: var(--ink-strong); color: var(--paper); }
 
+  /* 01 decision fields */
+  .verdict { font-size: 22px; line-height: 1.5; color: var(--ink-strong); max-width: 32ch; margin-top: 8px; }
+  .fields { display: grid; grid-template-columns: 1fr 1fr; gap: 0; margin-top: 32px; border-top: 0.5px solid var(--line); }
+  .fields .f { padding: 16px 0; border-bottom: 0.5px solid var(--line); }
+  .fields .f:nth-child(odd) { padding-right: 24px; border-right: 0.5px solid var(--line); }
+  .fields .f:nth-child(even) { padding-left: 24px; }
+  .fields .fn { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase; opacity: .55; }
+  .fields .fv { font-size: 26px; letter-spacing: -0.02em; color: var(--ink-strong); margin-top: 8px; }
+  .fields .fv small { font-size: 12px; letter-spacing: 0.16em; text-transform: uppercase; opacity: .5; margin-left: 8px; }
+
+  /* 04 evidence accordion */
+  .ev { grid-column: 1 / -1; }
+  .ev-toggle {
+    width: 100%; display: flex; align-items: center; justify-content: space-between;
+    padding: 22px 0; border-top: 0.5px solid var(--line); border-bottom: 0.5px solid var(--line);
+    font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 11px; letter-spacing: 0.24em; text-transform: uppercase;
+    color: var(--ink-strong); transition: opacity .3s var(--ease);
+  }
+  .ev-toggle:hover { opacity: .6; }
+  .ev-toggle .car { transition: transform .4s var(--ease); }
+  .ev.open .ev-toggle .car { transform: rotate(180deg); }
+  .ev-body { max-height: 0; overflow: hidden; transition: max-height .6s var(--ease); }
+  .ev.open .ev-body { max-height: 3200px; }
+  .ev-block { padding: 40px 0; border-bottom: 0.5px solid var(--line); display: grid; grid-template-columns: 200px 1fr; gap: 48px; }
+  .ev-block > .k { padding-top: 4px; }
+  .cera { display: flex; flex-direction: column; gap: 18px; }
+  .cera .r { display: grid; grid-template-columns: 110px 1fr; gap: 20px; align-items: baseline; font-size: 14px; }
+  .cera .r .kk { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; opacity: .55; }
+  .cera .r .vv { max-width: 56ch; opacity: .9; }
+  .srcs { display: flex; flex-direction: column; }
+  .srcs a { display: grid; grid-template-columns: 1fr auto; gap: 20px; padding: 12px 0; border-bottom: 0.5px solid var(--line); font-size: 13px; opacity: .8; }
+  .srcs a:hover { opacity: 1; color: var(--ink-strong); }
+  .reason { display: flex; flex-direction: column; }
+  .reason .r { display: grid; grid-template-columns: 140px 1fr; gap: 20px; padding: 12px 0; border-bottom: 0.5px solid var(--line); font-size: 13px; }
+  .reason .r .n { text-transform: uppercase; letter-spacing: 0.14em; opacity: .6; font-size: 11px; }
+  .tags { margin-top: 10px; display: flex; gap: 8px; }
+  .tags span { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; border: 0.5px solid var(--line); border-radius: 999px; padding: 4px 10px; opacity: .7; }
+
   /* progress dots on the right side */
   .progress {
     position: fixed; right: 28px; top: 50%; transform: translateY(-50%); z-index: 20;
@@ -87,6 +125,7 @@
     content: ""; width: 6px; height: 6px; border-radius: 50%; border: 0.5px solid var(--ink);
   }
   .progress a.on::before { background: var(--ink-strong); border-color: var(--ink-strong); }
+
 </style>
 </head>
 <body>
@@ -124,10 +163,11 @@
 
   <nav class="progress">
     <a href="#s1" class="on" data-hand="-140">01 Overview</a>
-    <a href="#s2" data-hand="-70">02 Why Yes</a>
-    <a href="#s3" data-hand="0">03 Why No</a>
-    <a href="#s4" data-hand="70">04 Actions</a>
-    <a href="#s5" data-hand="140">05 Next</a>
+    <a href="#s2" data-hand="-70">02 决策</a>
+    <a href="#s3" data-hand="0">03 判断</a>
+    <a href="#s4" data-hand="70">04 投前 3 步</a>
+    <a href="#s5" data-hand="140">05 证据</a>
+
   </nav>
 
   <section class="screen" id="s1">
@@ -147,38 +187,51 @@
 
   <section class="screen" id="s2">
     <div class="moon-score">
-      <div class="m" style="background: linear-gradient(90deg, var(--ink-strong) 0 92%, var(--paper) 92% 100%);">
-        <div class="lbl">Skills · 92</div>
+      <div class="m" style="background: linear-gradient(90deg, var(--ink-strong) 0 78%, var(--paper) 78% 100%);">
+        <div class="lbl">Decision · Go</div>
       </div>
     </div>
     <div>
-      <div class="k">02 · Why Yes</div>
-      <h2>可迁移的<br/>工艺。</h2>
-      <div class="bars" style="margin-top:32px;">
-        <div class="bar"><span class="n">System Design</span><span class="t" style="--v:88%"></span><span class="v">88</span></div>
-        <div class="bar"><span class="n">Frontend Craft</span><span class="t" style="--v:94%"></span><span class="v">94</span></div>
-        <div class="bar"><span class="n">Product Sense</span><span class="t" style="--v:82%"></span><span class="v">82</span></div>
-        <div class="bar"><span class="n">Communication</span><span class="t" style="--v:78%"></span><span class="v">78</span></div>
+      <div class="k">01 · 一句话决策</div>
+      <h2>改完<br/>再投。</h2>
+      <p class="verdict">你的系统设计与前端工艺已达标，但 CI/CD 证据缺失；补完这一块再投，胜算会从「中」抬到「中高」。</p>
+      <div class="fields">
+        <div class="f"><div class="fn">是否优先投</div><div class="fv">改完再投</div></div>
+        <div class="f"><div class="fn">匹配分</div><div class="fv">78<small>/ 100</small></div></div>
+        <div class="f"><div class="fn">胜算等级</div><div class="fv">中<small>Medium</small></div></div>
+        <div class="f"><div class="fn">投递优先级</div><div class="fv">Top 3</div></div>
       </div>
     </div>
   </section>
 
   <section class="screen" id="s3">
     <div>
-      <div class="k">03 · Why No</div>
-      <h2>需要正视的<br/>三个空缺。</h2>
+      <div class="k">02 · 三个关键判断</div>
+      <h2>优势、缺口、<br/>风险。</h2>
       <div class="risklist" style="margin-top:32px;">
         <div class="row">
-          <span class="k mark w">W1</span>
-          <div><div class="t">团队规模不匹配</div><div class="d">该岗位团队 60+，你的偏好为 ≤ 20。需评估是否为可协商项。</div></div>
+          <span class="k mark">最大优势</span>
+          <div>
+            <div class="t">复杂前端系统的独立交付能力</div>
+            <div class="d">主导过 3 个百万级 DAU 前端重构，与该岗位「负责支付前端架构」的核心诉求直接对齐。</div>
+            <div class="tags"><span>专业技能</span><span>执行交付</span></div>
+          </div>
         </div>
         <div class="row">
-          <span class="k mark w">W2</span>
-          <div><div class="t">DevOps 深度略浅</div><div class="d">岗位期望具备完整 CI/CD 与线上排障经验，画像分数 54。</div></div>
+          <span class="k mark w">最大缺口</span>
+          <div>
+            <div class="t">缺少可验证的 CI/CD 与线上排障证据</div>
+            <div class="d">JD 明确要求参与部署链路与值班，简历中无相关描述，画像该维度 54 分。</div>
+            <div class="tags"><span>工程素养</span></div>
+          </div>
         </div>
         <div class="row">
-          <span class="k mark i">I1</span>
-          <div><div class="t">在职时长偏短</div><div class="d">近 3 段经历平均 14 个月，可在面试中主动解释背景。</div></div>
+          <span class="k mark i">最大风险</span>
+          <div>
+            <div class="t">团队规模偏好与岗位环境不一致</div>
+            <div class="d">该团队 60+ 人、跨时区协作，你的画像偏好 ≤ 20 人小团队，面试中大概率被追问。</div>
+            <div class="tags"><span>协作沟通</span><span>动机稳定性</span></div>
+          </div>
         </div>
       </div>
     </div>
@@ -192,34 +245,93 @@
   <section class="screen" id="s4">
     <div class="moon-score">
       <div class="m" style="background: linear-gradient(90deg, var(--ink-strong) 0 66%, var(--paper) 66% 100%);">
-        <div class="lbl">Actions · 4</div>
+        <div class="lbl">Actions · 3</div>
       </div>
     </div>
     <div>
-      <div class="k">04 · Actions</div>
-      <h2>下一步<br/>要做什么。</h2>
+      <div class="k">03 · 投前 3 步</div>
+      <h2>投之前<br/>先做这些。</h2>
       <div class="risklist" style="margin-top:32px;">
-        <div class="row"><span class="k">A1</span><div><div class="t">补一个 CI/CD 项目片段</div><div class="d">在简历中显性化线上部署链路 & 故障复盘。</div></div></div>
-        <div class="row"><span class="k">A2</span><div><div class="t">改写自我介绍</div><div class="d">突出跨团队沟通经历，弱化对小团队的强偏好。</div></div></div>
-        <div class="row"><span class="k">A3</span><div><div class="t">加入对比池</div><div class="d">与另外 2 个 Frontend Lead 岗位一并横向评估。</div></div></div>
+        <div class="row">
+          <span class="k">01</span>
+          <div><div class="t">简历如何完善</div><div class="d">在最近一段经历下新增一条：主导 CI/CD 流水线改造，构建时长 18min → 6min，并注明线上故障复盘参与次数。</div></div>
+        </div>
+        <div class="row">
+          <span class="k">02</span>
+          <div><div class="t">作品集 / 项目表达要补什么</div><div class="d">补一页支付类前端架构图：模块划分、错误兜底、灰度发布策略，替换掉当前偏视觉的展示页。</div></div>
+        </div>
+        <div class="row">
+          <span class="k">03</span>
+          <div><div class="t">面试 / 自我介绍要准备什么</div><div class="d">准备一段 60 秒回答：为什么愿意进入 60+ 人跨时区团队，用一段实际跨团队协作经历作为证据。</div></div>
+        </div>
       </div>
     </div>
   </section>
 
-  <section class="screen" id="s5">
-    <div>
-      <div class="k">05 · Next</div>
-      <h2>然后<br/>就投它。</h2>
-      <p>投递后系统会自动把状态挂到时间线上，你可以在投递页复盘任何一段决策路径。</p>
-      <div class="cta-row" style="margin-top:32px;">
-        <a class="btn" href="./delivery.html">进入投递 →</a>
-        <a class="btn" href="./compare.html">再对比一下 →</a>
+  <section class="screen" id="s5" style="display:block; min-height:auto; padding:80px 0;">
+    <div class="k">04 · 证据展开</div>
+    <h2 style="font-size:64px; font-weight:500; letter-spacing:-0.03em; line-height:.95; color:var(--ink-strong); margin:16px 0 40px;">为什么<br/>是这个结论。</h2>
+
+    <div class="ev" id="ev">
+      <button class="ev-toggle" id="evToggle" aria-expanded="false">
+        <span>展开证据 · Evidence / Scores / Reasoning / Sources</span>
+        <span class="car">↓</span>
+      </button>
+      <div class="ev-body">
+        <div class="ev-block">
+          <div class="k">详细证据</div>
+          <div class="cera">
+            <div class="r"><span class="kk">Conclusion</span><span class="vv">建议补齐工程链路证据后再投，属于「改完再投」。</span></div>
+            <div class="r"><span class="kk">Evidence</span><span class="vv">简历第 2 段提到「负责发布流程优化」但无量化结果；JD 第 4 条要求「owns deployment pipeline & on-call」。</span></div>
+            <div class="r"><span class="kk">Reasoning</span><span class="vv">硬性能力已覆盖 6/8 维度，缺口集中在可验证性而非能力本身，属于表达问题，改动成本低。</span></div>
+            <div class="r"><span class="kk">Impact</span><span class="vv">补齐后预计匹配分 78 → 86，胜算等级由「中」升至「中高」。</span></div>
+            <div class="r"><span class="kk">Action</span><span class="vv">按「投前 3 步」执行，预计耗时 2–3 小时，建议 48 小时内投递。</span></div>
+          </div>
+        </div>
+
+        <div class="ev-block">
+          <div class="k">分项评分</div>
+          <div class="bars">
+            <div class="bar"><span class="n">专业技能</span><span class="t" style="--v:94%"></span><span class="v">94</span></div>
+            <div class="bar"><span class="n">系统设计</span><span class="t" style="--v:88%"></span><span class="v">88</span></div>
+            <div class="bar"><span class="n">执行交付</span><span class="t" style="--v:85%"></span><span class="v">85</span></div>
+            <div class="bar"><span class="n">产品理解</span><span class="t" style="--v:82%"></span><span class="v">82</span></div>
+            <div class="bar"><span class="n">协作沟通</span><span class="t" style="--v:78%"></span><span class="v">78</span></div>
+            <div class="bar"><span class="n">学习成长</span><span class="t" style="--v:76%"></span><span class="v">76</span></div>
+            <div class="bar"><span class="n">工程素养</span><span class="t" style="--v:54%"></span><span class="v">54</span></div>
+            <div class="bar"><span class="n">动机稳定性</span><span class="t" style="--v:48%"></span><span class="v">48</span></div>
+          </div>
+        </div>
+
+        <div class="ev-block">
+          <div class="k">每个花瓣的推理</div>
+          <div class="reason">
+            <div class="r"><span class="n">专业技能</span><span>React / TS 深度与 JD 技术栈完全一致，且有开源贡献佐证。</span></div>
+            <div class="r"><span class="n">系统设计</span><span>有从 0 到 1 的前端架构决策记录，符合岗位对 owner 的期待。</span></div>
+            <div class="r"><span class="n">执行交付</span><span>三段经历均有明确上线结果，交付确定性高。</span></div>
+            <div class="r"><span class="n">产品理解</span><span>能从指标反推方案，但缺少支付/金融领域上下文。</span></div>
+            <div class="r"><span class="n">协作沟通</span><span>跨团队协作有描述，未体现跨时区异步协作经验。</span></div>
+            <div class="r"><span class="n">学习成长</span><span>技术栈迭代频率健康，自学路径清晰。</span></div>
+            <div class="r"><span class="n">工程素养</span><span>无 CI/CD、监控、on-call 的可验证证据，为主要扣分项。</span></div>
+            <div class="r"><span class="n">动机稳定性</span><span>近 3 段平均在职 14 个月，且团队规模偏好与岗位不符。</span></div>
+          </div>
+        </div>
+
+        <div class="ev-block">
+          <div class="k">外部岗位信息来源</div>
+          <div class="srcs">
+            <a href="#"><span>岗位 JD 原文 · Senior Frontend Engineer, Payments</span><span class="k">2026-07-28</span></a>
+            <a href="#"><span>公司公开信息 · 团队规模与技术博客</span><span class="k">2026-07-26</span></a>
+            <a href="#"><span>同类岗位对照 · 4 个同级 JD 的能力要求交集</span><span class="k">2026-07-25</span></a>
+            <a href="#"><span>你的画像快照 · Profile v3</span><span class="k">2026-07-30</span></a>
+          </div>
+        </div>
       </div>
     </div>
-    <div class="moon-score">
-      <div class="m" style="background: var(--ink-strong);">
-        <div class="lbl">Ready · 100</div>
-      </div>
+
+    <div class="cta-row" style="margin-top:48px;">
+      <a class="btn" href="./compare.html">加入对比 →</a>
+      <a class="btn" href="./delivery.html">进入投递 →</a>
     </div>
   </section>
 </main>
@@ -244,6 +356,19 @@
     }
   })();
 
+  // evidence accordion
+  (function () {
+    const ev = document.getElementById("ev");
+    const btn = document.getElementById("evToggle");
+    btn.addEventListener("click", () => {
+      const open = ev.classList.toggle("open");
+      btn.setAttribute("aria-expanded", open ? "true" : "false");
+      btn.querySelector("span").textContent = open
+        ? "收起证据 · Evidence / Scores / Reasoning / Sources"
+        : "展开证据 · Evidence / Scores / Reasoning / Sources";
+    });
+  })();
+
   // scroll → highlight progress + rotate hand
   (function () {
     const hand = document.getElementById("hand");
@@ -261,5 +386,6 @@
     onScroll();
   })();
 </script>
+
 </body>
 </html>
