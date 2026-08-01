@@ -154,7 +154,8 @@
   .merge .arena > div { position: absolute; top: 0; width: 340px; height: 380px;
                         transition: transform 1.15s cubic-bezier(.7,0,.2,1), opacity 1.15s var(--ease); }
   .merge .arena > div svg { width: 100%; height: 100%; opacity: 1 !important; transform: none !important; animation: none !important; }
-  .merge .arena .petal { animation: none !important; stroke-dasharray: none; }
+  .merge .arena .petal { animation: none !important; stroke-dasharray: none;
+                         fill: color-mix(in srgb, var(--ink-strong) calc(var(--pf, 0) * 0.45%), transparent); }
   .merge .mine { left: 0; transform: translateX(0) scale(.92); }
   .merge .role { right: 0; transform: translateX(0) scale(.92); }
   .merge.go .mine { transform: translateX(160px) scale(1.02); opacity: .75; }
