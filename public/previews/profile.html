@@ -66,10 +66,11 @@
   /* ---------- handwritten annotations ---------- */
   .note-text {
     font-family: "Caveat", "Zhi Mang Xing", "Bradley Hand", "Segoe Script", "Xingkai SC", "Hanzipen SC", cursive;
-    font-size: 19px; fill: var(--ink-strong);
+    font-size: 13.5px; fill: var(--ink); opacity: .45; letter-spacing: .04em;
   }
 
-  .note-line { stroke: var(--ink-strong); stroke-width: 0.9; fill: none; stroke-linecap: round; opacity: .6; }
+  .note-line { stroke: var(--ink); stroke-width: 0.7; fill: none; stroke-linecap: round; stroke-linejoin: round; opacity: .35; }
+
   .note { opacity: 0; transition: opacity .6s var(--ease); }
   .bloomed .note { opacity: 1; }
 
