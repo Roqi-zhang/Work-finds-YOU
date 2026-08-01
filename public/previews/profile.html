@@ -89,6 +89,8 @@
   .rcard .lines i { display: block; height: 0.5px; background: var(--line); }
   .rcard .rmeta { margin-top: auto; display: flex; justify-content: space-between; font-size: 10px; letter-spacing: .18em; text-transform: uppercase; opacity: .5; }
   .rcard .scan { position: absolute; left: 0; right: 0; top: 0; height: 1px; background: var(--ink); opacity: 0; }
+  .petal-stage[data-state="ready"] .rcard { cursor: pointer; }
+  .petal-stage[data-state="ready"] .rcard:hover { border-color: var(--ink-strong); }
 
   /* ---------- state machine ---------- */
   .petal-stage[data-state="empty"] .flower-svg { opacity: .9; }
