@@ -499,9 +499,6 @@
     }
 
     input.addEventListener("change", (e) => handle(e.target.files && e.target.files[0]));
-    document.getElementById("rRemove").addEventListener("click", (e) => {
-      e.stopPropagation(); input.value = ""; setState("empty");
-    });
 
     ["dragenter", "dragover"].forEach((ev) =>
       visual.addEventListener(ev, (e) => { e.preventDefault(); visual.classList.add("dragging"); }));
