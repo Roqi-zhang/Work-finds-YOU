@@ -520,37 +520,54 @@
       setState("analysing");
       setTimeout(() => {
         const result = [
-          { score: 4,    evidence: "简历中 3 段 SQL / Figma 主导项目", why: "有可验证的交付物与工具链", action: "补一段量化结果",   note: "项目证据强" },
-          { score: 3,    evidence: "描述过 GMV / 留存指标",           why: "有指标意识但缺业务推演",   action: "补充业务判断过程" },
-          { score: 4,    evidence: "两次 A/B 实验设计",               why: "能用数据支撑判断",         action: "写清取舍逻辑" },
-          { score: 5,    evidence: "连续 4 个季度按时交付",           why: "长期交付记录完整",         action: "作为主线故事",     note: "可作主线故事" },
-          { score: 3,    evidence: "有对上汇报与文档记录",             why: "书面强、口头证据少",       action: "准备 STAR 口述" },
-          { score: 2,    evidence: "跨团队协作描述较少",               why: "缺少推动他人的具体案例",   action: "补一段跨团队案例", note: "需补跨团队" },
-          { score: 4,    evidence: "半年内切换两个新领域",             why: "上手速度有实证",           action: "保留" },
-          { score: null, evidence: "未填写偏好与求职动机",             why: "无证据，不计分",           action: "填写偏好备注" },
+          { score: 4,    strength: "strong", evidence: "简历中 3 段 SQL / Figma 主导项目", why: "工具链与交付物均可验证", action: "补一段量化结果",   note: "项目证据强" },
+          { score: 3,    strength: "medium", evidence: "描述过 GMV / 留存指标",           why: "有指标意识但缺业务推演", action: "补充业务判断过程" },
+          { score: 4,    strength: "strong", evidence: "两次 A/B 实验设计与结论",         why: "能用数据支撑判断",       action: "写清取舍逻辑" },
+          { score: 5,    strength: "strong", evidence: "连续 4 个季度按时交付",           why: "长期交付记录完整",       action: "作为主线故事",     note: "可作主线故事" },
+          { score: 3,    strength: "medium", evidence: "有对上汇报与文档记录",           why: "书面强、口头证据少",     action: "准备 STAR 口述" },
+          { score: 2,    strength: "weak",   evidence: "跨团队协作描述较少",             why: "缺少推动他人的具体案例", action: "补一段跨团队案例", note: "需补跨团队" },
+          { score: 4,    strength: "strong", evidence: "半年内切换两个新领域",           why: "上手速度有实证",         action: "保持并写清方法",   note: "上手快" },
+          { score: null, strength: "missing",evidence: "未填写偏好与求职动机",           why: "无证据，不计分",         action: "填写偏好备注",     note: "证据不足" },
         ];
         paint(result, true);
         stageEl.classList.add("blooming");
         setState("bloomed");
         stageEl.classList.add("bloomed");
-        renderFourProfiles();
+        renderPetalAnalysis(result);
       }, 2600);
     });
 
-    function renderFourProfiles() {
+    // ---- 8 petals · detailed analysis, grouped by the three hiring judgements ----
+    function renderPetalAnalysis(result) {
       const groups = [
-        { title: "01 · Experience Fit · 经验画像", items: [["行业经验 Industry","互联网 / AI · 匹配"],["岗位经验 Role","PM · 4y · 相关"],["项目复杂度 Complexity","复杂系统"],["业务阶段 Stage","1 → 10"]] },
-        { title: "02 · Skill Stack · 技能画像",    items: [["硬技能 Hard","SQL · Figma · Notion"],["产品技能 Product","用研 · A/B · 数据"],["工程理解 Cross-func","中等 · 可对话"],["上手速度 Ramp-up","快 · 2 周内"]] },
-        { title: "03 · Motivation Fit · 动机画像", items: [["求职动机 Why-move","证据不足"],["兴趣方向 Interest","AI · 平台型产品"],["职业阶段 Career","上升期"],["核心期望 Expect","证据不足"]] },
-        { title: "04 · Risk Profile · 风险画像",   items: [["稳定性 Stability","平均 2.1y · 稳"],["抗压 Resilience","经历过高强度"],["协作 Collaboration","低冲突 · 开放"],["期望现实度 Realism","合理"]] },
+        { title: "01 · Can do · 能不能做",            idx: [0, 1, 2] },
+        { title: "02 · Can deliver · 能不能做成",     idx: [3, 4, 5] },
+        { title: "03 · Long-term fit · 能不能长期适配", idx: [6, 7] },
       ];
       legend.innerHTML = "";
       groups.forEach((g, i) => {
         const div = document.createElement("div");
         div.className = "g fade";
         div.style.animationDelay = (i * 0.12) + "s";
-        div.innerHTML = "<h4>" + g.title + "</h4><ul>" +
-          g.items.map(([k, v]) => `<li><span>${k}</span><span>${v}</span></li>`).join("") + "</ul>";
+        div.innerHTML = "<h4>" + g.title + "</h4>" + g.idx.map((k) => {
+          const d = result[k] || {};
+          const s = d.score;
+          const bar = Array.from({ length: 5 }, (_, n) =>
+            `<i class="${s != null && n < s ? "on" : ""}"></i>`).join("");
+          return `<div class="p">
+            <div class="ph"><span>${DIMS[k].label}<em>${DIMS[k].key}</em></span><b>${s == null ? "—" : s}/5</b></div>
+            <div class="bar ${s == null ? "none" : ""}">${bar}</div>
+            <dl>
+              <div class="r"><span class="k">Evidence</span><span class="v">${d.evidence || "—"}</span></div>
+              <div class="r"><span class="k">Why</span><span class="v">${d.why || "—"}</span></div>
+              <div class="r"><span class="k">Action</span><span class="v">${d.action || "—"}</span></div>
+            </dl>
+            <div class="str">[${(d.strength || "missing").toUpperCase()}]</div>
+          </div>`;
+        }).join("");
+        legend.appendChild(div);
+      });
+    }
         legend.appendChild(div);
       });
     }
