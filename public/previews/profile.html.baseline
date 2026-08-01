@@ -1,0 +1,584 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=1280" />
+<title>02 Profile · Ability Flower · A</title>
+<link rel="stylesheet" href="./_shared.css" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500&family=Zhi+Mang+Xing&family=Parisienne&display=swap" rel="stylesheet" />
+<script src="./_shared.js"></script>
+
+<style>
+  .layout { display: grid; grid-template-columns: 3fr 9fr; gap: 48px; align-items: start; }
+  .side { display: flex; flex-direction: column; gap: 40px; position: sticky; top: 32px; }
+  .side h1 { font-size: 56px; font-weight: 500; letter-spacing: -0.03em; line-height: 0.95; color: var(--ink-strong); }
+  .side p { font-size: 13px; opacity: .8; max-width: 32ch; }
+  .steps { display: flex; flex-direction: column; gap: 14px; margin-top: 24px; }
+  .step { display: flex; gap: 14px; align-items: baseline; font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; opacity: .5; }
+  .step.on { opacity: 1; color: var(--ink-strong); }
+  .step .n { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 10px; }
+  .actions { display: flex; gap: 16px; margin-top: 40px; }
+  .btn { border: 0.5px solid var(--ink); padding: 12px 22px; font-size: 12px; letter-spacing: 0.2em; text-transform: uppercase; transition: all .3s var(--ease); border-radius: 999px; background: transparent; color: var(--ink); }
+  .btn:hover { background: var(--ink-strong); color: var(--paper); border-color: var(--ink-strong); }
+  .btn.ghost { border-color: var(--line); }
+  .btn[disabled] { opacity: .35; cursor: not-allowed; }
+  .btn[disabled]:hover { background: transparent; color: var(--ink); border-color: var(--line); }
+  .btn.loading { pointer-events: none; }
+  .btn .dot { display: inline-block; width: 4px; height: 4px; border-radius: 50%; background: currentColor; margin-left: 3px; animation: pulse 1.2s var(--ease) infinite; }
+  .btn .dot:nth-child(2){ animation-delay:.15s } .btn .dot:nth-child(3){ animation-delay:.3s }
+  @keyframes pulse { 0%,80%,100%{opacity:.2;transform:translateY(0)} 40%{opacity:1;transform:translateY(-2px)} }
+
+  .stage { position: relative; border-left: 0.5px solid var(--line); padding-left: 48px; }
+  .stage-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 16px; }
+  .stage-head .mode { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 11px; letter-spacing: 0.16em; }
+
+  .petal-stage { display: flex; flex-direction: column; align-items: center; }
+
+  /* ---------- main visual area: fixed box, contents swap ---------- */
+  .visual {
+    position: relative; width: 100%; height: 640px;
+    display: flex; align-items: center; justify-content: center;
+    border: 0.5px dashed transparent; transition: border-color .3s var(--ease);
+  }
+  .visual.dragging { border-color: var(--ink); border-style: solid; }
+
+  .flower-svg {
+    position: absolute; height: 640px; width: auto; overflow: visible;
+    transition: opacity .45s var(--ease), transform .45s var(--ease), filter .6s var(--ease);
+  }
+
+  /* --sd (0..1) = score depth → stroke darkness + weight */
+  .petal { fill: var(--paper); stroke: var(--ink-strong); stroke-width: calc(0.55px + var(--sd, .5) * 1.05px);
+           stroke-linejoin: round; stroke-linecap: round;
+           opacity: calc(0.10 + var(--sd, 0.5) * 0.75);
+           transition: stroke .3s var(--ease), stroke-width .3s var(--ease), opacity .4s var(--ease); cursor: pointer; }
+  .petal-g.weak .petal { stroke-dasharray: 4 5; }
+  .petal-g:hover .petal { stroke: var(--ink-strong); stroke-width: 1.6; opacity: 1; }
+  .flower-line { fill: none; stroke: var(--ink); stroke-width: 0.9; stroke-linecap: round; stroke-linejoin: round; opacity: .8; }
+  .stamen { fill: none; stroke: var(--ink); stroke-width: 0.8; stroke-linecap: round; opacity: .8; }
+
+  /* draw-on bloom */
+  .grow { stroke-dasharray: var(--len); stroke-dashoffset: var(--len); }
+  .blooming .grow { animation: draw 1.15s var(--ease) forwards; }
+  @keyframes draw { to { stroke-dashoffset: 0; } }
+
+  /* ---------- confirm dialog ---------- */
+  .mask { position: fixed; inset: 0; background: color-mix(in srgb, var(--paper) 72%, transparent);
+          backdrop-filter: blur(6px); display: none; align-items: center; justify-content: center; z-index: 60; }
+  .mask.on { display: flex; }
+  .dlg { width: 420px; background: var(--paper); border: 0.5px solid var(--ink); padding: 30px 30px 24px; }
+  .dlg h5 { font-size: 11px; letter-spacing: .24em; text-transform: uppercase; color: var(--ink-strong); }
+  .dlg p { font-size: 13px; line-height: 1.7; opacity: .8; margin-top: 14px; }
+  .dlg .row { display: flex; justify-content: flex-end; gap: 12px; margin-top: 28px; }
+  .dlg .btn { padding: 10px 20px; }
+
+  /* ---------- resume card ---------- */
+  .rcard {
+    position: absolute; width: 260px; height: 368px; background: var(--paper);
+    border: 0.5px solid var(--ink); padding: 22px 20px; box-sizing: border-box;
+    display: flex; flex-direction: column; gap: 14px; overflow: hidden;
+    opacity: 0; transform: translateY(14px); pointer-events: none;
+    transition: opacity .45s var(--ease), transform .45s var(--ease);
+  }
+  .rcard .rname { font-size: 12px; letter-spacing: .06em; color: var(--ink-strong);
+                  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-right: 26px; }
+  .rcard .rtag { position: absolute; top: 18px; right: 18px; font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 10px; opacity: .55; }
+  .rcard .lines { display: flex; flex-direction: column; gap: 9px; margin-top: 4px; }
+  .rcard .lines i { display: block; height: 0.5px; background: var(--line); }
+  .rcard .rmeta { margin-top: auto; display: flex; justify-content: space-between; font-size: 10px; letter-spacing: .18em; text-transform: uppercase; opacity: .5; }
+  .rcard .scan { position: absolute; left: 0; right: 0; top: 0; height: 1px; background: var(--ink); opacity: 0; }
+  .petal-stage[data-state="ready"] .rcard { cursor: pointer; }
+  .petal-stage[data-state="ready"] .rcard:hover { border-color: var(--ink-strong); }
+
+  /* ---------- state machine ---------- */
+  .petal-stage[data-state="empty"] .flower-svg { opacity: .9; }
+  .petal-stage[data-state="ready"] .flower-svg { opacity: 0; transform: translateY(18px) scale(.97); pointer-events: none; }
+  .petal-stage[data-state="ready"] .rcard { opacity: 1; transform: translateY(0); pointer-events: auto; }
+  .petal-stage[data-state="analysing"] .flower-svg { opacity: .14; animation: breathe 2.2s var(--ease) infinite; }
+  .petal-stage[data-state="analysing"] .rcard { opacity: 0; transform: translateY(-10px); transition-duration: 1.6s; }
+  .petal-stage[data-state="analysing"] .rcard .scan { opacity: 1; animation: scan 1.3s var(--ease) infinite; }
+  @keyframes scan { from { top: 0; } to { top: 100%; } }
+  @keyframes breathe { 0%,100% { opacity: .12; } 50% { opacity: .26; } }
+  .petal-stage[data-state="bloomed"] .flower-svg { opacity: 1; }
+
+  .state-line { font-size: 11px; letter-spacing: .22em; text-transform: uppercase; opacity: .55; margin-top: 6px; min-height: 16px; text-align: center; }
+  .state-line.script { font-family: "Parisienne", "Caveat", cursive; font-size: 38px; letter-spacing: 0; text-transform: none;
+                       opacity: .8; color: var(--ink-strong); line-height: 1.2; margin-top: 2px; }
+  .stage-actions { display: flex; flex-direction: column; align-items: center; gap: 10px; margin-top: 22px; text-align: center; }
+  .btnrow { display: flex; align-items: center; gap: 12px; }
+  .hintline { font-size: 10px; letter-spacing: .18em; text-transform: uppercase; opacity: .4; }
+
+
+
+  /* hover evidence card */
+  .tip {
+    position: absolute; pointer-events: none; z-index: 20;
+    width: 250px; padding: 14px 16px; background: var(--paper);
+    border: 0.5px solid var(--line); backdrop-filter: blur(6px);
+    opacity: 0; transform: translateY(4px); transition: opacity .25s var(--ease), transform .25s var(--ease);
+  }
+  .tip.on { opacity: 1; transform: translateY(0); }
+  .tip h5 { font-size: 12px; letter-spacing: 0.1em; color: var(--ink-strong); margin-bottom: 2px; display: flex; justify-content: space-between; }
+  .tip h5 b { font-family: "JetBrains Mono", ui-monospace, monospace; font-weight: 400; opacity: .6; }
+  .tip .row { margin-top: 8px; }
+  .tip .k { font-size: 9px; letter-spacing: 0.22em; text-transform: uppercase; opacity: .5; }
+  .tip .v { font-size: 12px; line-height: 1.55; }
+
+  .legend { width: 100%; display: grid; grid-template-columns: repeat(3, 1fr); gap: 40px 48px; margin-top: 48px; padding-bottom: 40px; }
+  .legend .g { border-top: 0.5px solid var(--ink); padding-top: 12px; display: flex; flex-direction: column; gap: 22px; }
+  .legend .g > h4 { font-size: 11px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--ink-strong); }
+  .legend .p { display: flex; flex-direction: column; gap: 7px; }
+  .legend .p .ph { display: flex; justify-content: space-between; align-items: baseline; font-size: 13px; color: var(--ink-strong); }
+  .legend .p .ph em { font-style: normal; font-size: 9px; letter-spacing: .2em; text-transform: uppercase; opacity: .45; margin-left: 8px; }
+  .legend .p .ph b { font-family: "JetBrains Mono", ui-monospace, monospace; font-weight: 400; font-size: 12px; opacity: .7; }
+  .legend .bar { display: flex; gap: 4px; }
+  .legend .bar i { flex: 1; height: 3px; border: 0.5px solid var(--line); }
+  .legend .bar i.on { background: var(--ink); border-color: var(--ink); }
+  .legend .bar.none i { border-style: dashed; }
+  .legend .p dl { display: flex; flex-direction: column; gap: 5px; margin-top: 2px; }
+  .legend .p .r { display: flex; gap: 10px; font-size: 11.5px; line-height: 1.5; }
+  .legend .p .r .k { flex: 0 0 62px; font-size: 9px; letter-spacing: .18em; text-transform: uppercase; opacity: .45; padding-top: 2px; }
+  .legend .p .r .v { opacity: .85; }
+  .legend .p .str { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 9.5px; letter-spacing: .12em; opacity: .5; }
+  .legend .g.fade { animation: fadeUp .5s var(--ease) both; }
+  @keyframes fadeUp { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
+</style>
+</head>
+<body>
+<main class="page">
+  <header class="topbar">
+    <div class="logo">Work Finds You / 工作找你</div>
+    <nav>
+      <a href="./home.html">01 Home</a>
+      <a href="./profile.html" class="on">02 Profile</a>
+      <a href="./jobprofile.html">03 Job</a>
+      <a href="./match.html">04 Match</a>
+      <a href="./compare.html">05 Compare</a>
+      <a href="./delivery.html">06 Delivery</a>
+    </nav>
+    <div class="right">
+      <span class="caption">Step 01 / 03</span>
+      <button class="theme-toggle"></button>
+    </div>
+  </header>
+
+  <section class="layout">
+    <aside class="side">
+      <div class="caption">02 · Candidate Profile</div>
+      <h1>创建属于你的<br/>能力花</h1>
+      <p>上传简历，8 项胜任力维度将生长为这朵花的花瓣。花瓣越舒展代表该能力越突出；证据不足时只开虚线小瓣，不记 0 分。</p>
+
+      <div class="steps">
+        <div class="step on" id="s1"><span class="n">01</span> 上传简历</div>
+        <div class="step" id="s2"><span class="n">02</span> 建立画像</div>
+        <div class="step" id="s3"><span class="n">03</span> 进入匹配</div>
+      </div>
+
+      <div class="actions">
+        <button class="btn ghost" id="backBtn">← 返回</button>
+      </div>
+
+      <div style="margin-top:auto;">
+        <div class="caption" style="margin-bottom:10px;">Parser</div>
+        <div class="moon"><i></i><i></i><i></i><i></i><i></i></div>
+      </div>
+    </aside>
+
+    <section class="stage">
+      <div class="stage-head">
+        <span class="caption">Ability Flower · 8 competencies</span>
+        <span class="mode" id="stateTag">STATE / EMPTY</span>
+      </div>
+
+      <div class="petal-stage" id="petalStage" data-state="empty">
+        <div class="visual" id="visual">
+          <svg class="flower-svg" id="flowerSvg" viewBox="112 200 506 344">
+            <g id="backPetals"></g>
+            <g id="frontPetals"></g>
+            <g id="stamens"></g>
+            <g id="stemLeaf"></g>
+            <g id="notes"></g>
+          </svg>
+
+          <div class="rcard" id="rcard">
+            <div class="rname" id="rName">resume.pdf</div>
+            <div class="rtag">[R]</div>
+            <div class="lines" id="rLines"></div>
+            <div class="rmeta"><span id="rMeta">PDF · 1.2 MB</span><span>CV</span></div>
+            
+            <div class="scan"></div>
+          </div>
+
+          <div class="tip" id="tip">
+            <h5><span id="tipName"></span><b id="tipScore"></b></h5>
+            <div class="row"><div class="k">Evidence</div><div class="v" id="tipEvi"></div></div>
+            <div class="row"><div class="k">Why this score</div><div class="v" id="tipWhy"></div></div>
+            <div class="row"><div class="k">Action</div><div class="v" id="tipAct"></div></div>
+          </div>
+        </div>
+
+        <div class="state-line" id="stateLine">LET YOUR FLOWER BLOOM</div>
+
+        <div class="stage-actions">
+          <div class="btnrow">
+            <button class="btn ghost" id="redoBtn" hidden>重新建立画像</button>
+            <button class="btn" id="mainBtn">上传简历</button>
+          </div>
+          <span class="hintline" id="hintLine">click or drag · PDF / Word / Image</span>
+          <input id="cvFile" type="file" accept=".pdf,.doc,.docx,image/*" hidden />
+        </div>
+
+        <div class="legend" id="legend"></div>
+      </div>
+    </section>
+  </section>
+</main>
+
+<div class="mask" id="mask">
+  <div class="dlg">
+    <h5 id="dlgTitle">Discard profile?</h5>
+    <p id="dlgBody">返回将清空当前简历与已生成的能力花，是否继续？</p>
+    <div class="row">
+      <button class="btn ghost" id="dlgCancel">取消</button>
+      <button class="btn" id="dlgOk">确认返回</button>
+    </div>
+  </div>
+</div>
+
+<a class="preview-crumb" href="./index.html">← Previews</a>
+
+<script>
+  // ============ 8 competency dimensions (PRD 7.4) ============
+  const DIMS = [
+    { key:"skill",     label:"专业技能" },
+    { key:"business",  label:"业务理解" },
+    { key:"analysis",  label:"问题分析" },
+    { key:"delivery",  label:"执行交付" },
+    { key:"comm",      label:"沟通表达" },
+    { key:"collab",    label:"协作影响" },
+    { key:"learning",  label:"学习适应" },
+    { key:"motive",    label:"动机匹配" },
+  ];
+
+  // ---- traced from the reference line-art (image space 750 x 1060) ----
+  const C = [355, 372];                       // flower heart
+  const FRONT = [
+    // 0 skill · top petal
+    [[352,366],[297,270],[350,230],[415,235],[410,300],[392,322]],
+    // 1 business · upper-left petal
+    [[332,362],[297,272],[255,287],[247,365],[276,368]],
+    // 2 analysis · lower-left petal
+    [[268,360],[252,410],[280,437],[315,460],[341,434],[350,392]],
+    // 3 delivery · bottom petal
+    [[352,386],[356,421],[371,481],[415,486],[436,459],[461,435],[416,406]],
+    // 4 comm · right petal
+    [[364,364],[395,320],[440,290],[477,307],[472,337],[505,350],[495,395],[460,427],[416,406]],
+  ];
+  const BACK = [
+    // 5 collab · peeking behind top-right
+    [[408,300],[430,254],[463,250],[474,292],[452,308]],
+    // 6 learning · peeking behind left
+    [[262,356],[226,349],[214,386],[247,403],[270,384]],
+    // 7 motive · peeking behind bottom-right
+    [[441,430],[473,455],[464,492],[426,489],[417,462]],
+  ];
+
+  const SVGNS = "http://www.w3.org/2000/svg";
+  const frontRoot = document.getElementById("frontPetals");
+  const backRoot  = document.getElementById("backPetals");
+  const stamenRoot= document.getElementById("stamens");
+  const stemRoot  = document.getElementById("stemLeaf");
+  const notesRoot = document.getElementById("notes");
+  const stageEl   = document.getElementById("petalStage");
+  const visual    = document.getElementById("visual");
+  const stateTag  = document.getElementById("stateTag");
+  const stateLine = document.getElementById("stateLine");
+  const tip       = document.getElementById("tip");
+
+  // deterministic pseudo random (same resume → same flower)
+  function rng(seed) { let t = seed >>> 0; return () => { t += 0x6D2B79F5; let r = Math.imul(t ^ (t >>> 15), 1 | t); r ^= r + Math.imul(r ^ (r >>> 7), 61 | r); return ((r ^ (r >>> 14)) >>> 0) / 4294967296; }; }
+
+  // closed Catmull-Rom → cubic bezier, keeps the hand-drawn soft lobes
+  function spline(pts) {
+    const n = pts.length, d = [`M ${pts[0][0].toFixed(1)} ${pts[0][1].toFixed(1)}`];
+    for (let i = 0; i < n; i++) {
+      const p0 = pts[(i - 1 + n) % n], p1 = pts[i], p2 = pts[(i + 1) % n], p3 = pts[(i + 2) % n];
+      const c1 = [p1[0] + (p2[0] - p0[0]) / 6, p1[1] + (p2[1] - p0[1]) / 6];
+      const c2 = [p2[0] - (p3[0] - p1[0]) / 6, p2[1] - (p3[1] - p1[1]) / 6];
+      d.push(`C ${c1[0].toFixed(1)} ${c1[1].toFixed(1)} ${c2[0].toFixed(1)} ${c2[1].toFixed(1)} ${p2[0].toFixed(1)} ${p2[1].toFixed(1)}`);
+    }
+    return d.join(" ") + " Z";
+  }
+
+  // score (0..5 | null) → petal points, scaled radially around the heart + tiny hand jitter
+  function shape(base, score, seed) {
+    const s = score == null ? 1.2 : score;
+    const f = 0.87 + s * 0.052;                 // 2.5 => 1.0 (= the reference outline)
+    const r = rng(seed * 7919 + 13);
+    return base.map((p, i) => {
+      const dx = p[0] - C[0], dy = p[1] - C[1];
+      const dist = Math.hypot(dx, dy);
+      const near = Math.min(1, dist / 60);      // anchor points near the heart
+      const ff = 1 + (f - 1) * near;
+      const j = (r() - 0.5) * 5 * near;
+      const jj = (r() - 0.5) * 5 * near;
+      return [C[0] + dx * ff + j, C[1] + dy * ff + jj];
+    });
+  }
+
+  // ---- build petals ----
+  const refs = [];
+  function makePetal(root, base, index, delay) {
+    const g = document.createElementNS(SVGNS, "g");
+    g.setAttribute("class", "petal-g");
+    const p = document.createElementNS(SVGNS, "path");
+    p.setAttribute("class", "petal grow");
+    p.setAttribute("d", spline(shape(base, 2.5, index)));
+    g.appendChild(p);
+    root.appendChild(g);
+    const ref = { g, p, base, index, dim: DIMS[index], delay };
+    refs[index] = ref;
+    g.addEventListener("mousemove", (e) => showTip(e, ref));
+    g.addEventListener("mouseleave", () => tip.classList.remove("on"));
+    g.addEventListener("click", (e) => showTip(e, ref));
+    return ref;
+  }
+  BACK.forEach((b, i) => makePetal(backRoot, b, 5 + i, 0.05 * i));
+  FRONT.forEach((b, i) => makePetal(frontRoot, b, i, 0.18 + 0.11 * i));
+
+  // ---- stamens (traced fan at the heart) ----
+  [
+    "M 352 384 C 348 372 342 362 336 356", "M 336 356 c -3 -2 -6 0 -5 3 c 1 3 5 3 6 0",
+    "M 350 382 C 344 378 334 376 326 378", "M 326 378 c -4 1 -5 4 -2 6 c 3 2 6 -1 5 -4",
+    "M 354 380 C 356 368 356 358 354 348", "M 354 348 c -1 -3 2 -5 4 -3 c 2 2 1 5 -2 5",
+    "M 357 381 C 362 372 370 365 379 361", "M 379 361 c 3 -1 5 1 4 4 c -2 3 -6 2 -6 -1",
+    "M 358 384 C 366 381 375 381 383 383", "M 383 383 c 3 1 3 4 0 5 c -3 1 -6 -2 -4 -4",
+    "M 349 388 C 340 389 331 393 325 399", "M 325 399 c -2 2 -1 5 2 5 c 3 0 5 -3 3 -5",
+  ].forEach((d) => {
+    const p = document.createElementNS(SVGNS, "path");
+    p.setAttribute("class", "stamen"); p.setAttribute("d", d);
+    stamenRoot.appendChild(p);
+  });
+
+  // ---- stem + leaf removed: the flower head is the only subject ----
+  stemRoot.innerHTML = "";
+
+
+  // ---- annotations removed: score is encoded in petal stroke depth ----
+
+
+  // ---- paint ----
+  let current = DIMS.map(() => ({ score: null }));
+
+  function paint(data, animate) {
+    current = data;
+    refs.forEach((r, i) => {
+      const d = data[i] || {};
+      r.p.setAttribute("d", spline(shape(r.base, d.score, i + (d.seed || 0))));
+      r.g.setAttribute("class", "petal-g" + (d.score == null ? " weak" : ""));
+      // score → stroke depth (deeper = higher score)
+      r.p.style.setProperty("--sd", d.score == null ? 0.1 : (0.12 + (d.score / 5) * 0.88).toFixed(3));
+      if (animate) {
+        const len = r.p.getTotalLength();
+        r.p.style.setProperty("--len", len);
+        r.p.style.animationDelay = r.delay + "s";
+      }
+    });
+    if (animate) {
+      stemRoot.querySelectorAll("path").forEach((p, i) => {
+        p.style.setProperty("--len", p.getTotalLength());
+        p.style.animationDelay = (0.9 + i * 0.2) + "s";
+      });
+    }
+    notesRoot.innerHTML = "";
+  }
+  paint(DIMS.map((_, i) => ({ score: 2.5, seed: i })), false);
+
+  function showTip(e, ref) {
+    if (stageEl.dataset.state !== "bloomed" && stageEl.dataset.state !== "empty") return;
+    const d = current[ref.index] || {};
+    document.getElementById("tipName").textContent = ref.dim.label;
+    document.getElementById("tipScore").textContent = d.evidence ? (d.score == null ? "证据不足" : d.score + "/5") : "—";
+    document.getElementById("tipEvi").textContent = d.evidence || "尚未建立画像";
+    document.getElementById("tipWhy").textContent = d.why || "上传简历后生成";
+    document.getElementById("tipAct").textContent = d.action || "—";
+    const box = visual.getBoundingClientRect();
+    let x = e.clientX - box.left + 18, y = e.clientY - box.top + 12;
+    x = Math.min(x, box.width - 262); y = Math.min(y, box.height - 180);
+    tip.style.left = Math.max(0, x) + "px";
+    tip.style.top = Math.max(0, y) + "px";
+    tip.classList.add("on");
+  }
+
+  // ============ upload → build → bloom ============
+  (function () {
+    const input = document.getElementById("cvFile");
+    const mainBtn = document.getElementById("mainBtn");
+    const redoBtn = document.getElementById("redoBtn");
+    const backBtn = document.getElementById("backBtn");
+    const rcard = document.getElementById("rcard");
+    const mask = document.getElementById("mask");
+    const dlgTitle = document.getElementById("dlgTitle");
+    const dlgBody = document.getElementById("dlgBody");
+    const dlgOk = document.getElementById("dlgOk");
+    const dlgCancel = document.getElementById("dlgCancel");
+    const hintLine = document.getElementById("hintLine");
+    const legend = document.getElementById("legend");
+    const rName = document.getElementById("rName");
+    const rMeta = document.getElementById("rMeta");
+    const rLines = document.getElementById("rLines");
+    const accept = /\.(pdf|docx?|png|jpe?g|webp|gif|bmp|heic|tiff?)$/i;
+    let state = "empty";
+
+    // filler text lines inside the resume card
+    rLines.innerHTML = Array.from({ length: 14 }, (_, i) =>
+      `<i style="width:${[100, 92, 78, 96, 64, 88, 100, 72, 90, 58, 96, 84, 70, 92][i]}%"></i>`).join("");
+
+    function setState(next) {
+      state = next;
+      stageEl.dataset.state = next;
+      const map = {
+        empty:     ["STATE / EMPTY", "Let your flower bloom", "上传简历", "click or drag · PDF / Word / Image"],
+        ready:     ["STATE / READY", "RESUME READY · WAITING TO BLOOM", "建立画像", ""],
+        analysing: ["STATE / LOADING", "ANALYSING…", "分析中", "PARSING · EXTRACTING · SCORING"],
+        bloomed:   ["STATE / SUCCESS · 1 LOW-CONFIDENCE", "YOUR FLOWER HAS BLOOMED", "下一步 →", "hover 花瓣查看证据与得分理由"],
+      }[next];
+      stateTag.textContent = map[0];
+      stateLine.textContent = map[1];
+      stateLine.classList.toggle("script", next === "empty");
+      mainBtn.textContent = map[2];
+      hintLine.textContent = map[3];
+      mainBtn.classList.toggle("loading", next === "analysing");
+      if (next === "analysing") mainBtn.innerHTML = '分析中<span class="dot"></span><span class="dot"></span><span class="dot"></span>';
+      redoBtn.hidden = next !== "bloomed";
+      document.getElementById("s1").classList.toggle("on", next === "empty");
+      document.getElementById("s2").classList.toggle("on", next === "ready" || next === "analysing");
+      document.getElementById("s3").classList.toggle("on", next === "bloomed");
+    }
+
+    function handle(file) {
+      if (!file) return;
+      if (!accept.test(file.name)) { hintLine.textContent = "UNSUPPORTED · PDF / WORD / IMAGE ONLY"; return; }
+      const kb = file.size / 1024;
+      rName.textContent = file.name;
+      rMeta.textContent = (file.name.split(".").pop() || "FILE").toUpperCase() + " · " +
+        (kb > 1024 ? (kb / 1024).toFixed(1) + " MB" : Math.round(kb) + " KB");
+      legend.innerHTML = "";
+      setState("ready");
+    }
+
+    input.addEventListener("change", (e) => handle(e.target.files && e.target.files[0]));
+
+    ["dragenter", "dragover"].forEach((ev) =>
+      visual.addEventListener(ev, (e) => { e.preventDefault(); visual.classList.add("dragging"); }));
+    ["dragleave", "drop"].forEach((ev) =>
+      visual.addEventListener(ev, (e) => { e.preventDefault(); visual.classList.remove("dragging"); }));
+    visual.addEventListener("drop", (e) => handle(e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]));
+    window.addEventListener("dragover", (e) => e.preventDefault());
+    window.addEventListener("drop", (e) => {
+      e.preventDefault();
+      const f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+      if (f) handle(f);
+    });
+
+    // re-upload: clicking the resume card opens the picker again (no visible button)
+    rcard.addEventListener("click", () => { if (state === "ready") { input.value = ""; input.click(); } });
+
+    // ---- reset back to the empty state ----
+    function reset() {
+      stageEl.classList.remove("blooming", "bloomed");
+      legend.innerHTML = "";
+      input.value = "";
+      paint(DIMS.map((_, i) => ({ score: 2.5, seed: i })), false);
+      setState("empty");
+    }
+
+    // ---- confirm dialog ----
+    let onConfirm = null;
+    function confirmDialog(title, body, okText, cb) {
+      dlgTitle.textContent = title; dlgBody.textContent = body; dlgOk.textContent = okText;
+      onConfirm = cb; mask.classList.add("on");
+    }
+    function closeDialog() { mask.classList.remove("on"); onConfirm = null; }
+    dlgCancel.addEventListener("click", closeDialog);
+    mask.addEventListener("click", (e) => { if (e.target === mask) closeDialog(); });
+    document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeDialog(); });
+    dlgOk.addEventListener("click", () => { const cb = onConfirm; closeDialog(); if (cb) cb(); });
+
+    backBtn.addEventListener("click", () => {
+      if (state === "bloomed" || state === "analysing") {
+        confirmDialog("Discard profile?", "返回将清空当前简历与已生成的能力花，是否继续？", "确认返回", () => history.back());
+      } else history.back();
+    });
+
+    redoBtn.addEventListener("click", () => {
+      confirmDialog("Rebuild profile?", "重新建立画像将清空当前结果，需要重新上传简历，是否继续？", "确认重建", () => {
+        reset();
+        input.click();
+      });
+    });
+
+    mainBtn.addEventListener("click", () => {
+      if (state === "empty") { input.click(); return; }
+      if (state === "bloomed") { location.href = "./jobprofile.html"; return; }
+      if (state !== "ready") return;
+
+      setState("analysing");
+      setTimeout(() => {
+        const result = [
+          { score: 4,    strength: "strong", evidence: "简历中 3 段 SQL / Figma 主导项目", why: "工具链与交付物均可验证", action: "补一段量化结果",   note: "项目证据强" },
+          { score: 3,    strength: "medium", evidence: "描述过 GMV / 留存指标",           why: "有指标意识但缺业务推演", action: "补充业务判断过程" },
+          { score: 4,    strength: "strong", evidence: "两次 A/B 实验设计与结论",         why: "能用数据支撑判断",       action: "写清取舍逻辑" },
+          { score: 5,    strength: "strong", evidence: "连续 4 个季度按时交付",           why: "长期交付记录完整",       action: "作为主线故事",     note: "可作主线故事" },
+          { score: 3,    strength: "medium", evidence: "有对上汇报与文档记录",           why: "书面强、口头证据少",     action: "准备 STAR 口述" },
+          { score: 2,    strength: "weak",   evidence: "跨团队协作描述较少",             why: "缺少推动他人的具体案例", action: "补一段跨团队案例", note: "需补跨团队" },
+          { score: 4,    strength: "strong", evidence: "半年内切换两个新领域",           why: "上手速度有实证",         action: "保持并写清方法",   note: "上手快" },
+          { score: null, strength: "missing",evidence: "未填写偏好与求职动机",           why: "无证据，不计分",         action: "填写偏好备注",     note: "证据不足" },
+        ];
+        paint(result, true);
+        stageEl.classList.add("blooming");
+        setState("bloomed");
+        stageEl.classList.add("bloomed");
+        renderPetalAnalysis(result);
+      }, 2600);
+    });
+
+    // ---- 8 petals · detailed analysis, grouped by the three hiring judgements ----
+    function renderPetalAnalysis(result) {
+      const groups = [
+        { title: "01 · Can do · 能不能做",            idx: [0, 1, 2] },
+        { title: "02 · Can deliver · 能不能做成",     idx: [3, 4, 5] },
+        { title: "03 · Long-term fit · 能不能长期适配", idx: [6, 7] },
+      ];
+      legend.innerHTML = "";
+      groups.forEach((g, i) => {
+        const div = document.createElement("div");
+        div.className = "g fade";
+        div.style.animationDelay = (i * 0.12) + "s";
+        div.innerHTML = "<h4>" + g.title + "</h4>" + g.idx.map((k) => {
+          const d = result[k] || {};
+          const s = d.score;
+          const bar = Array.from({ length: 5 }, (_, n) =>
+            `<i class="${s != null && n < s ? "on" : ""}"></i>`).join("");
+          return `<div class="p">
+            <div class="ph"><span>${DIMS[k].label}<em>${DIMS[k].key}</em></span><b>${s == null ? "—" : s}/5</b></div>
+            <div class="bar ${s == null ? "none" : ""}">${bar}</div>
+            <dl>
+              <div class="r"><span class="k">Evidence</span><span class="v">${d.evidence || "—"}</span></div>
+              <div class="r"><span class="k">Why</span><span class="v">${d.why || "—"}</span></div>
+              <div class="r"><span class="k">Action</span><span class="v">${d.action || "—"}</span></div>
+            </dl>
+            <div class="str">[${(d.strength || "missing").toUpperCase()}]</div>
+          </div>`;
+        }).join("");
+        legend.appendChild(div);
+      });
+    }
+
+    setState("empty");
+  })();
+</script>
+</body>
+</html>
