@@ -449,7 +449,9 @@
     refs.forEach((r, i) => {
       const d = data[i] || {};
       r.p.setAttribute("d", spline(shape(r.base, d.score, i + (d.seed || 0))));
-      r.g.setAttribute("class", "petal-g" + (d.score == null ? " weak" : d.score <= 2 ? " dim" : ""));
+      r.g.setAttribute("class", "petal-g" + (d.score == null ? " weak" : ""));
+      // score → stroke depth (deeper = higher score)
+      r.p.style.setProperty("--sd", d.score == null ? 0.1 : (0.12 + (d.score / 5) * 0.88).toFixed(3));
       if (animate) {
         const len = r.p.getTotalLength();
         r.p.style.setProperty("--len", len);
