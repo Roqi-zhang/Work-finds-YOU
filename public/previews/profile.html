@@ -363,13 +363,13 @@
     ["left", "right"].forEach((side) => {
       const right = side === "right";
       const list = sides[side].sort((a, b) => a.ay - b.ay);
-      const top = 252, bottom = 566;
+      const top = 232, bottom = 508;
       const step = list.length > 1 ? (bottom - top) / (list.length - 1) : 0;
 
       list.forEach((d, k) => {
         const rnd = (n) => ((Math.sin((d.i + 1) * 12.9898 + n * 78.233) * 43758.5453) % 1 + 1) % 1;
-        const ty = top + step * k + (rnd(1) - 0.5) * 16;
-        const tx = (right ? 476 : 236) + (rnd(2) - 0.5) * 26;
+        const ty = top + step * k + (rnd(1) - 0.5) * 12;
+        const tx = (right ? 500 : 212) + (rnd(2) - 0.5) * 18;
         const rot = (rnd(3) - 0.5) * 4;
 
         const g = document.createElementNS(SVGNS, "g");
@@ -385,26 +385,42 @@
           : ((d.note || DIMS[d.i].label) + " " + d.score + "/5");
         g.appendChild(t);
 
-        // hand-drawn hooked arrow from the note to its petal
-        const sx = tx + (right ? -10 : 10), sy = ty + 6;
-        const ex = d.ax + (right ? 16 : -16), ey = d.ay;
-        const mx = (sx + ex) / 2 + (right ? 12 : -12), my = (sy + ey) / 2 + (ey > sy ? 18 : -18);
+        // free hand-drawn hooked arrow: little loop at the start, loose cubic sweep
+        const sx = tx + (right ? -12 : 12), sy = ty + 7;
+        // pull the target slightly back toward the flower heart so arrows don't crowd the outline
+        const ex = d.ax + (C[0] - d.ax) * 0.25;
+        const ey = d.ay + (C[1] - d.ay) * 0.25;
+        const dx = ex - sx, dy = ey - sy;
+        const sway = (rnd(4) - 0.5) * 46 + (right ? -26 : 26);
+        const c1x = sx + dx * 0.28 + sway * 0.6, c1y = sy + dy * 0.18 - 26 - rnd(5) * 22;
+        const c2x = sx + dx * 0.72 + sway * 0.3, c2y = sy + dy * 0.82 + 18 + rnd(6) * 20;
+
+        // starting curl (small open loop, like the reference doodle)
+        const r = 4.2 + rnd(7) * 1.6;
+        const curl = document.createElementNS(SVGNS, "path");
+        curl.setAttribute("class", "note-line");
+        curl.setAttribute("d",
+          `M ${sx + (right ? 7 : -7)} ${sy - 3} c ${right ? -5 : 5} ${-r} ${right ? -2 * r : 2 * r} ${-r * 0.4} ` +
+          `${right ? -r * 1.4 : r * 1.4} ${r * 1.1} c ${right ? r * 0.6 : -r * 0.6} ${r * 0.9} ${right ? r * 1.6 : -r * 1.6} ${r * 0.2} ${sx - (sx + (right ? 7 : -7))} ${sy - (sy - 3)}`);
+        g.appendChild(curl);
+
         const line = document.createElementNS(SVGNS, "path");
         line.setAttribute("class", "note-line");
-        line.setAttribute("d", `M ${sx} ${sy} Q ${mx} ${my} ${ex} ${ey}`);
+        line.setAttribute("d", `M ${sx} ${sy} C ${c1x} ${c1y} ${c2x} ${c2y} ${ex} ${ey}`);
         g.appendChild(line);
 
-        const ang = Math.atan2(ey - my, ex - mx);
+        const ang = Math.atan2(ey - c2y, ex - c2x);
         const head = document.createElementNS(SVGNS, "path");
         head.setAttribute("class", "note-line");
         head.setAttribute("d",
-          `M ${ex - Math.cos(ang - 0.45) * 9} ${ey - Math.sin(ang - 0.45) * 9} L ${ex} ${ey} ` +
-          `L ${ex - Math.cos(ang + 0.45) * 9} ${ey - Math.sin(ang + 0.45) * 9}`);
+          `M ${ex - Math.cos(ang - 0.40) * 9.5} ${ey - Math.sin(ang - 0.40) * 9.5} L ${ex} ${ey} ` +
+          `L ${ex - Math.cos(ang + 0.62) * 6} ${ey - Math.sin(ang + 0.62) * 6}`);
         g.appendChild(head);
 
         notesRoot.appendChild(g);
       });
     });
+
   }
 
   // ---- paint ----
