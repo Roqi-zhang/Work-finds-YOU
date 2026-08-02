@@ -466,6 +466,37 @@
 <a class="preview-crumb" href="./index.html">← Previews</a>
 
 <script>
+  // ---- current job (static prototype data) ----
+  (function () {
+    const JOB = { id: "stripe-senior-frontend", co: "Stripe", title: "Senior Frontend", loc: "Remote / SF", m: 78, s: "$180K–220K", yes: "Craft · Product", no: "Team > 60" };
+    const read = (k) => { try { return JSON.parse(localStorage.getItem(k) || "[]"); } catch (e) { return []; } };
+    const write = (k, v) => localStorage.setItem(k, JSON.stringify(v));
+
+    const pool = document.getElementById("addPoolBtn");
+    const apply = document.getElementById("applyBtn");
+    if (pool) pool.addEventListener("click", () => {
+      const list = read("wfy.pool");
+      if (!list.some((j) => j.id === JOB.id)) { list.push(JOB); write("wfy.pool", list); }
+      location.href = "./compare.html";
+    });
+    if (apply) apply.addEventListener("click", () => {
+      const list = read("wfy.deliveries");
+      if (!list.some((j) => j.id === JOB.id)) {
+        const d = new Date();
+        const M = ["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"];
+        list.unshift({
+          id: JOB.id, co: JOB.co, title: JOB.title, m: JOB.m, status: "待投递",
+          day: String(d.getDate()).padStart(2, "0"), mon: M[d.getMonth()], year: d.getFullYear(),
+          body: "从匹配页直接投递。匹配 " + JOB.m + "%，投前 3 步的建议尚未全部完成，先记录下来。",
+          quote: "",
+        });
+        write("wfy.deliveries", list);
+      }
+      location.href = "./delivery.html";
+    });
+  })();
+</script>
+
   // draw tick marks around bg dial
   (function () {
     const g = document.getElementById("bg-ticks");
