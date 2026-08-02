@@ -201,137 +201,139 @@ export default function Compare() {
   }
 
   return (
-    <main className="page">
-      <TopBar date="Pool · 12 jobs" />
+    <div className="p-compare">
+      <main className="page">
+        <TopBar date="Pool · 12 jobs" />
 
-      <div className="head-row">
-        <div>
-          <div className="caption">04 · Compare</div>
-          <h1 style={{ marginTop: 16 }}>
-            Orbit
-            <br />
-            the pool.
-          </h1>
-        </div>
-        <p className="caption">
-          中心是你的画像，同心轨道上分布 12 个岗位节点。悬停任意节点，中心与它之间生成贝塞尔连线，右侧面板同步显示 Why Yes / Why No / Match。
-        </p>
-      </div>
-
-      <section className="stage">
-        <div className="pool">
-          <svg viewBox="-400 -320 800 640" id="orbit">
-            <circle className="ring" r="140" />
-            <circle className="ring" r="220" />
-            <circle className="ring" r="290" />
-
-            <circle className="center" r="52" />
-            <text className="center-label" y="-2">
-              YOU · L. HAN
-            </text>
-            <text className="center-sub" y="16">
-              Match core
-            </text>
-
-            <path ref={lineRef} id="line" className={"bezier" + (lineOn ? " on" : "")} d="M0,0 C0,0 0,0 0,0" />
-
-            <g id="nodes" ref={nodesRef}></g>
-          </svg>
-        </div>
-
-        <aside className="detail" id="detail">
-          <div className="k">{detail.k}</div>
+        <div className="head-row">
           <div>
-            <h3 id="d-title">{detail.title}</h3>
-            <div className="meta">
-              <span id="d-company">{detail.company}</span>
-              <span>·</span>
-              <span id="d-loc">{detail.loc}</span>
-            </div>
+            <div className="caption">04 · Compare</div>
+            <h1 style={{ marginTop: 16 }}>
+              Orbit
+              <br />
+              the pool.
+            </h1>
           </div>
-          <div className="row">
-            <span>Match</span>
-            <span id="d-match">{detail.match}</span>
-          </div>
-          <div className="row">
-            <span>Salary</span>
-            <span id="d-salary">{detail.salary}</span>
-          </div>
-          <div className="row">
-            <span>Why Yes</span>
-            <span id="d-yes">{detail.yes}</span>
-          </div>
-          <div className="row">
-            <span>Why No</span>
-            <span id="d-no">{detail.no}</span>
-          </div>
-          <div className="actions">
-            <button className="btn" id="applyBtn" type="button" disabled={disabled} onClick={handleApply}>
-              投递 →
-            </button>
-            <button className="btn ghost" id="removeBtn" type="button" disabled={disabled} onClick={handleRemove}>
-              移出对比
-            </button>
+          <p className="caption">
+            中心是你的画像，同心轨道上分布 12 个岗位节点。悬停任意节点，中心与它之间生成贝塞尔连线，右侧面板同步显示 Why Yes / Why No / Match。
+          </p>
+        </div>
+
+        <section className="stage">
+          <div className="pool">
+            <svg viewBox="-400 -320 800 640" id="orbit">
+              <circle className="ring" r="140" />
+              <circle className="ring" r="220" />
+              <circle className="ring" r="290" />
+
+              <circle className="center" r="52" />
+              <text className="center-label" y="-2">
+                YOU · L. HAN
+              </text>
+              <text className="center-sub" y="16">
+                Match core
+              </text>
+
+              <path ref={lineRef} id="line" className={"bezier" + (lineOn ? " on" : "")} d="M0,0 C0,0 0,0 0,0" />
+
+              <g id="nodes" ref={nodesRef}></g>
+            </svg>
           </div>
 
-          <div style={{ marginTop: "auto", paddingTop: 16, borderTop: "0.5px solid var(--line)" }}>
-            <div className="k" style={{ marginBottom: 8 }}>
-              Pool loading
+          <aside className="detail" id="detail">
+            <div className="k">{detail.k}</div>
+            <div>
+              <h3 id="d-title">{detail.title}</h3>
+              <div className="meta">
+                <span id="d-company">{detail.company}</span>
+                <span>·</span>
+                <span id="d-loc">{detail.loc}</span>
+              </div>
             </div>
-            <div className="moon">
-              <i></i>
-              <i></i>
-              <i></i>
-              <i></i>
-              <i></i>
+            <div className="row">
+              <span>Match</span>
+              <span id="d-match">{detail.match}</span>
+            </div>
+            <div className="row">
+              <span>Salary</span>
+              <span id="d-salary">{detail.salary}</span>
+            </div>
+            <div className="row">
+              <span>Why Yes</span>
+              <span id="d-yes">{detail.yes}</span>
+            </div>
+            <div className="row">
+              <span>Why No</span>
+              <span id="d-no">{detail.no}</span>
+            </div>
+            <div className="actions">
+              <button className="btn" id="applyBtn" type="button" disabled={disabled} onClick={handleApply}>
+                投递 →
+              </button>
+              <button className="btn ghost" id="removeBtn" type="button" disabled={disabled} onClick={handleRemove}>
+                移出对比
+              </button>
+            </div>
+
+            <div style={{ marginTop: "auto", paddingTop: 16, borderTop: "0.5px solid var(--line)" }}>
+              <div className="k" style={{ marginBottom: 8 }}>
+                Pool loading
+              </div>
+              <div className="moon">
+                <i></i>
+                <i></i>
+                <i></i>
+                <i></i>
+                <i></i>
+              </div>
+            </div>
+          </aside>
+        </section>
+
+        <div className="controls">
+          <div className="grp">
+            <span className="caption">Sort</span>
+            <button className="on">Match</button>
+            <button>Salary</button>
+            <button>Recency</button>
+          </div>
+          <div className="grp">
+            <span className="caption">Orbits</span>
+            <button>2</button>
+            <button className="on">3</button>
+            <button>4</button>
+          </div>
+          <div className="grp">
+            <span className="caption">Density</span>
+            <button>Sparse</button>
+            <button className="on">Regular</button>
+            <button>Dense</button>
+          </div>
+        </div>
+
+        <div className={"mask" + (dlgOpen ? " on" : "")} id="mask" onClick={(e) => e.target === e.currentTarget && closeDialog()}>
+          <div className="dlg">
+            <h5 id="dlgTitle">{dlgTitle}</h5>
+            <p id="dlgBody">{dlgBody}</p>
+            <div className="row">
+              <button className="btn ghost" id="dlgCancel" onClick={closeDialog}>
+                取消
+              </button>
+              <button
+                className="btn"
+                id="dlgOk"
+                onClick={() => {
+                  const cb = onConfirmRef.current;
+                  closeDialog();
+                  if (cb) cb();
+                }}
+              >
+                {dlgOkText}
+              </button>
             </div>
           </div>
-        </aside>
-      </section>
-
-      <div className="controls">
-        <div className="grp">
-          <span className="caption">Sort</span>
-          <button className="on">Match</button>
-          <button>Salary</button>
-          <button>Recency</button>
         </div>
-        <div className="grp">
-          <span className="caption">Orbits</span>
-          <button>2</button>
-          <button className="on">3</button>
-          <button>4</button>
-        </div>
-        <div className="grp">
-          <span className="caption">Density</span>
-          <button>Sparse</button>
-          <button className="on">Regular</button>
-          <button>Dense</button>
-        </div>
-      </div>
-
-      <div className={"mask" + (dlgOpen ? " on" : "")} id="mask" onClick={(e) => e.target === e.currentTarget && closeDialog()}>
-        <div className="dlg">
-          <h5 id="dlgTitle">{dlgTitle}</h5>
-          <p id="dlgBody">{dlgBody}</p>
-          <div className="row">
-            <button className="btn ghost" id="dlgCancel" onClick={closeDialog}>
-              取消
-            </button>
-            <button
-              className="btn"
-              id="dlgOk"
-              onClick={() => {
-                const cb = onConfirmRef.current;
-                closeDialog();
-                if (cb) cb();
-              }}
-            >
-              {dlgOkText}
-            </button>
-          </div>
-        </div>
-      </div>
-    </main>
+      </main>
+    </div>
   );
 }

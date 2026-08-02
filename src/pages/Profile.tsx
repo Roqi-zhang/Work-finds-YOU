@@ -401,248 +401,250 @@ export default function Profile() {
   const hintLine = hintOverride ?? map.hint;
 
   return (
-    <main className="page">
-      <TopBar />
+    <div className="p-profile">
+      <main className="page">
+        <TopBar />
 
-      <section className="layout">
-        <aside className="side">
-          <div className="caption">02 · Candidate Profile</div>
-          <h1>
-            创建属于你的
-            <br />
-            能力花
-          </h1>
-          <p>上传简历，8 项胜任力维度将生长为这朵花的花瓣。花瓣越舒展代表该能力越突出；证据不足时只开虚线小瓣，不记 0 分。</p>
+        <section className="layout">
+          <aside className="side">
+            <div className="caption">02 · Candidate Profile</div>
+            <h1>
+              创建属于你的
+              <br />
+              能力花
+            </h1>
+            <p>上传简历，8 项胜任力维度将生长为这朵花的花瓣。花瓣越舒展代表该能力越突出；证据不足时只开虚线小瓣，不记 0 分。</p>
 
-          <div className="steps">
-            <div className={"step" + (state === "empty" ? " on" : "")} id="s1">
-              <span className="n">01</span> 上传简历
+            <div className="steps">
+              <div className={"step" + (state === "empty" ? " on" : "")} id="s1">
+                <span className="n">01</span> 上传简历
+              </div>
+              <div className={"step" + (state === "ready" || state === "analysing" ? " on" : "")} id="s2">
+                <span className="n">02</span> 建立画像
+              </div>
+              <div className={"step" + (state === "bloomed" ? " on" : "")} id="s3">
+                <span className="n">03</span> 进入匹配
+              </div>
             </div>
-            <div className={"step" + (state === "ready" || state === "analysing" ? " on" : "")} id="s2">
-              <span className="n">02</span> 建立画像
-            </div>
-            <div className={"step" + (state === "bloomed" ? " on" : "")} id="s3">
-              <span className="n">03</span> 进入匹配
-            </div>
-          </div>
 
-          <div className="actions">
-            <button className="btn ghost" id="backBtn" onClick={onBack}>
-              ← 返回
-            </button>
-          </div>
-
-          <div style={{ marginTop: "auto" }}>
-            <div className="caption" style={{ marginBottom: 10 }}>
-              Parser
+            <div className="actions">
+              <button className="btn ghost" id="backBtn" onClick={onBack}>
+                ← 返回
+              </button>
             </div>
-            <div className="moon">
-              <i></i>
-              <i></i>
-              <i></i>
-              <i></i>
-              <i></i>
+
+            <div style={{ marginTop: "auto" }}>
+              <div className="caption" style={{ marginBottom: 10 }}>
+                Parser
+              </div>
+              <div className="moon">
+                <i></i>
+                <i></i>
+                <i></i>
+                <i></i>
+                <i></i>
+              </div>
             </div>
-          </div>
-        </aside>
+          </aside>
 
-        <section className="stage">
-          <div className="stage-head">
-            <span className="caption">Ability Flower · 8 competencies</span>
-            <span className="mode" id="stateTag">
-              {map.tag}
-            </span>
-          </div>
+          <section className="stage">
+            <div className="stage-head">
+              <span className="caption">Ability Flower · 8 competencies</span>
+              <span className="mode" id="stateTag">
+                {map.tag}
+              </span>
+            </div>
 
-          <div
-            className={"petal-stage" + (blooming ? " blooming" : "") + (bloomedClass ? " bloomed" : "")}
-            id="petalStage"
-            data-state={state}
-          >
             <div
-              className={"visual" + (dragging ? " dragging" : "")}
-              id="visual"
-              ref={visualRef}
-              onDragEnter={(e) => {
-                e.preventDefault();
-                setDragging(true);
-              }}
-              onDragOver={(e) => {
-                e.preventDefault();
-                setDragging(true);
-              }}
-              onDragLeave={(e) => {
-                e.preventDefault();
-                setDragging(false);
-              }}
-              onDrop={(e) => {
-                e.preventDefault();
-                setDragging(false);
-                handle(e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]);
-              }}
+              className={"petal-stage" + (blooming ? " blooming" : "") + (bloomedClass ? " bloomed" : "")}
+              id="petalStage"
+              data-state={state}
             >
-              <svg className="flower-svg" id="flowerSvg" viewBox="112 200 506 344">
-                <g id="backPetals" ref={backRootRef}></g>
-                <g id="frontPetals" ref={frontRootRef}></g>
-                <g id="stamens" ref={stamenRootRef}></g>
-                <g id="stemLeaf"></g>
-                <g id="notes"></g>
-              </svg>
-
               <div
-                className="rcard"
-                id="rcard"
-                onClick={() => {
-                  if (state === "ready") {
-                    if (inputRef.current) inputRef.current.value = "";
-                    inputRef.current?.click();
-                  }
+                className={"visual" + (dragging ? " dragging" : "")}
+                id="visual"
+                ref={visualRef}
+                onDragEnter={(e) => {
+                  e.preventDefault();
+                  setDragging(true);
+                }}
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  setDragging(true);
+                }}
+                onDragLeave={(e) => {
+                  e.preventDefault();
+                  setDragging(false);
+                }}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  setDragging(false);
+                  handle(e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]);
                 }}
               >
-                <div className="rname" id="rName">
-                  {rName}
+                <svg className="flower-svg" id="flowerSvg" viewBox="112 200 506 344">
+                  <g id="backPetals" ref={backRootRef}></g>
+                  <g id="frontPetals" ref={frontRootRef}></g>
+                  <g id="stamens" ref={stamenRootRef}></g>
+                  <g id="stemLeaf"></g>
+                  <g id="notes"></g>
+                </svg>
+
+                <div
+                  className="rcard"
+                  id="rcard"
+                  onClick={() => {
+                    if (state === "ready") {
+                      if (inputRef.current) inputRef.current.value = "";
+                      inputRef.current?.click();
+                    }
+                  }}
+                >
+                  <div className="rname" id="rName">
+                    {rName}
+                  </div>
+                  <div className="rtag">[R]</div>
+                  <div className="lines" id="rLines">
+                    {RLINE_WIDTHS.map((w, i) => (
+                      <i key={i} style={{ width: w + "%" }}></i>
+                    ))}
+                  </div>
+                  <div className="rmeta">
+                    <span id="rMeta">{rMeta}</span>
+                    <span>CV</span>
+                  </div>
+
+                  <div className="scan"></div>
                 </div>
-                <div className="rtag">[R]</div>
-                <div className="lines" id="rLines">
-                  {RLINE_WIDTHS.map((w, i) => (
-                    <i key={i} style={{ width: w + "%" }}></i>
+
+                <div className={"tip" + (tip.on ? " on" : "")} id="tip" style={{ left: tip.x, top: tip.y }}>
+                  <h5>
+                    <span id="tipName">{tip.name}</span>
+                    <b id="tipScore">{tip.score}</b>
+                  </h5>
+                  <div className="row">
+                    <div className="k">Evidence</div>
+                    <div className="v" id="tipEvi">
+                      {tip.evi}
+                    </div>
+                  </div>
+                  <div className="row">
+                    <div className="k">Why this score</div>
+                    <div className="v" id="tipWhy">
+                      {tip.why}
+                    </div>
+                  </div>
+                  <div className="row">
+                    <div className="k">Action</div>
+                    <div className="v" id="tipAct">
+                      {tip.act}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className={"state-line" + (state === "empty" ? " script" : "")} id="stateLine">
+                {map.line}
+              </div>
+
+              <div className="stage-actions">
+                <div className="btnrow">
+                  <button className="btn ghost" id="redoBtn" hidden={state !== "bloomed"} onClick={onRedo}>
+                    重新建立画像
+                  </button>
+                  <button className={"btn" + (state === "analysing" ? " loading" : "")} id="mainBtn" onClick={onMainBtn}>
+                    {state === "analysing" ? (
+                      <>
+                        分析中<span className="dot"></span><span className="dot"></span><span className="dot"></span>
+                      </>
+                    ) : (
+                      map.btn
+                    )}
+                  </button>
+                </div>
+                <span className="hintline" id="hintLine">
+                  {hintLine}
+                </span>
+                <input
+                  ref={inputRef}
+                  id="cvFile"
+                  type="file"
+                  accept=".pdf,.doc,.docx,image/*"
+                  hidden
+                  onChange={(e) => handle(e.target.files && e.target.files[0])}
+                />
+              </div>
+
+              <div className="legend" id="legend">
+                {result &&
+                  GROUPS.map((g, i) => (
+                    <div className="g fade" key={g.title} style={{ animationDelay: i * 0.12 + "s" }}>
+                      <h4>{g.title}</h4>
+                      {g.idx.map((k) => {
+                        const d = result[k] || ({} as DimResult);
+                        const s = d.score;
+                        return (
+                          <div className="p" key={k}>
+                            <div className="ph">
+                              <span>
+                                {DIMS[k].label}
+                                <em>{DIMS[k].key}</em>
+                              </span>
+                              <b>{s == null ? "—" : s}/5</b>
+                            </div>
+                            <div className={"bar" + (s == null ? " none" : "")}>
+                              {Array.from({ length: 5 }, (_, n) => (
+                                <i key={n} className={s != null && n < s ? "on" : ""}></i>
+                              ))}
+                            </div>
+                            <dl>
+                              <div className="r">
+                                <span className="k">Evidence</span>
+                                <span className="v">{d.evidence || "—"}</span>
+                              </div>
+                              <div className="r">
+                                <span className="k">Why</span>
+                                <span className="v">{d.why || "—"}</span>
+                              </div>
+                              <div className="r">
+                                <span className="k">Action</span>
+                                <span className="v">{d.action || "—"}</span>
+                              </div>
+                            </dl>
+                            <div className="str">[{(d.strength || "missing").toUpperCase()}]</div>
+                          </div>
+                        );
+                      })}
+                    </div>
                   ))}
-                </div>
-                <div className="rmeta">
-                  <span id="rMeta">{rMeta}</span>
-                  <span>CV</span>
-                </div>
-
-                <div className="scan"></div>
-              </div>
-
-              <div className={"tip" + (tip.on ? " on" : "")} id="tip" style={{ left: tip.x, top: tip.y }}>
-                <h5>
-                  <span id="tipName">{tip.name}</span>
-                  <b id="tipScore">{tip.score}</b>
-                </h5>
-                <div className="row">
-                  <div className="k">Evidence</div>
-                  <div className="v" id="tipEvi">
-                    {tip.evi}
-                  </div>
-                </div>
-                <div className="row">
-                  <div className="k">Why this score</div>
-                  <div className="v" id="tipWhy">
-                    {tip.why}
-                  </div>
-                </div>
-                <div className="row">
-                  <div className="k">Action</div>
-                  <div className="v" id="tipAct">
-                    {tip.act}
-                  </div>
-                </div>
               </div>
             </div>
-
-            <div className={"state-line" + (state === "empty" ? " script" : "")} id="stateLine">
-              {map.line}
-            </div>
-
-            <div className="stage-actions">
-              <div className="btnrow">
-                <button className="btn ghost" id="redoBtn" hidden={state !== "bloomed"} onClick={onRedo}>
-                  重新建立画像
-                </button>
-                <button className={"btn" + (state === "analysing" ? " loading" : "")} id="mainBtn" onClick={onMainBtn}>
-                  {state === "analysing" ? (
-                    <>
-                      分析中<span className="dot"></span><span className="dot"></span><span className="dot"></span>
-                    </>
-                  ) : (
-                    map.btn
-                  )}
-                </button>
-              </div>
-              <span className="hintline" id="hintLine">
-                {hintLine}
-              </span>
-              <input
-                ref={inputRef}
-                id="cvFile"
-                type="file"
-                accept=".pdf,.doc,.docx,image/*"
-                hidden
-                onChange={(e) => handle(e.target.files && e.target.files[0])}
-              />
-            </div>
-
-            <div className="legend" id="legend">
-              {result &&
-                GROUPS.map((g, i) => (
-                  <div className="g fade" key={g.title} style={{ animationDelay: i * 0.12 + "s" }}>
-                    <h4>{g.title}</h4>
-                    {g.idx.map((k) => {
-                      const d = result[k] || ({} as DimResult);
-                      const s = d.score;
-                      return (
-                        <div className="p" key={k}>
-                          <div className="ph">
-                            <span>
-                              {DIMS[k].label}
-                              <em>{DIMS[k].key}</em>
-                            </span>
-                            <b>{s == null ? "—" : s}/5</b>
-                          </div>
-                          <div className={"bar" + (s == null ? " none" : "")}>
-                            {Array.from({ length: 5 }, (_, n) => (
-                              <i key={n} className={s != null && n < s ? "on" : ""}></i>
-                            ))}
-                          </div>
-                          <dl>
-                            <div className="r">
-                              <span className="k">Evidence</span>
-                              <span className="v">{d.evidence || "—"}</span>
-                            </div>
-                            <div className="r">
-                              <span className="k">Why</span>
-                              <span className="v">{d.why || "—"}</span>
-                            </div>
-                            <div className="r">
-                              <span className="k">Action</span>
-                              <span className="v">{d.action || "—"}</span>
-                            </div>
-                          </dl>
-                          <div className="str">[{(d.strength || "missing").toUpperCase()}]</div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                ))}
-            </div>
-          </div>
+          </section>
         </section>
-      </section>
 
-      <div className={"mask" + (dialog ? " on" : "")} id="mask" onClick={(e) => { if (e.target === e.currentTarget) closeDialog(); }}>
-        <div className="dlg">
-          <h5 id="dlgTitle">{dialog?.title}</h5>
-          <p id="dlgBody">{dialog?.body}</p>
-          <div className="row">
-            <button className="btn ghost" id="dlgCancel" onClick={closeDialog}>
-              取消
-            </button>
-            <button
-              className="btn"
-              id="dlgOk"
-              onClick={() => {
-                const cb = dialog?.onConfirm;
-                closeDialog();
-                if (cb) cb();
-              }}
-            >
-              {dialog?.okText}
-            </button>
+        <div className={"mask" + (dialog ? " on" : "")} id="mask" onClick={(e) => { if (e.target === e.currentTarget) closeDialog(); }}>
+          <div className="dlg">
+            <h5 id="dlgTitle">{dialog?.title}</h5>
+            <p id="dlgBody">{dialog?.body}</p>
+            <div className="row">
+              <button className="btn ghost" id="dlgCancel" onClick={closeDialog}>
+                取消
+              </button>
+              <button
+                className="btn"
+                id="dlgOk"
+                onClick={() => {
+                  const cb = dialog?.onConfirm;
+                  closeDialog();
+                  if (cb) cb();
+                }}
+              >
+                {dialog?.okText}
+              </button>
+            </div>
           </div>
         </div>
-      </div>
-    </main>
+      </main>
+    </div>
   );
 }

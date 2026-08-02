@@ -127,167 +127,169 @@ export default function Delivery() {
   };
 
   return (
-    <main className="page">
-      <TopBar />
+    <div className="p-delivery">
+      <main className="page">
+        <TopBar />
 
-      <div className="head">
-        <div>
-          <div className="caption">05 · Delivery</div>
-          <h1 style={{ marginTop: 16 }}>
-            The
-            <br />
-            Job Journal.
-          </h1>
+        <div className="head">
+          <div>
+            <div className="caption">05 · Delivery</div>
+            <h1 style={{ marginTop: 16 }}>
+              The
+              <br />
+              Job Journal.
+            </h1>
+          </div>
+          <p>一份倒序阅读的求职日志。每一次投递、拒信、面试都是一段带小标题的段落；右侧竖轨记录状态变化的时间打点。</p>
         </div>
-        <p>一份倒序阅读的求职日志。每一次投递、拒信、面试都是一段带小标题的段落；右侧竖轨记录状态变化的时间打点。</p>
-      </div>
 
-      <div className="top-tools">
-        <div className="l">
-          <a href="#">+ 新增投递</a>
-          <span style={{ opacity: 0.5 }}>View · Journal</span>
-          <span style={{ opacity: 0.5 }}>Sort · Newest</span>
+        <div className="top-tools">
+          <div className="l">
+            <a href="#">+ 新增投递</a>
+            <span style={{ opacity: 0.5 }}>View · Journal</span>
+            <span style={{ opacity: 0.5 }}>Sort · Newest</span>
+          </div>
+          <div className="r">
+            <span className="caption" style={{ opacity: 0.5 }}>
+              Filter
+            </span>
+            <button className="icon-btn" title="filter">
+              <svg width="12" height="12" viewBox="0 0 12 12">
+                <circle cx="6" cy="6" r="5" fill="none" stroke="currentColor" strokeWidth="0.5" />
+                <line x1="3" y1="6" x2="9" y2="6" stroke="currentColor" strokeWidth="0.5" />
+              </svg>
+            </button>
+            <button className="icon-btn" title="more">
+              <svg width="12" height="12" viewBox="0 0 12 12">
+                <circle cx="3" cy="6" r="1" fill="currentColor" />
+                <circle cx="6" cy="6" r="1" fill="currentColor" />
+                <circle cx="9" cy="6" r="1" fill="currentColor" />
+              </svg>
+            </button>
+          </div>
         </div>
-        <div className="r">
-          <span className="caption" style={{ opacity: 0.5 }}>
-            Filter
-          </span>
-          <button className="icon-btn" title="filter">
-            <svg width="12" height="12" viewBox="0 0 12 12">
-              <circle cx="6" cy="6" r="5" fill="none" stroke="currentColor" strokeWidth="0.5" />
-              <line x1="3" y1="6" x2="9" y2="6" stroke="currentColor" strokeWidth="0.5" />
-            </svg>
-          </button>
-          <button className="icon-btn" title="more">
-            <svg width="12" height="12" viewBox="0 0 12 12">
-              <circle cx="3" cy="6" r="1" fill="currentColor" />
-              <circle cx="6" cy="6" r="1" fill="currentColor" />
-              <circle cx="9" cy="6" r="1" fill="currentColor" />
-            </svg>
-          </button>
-        </div>
-      </div>
 
-      <section className="journal">
-        <div className="entries" id="entries" ref={entriesRef}>
-          {!apps.length ? (
-            <div className="entry">
-              <div className="date">
-                <span className="d">—</span>NO DATA
-              </div>
-              <div className="body">
-                <h2>还没有投递记录</h2>
-                <div className="sub">在匹配页点「直接投递」，或在对比池里选中岗位后点「投递」，记录会出现在这里。</div>
-                <div className="foot">
-                  <a href="#" onClick={(e) => { e.preventDefault(); navigate("/compare"); }}>
-                    去对比池 →
-                  </a>
+        <section className="journal">
+          <div className="entries" id="entries" ref={entriesRef}>
+            {!apps.length ? (
+              <div className="entry">
+                <div className="date">
+                  <span className="d">—</span>NO DATA
+                </div>
+                <div className="body">
+                  <h2>还没有投递记录</h2>
+                  <div className="sub">在匹配页点「直接投递」，或在对比池里选中岗位后点「投递」，记录会出现在这里。</div>
+                  <div className="foot">
+                    <a href="#" onClick={(e) => { e.preventDefault(); navigate("/compare"); }}>
+                      去对比池 →
+                    </a>
+                  </div>
                 </div>
               </div>
-            </div>
-          ) : (
-            apps.map((a) => {
-              const p = parts(a.appliedAt);
-              const editing = editingId === a.id;
-              const showQuote = !!a.quote || showQuoteFor === a.id;
-              return (
-                <article className={"entry" + (editing ? " editing" : "")} data-id={a.id} key={a.id}>
-                  <div className="date">
-                    <span className="d">{p.d}</span>
-                    {p.mon} · {p.y}
-                  </div>
-                  <div className="body">
-                    <h2
-                      ref={(el) => (h2Refs.current[a.id] = el)}
-                      contentEditable={editing}
-                      suppressContentEditableWarning
-                    >
-                      {a.co} · {a.title}
-                    </h2>
-
-                    <div className="status-row">
-                      <span className="lb">投递状态</span>
-                      <span className="status-sel">
-                        <select value={a.status} onChange={(e) => handleStatusChange(a.id, e.target.value)}>
-                          {STATUSES.map((s) => (
-                            <option key={s} value={s}>
-                              {s}
-                            </option>
-                          ))}
-                        </select>
-                      </span>
+            ) : (
+              apps.map((a) => {
+                const p = parts(a.appliedAt);
+                const editing = editingId === a.id;
+                const showQuote = !!a.quote || showQuoteFor === a.id;
+                return (
+                  <article className={"entry" + (editing ? " editing" : "")} data-id={a.id} key={a.id}>
+                    <div className="date">
+                      <span className="d">{p.d}</span>
+                      {p.mon} · {p.y}
                     </div>
-
-                    <div className="sub">匹配 {a.m}%</div>
-                    <p ref={(el) => (pRefs.current[a.id] = el)} contentEditable={editing} suppressContentEditableWarning>
-                      {a.body}
-                    </p>
-                    {showQuote && (
-                      <div
-                        className="quote"
-                        ref={(el) => (quoteRefs.current[a.id] = el)}
+                    <div className="body">
+                      <h2
+                        ref={(el) => (h2Refs.current[a.id] = el)}
                         contentEditable={editing}
                         suppressContentEditableWarning
                       >
-                        {a.quote}
+                        {a.co} · {a.title}
+                      </h2>
+
+                      <div className="status-row">
+                        <span className="lb">投递状态</span>
+                        <span className="status-sel">
+                          <select value={a.status} onChange={(e) => handleStatusChange(a.id, e.target.value)}>
+                            {STATUSES.map((s) => (
+                              <option key={s} value={s}>
+                                {s}
+                              </option>
+                            ))}
+                          </select>
+                        </span>
                       </div>
-                    )}
 
-                    <div className="foot">
-                      <a
-                        href={`/match?focus=${encodeURIComponent(a.id)}`}
-                        onClick={(e) => {
-                          e.preventDefault();
-                          navigate("/match?focus=" + encodeURIComponent(a.id));
-                        }}
-                      >
-                        查看匹配
-                      </a>
-                      <button type="button" onClick={() => handleEditToggle(a)}>
-                        {editing ? "完成" : "编辑"}
-                      </button>
+                      <div className="sub">匹配 {a.m}%</div>
+                      <p ref={(el) => (pRefs.current[a.id] = el)} contentEditable={editing} suppressContentEditableWarning>
+                        {a.body}
+                      </p>
+                      {showQuote && (
+                        <div
+                          className="quote"
+                          ref={(el) => (quoteRefs.current[a.id] = el)}
+                          contentEditable={editing}
+                          suppressContentEditableWarning
+                        >
+                          {a.quote}
+                        </div>
+                      )}
+
+                      <div className="foot">
+                        <a
+                          href={`/match?focus=${encodeURIComponent(a.id)}`}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            navigate("/match?focus=" + encodeURIComponent(a.id));
+                          }}
+                        >
+                          查看匹配
+                        </a>
+                        <button type="button" onClick={() => handleEditToggle(a)}>
+                          {editing ? "完成" : "编辑"}
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                </article>
-              );
-            })
-          )}
-        </div>
-
-        <aside className="rail" id="rail">
-          <span className="caption">Timeline</span>
-
-          {rail.map((it, i) => (
-            <div className={"dot" + (it.on ? " on" : "")} data-id={it.id} key={i}>
-              <span className="m">{it.label}</span>
-              <span className="t">{it.t}</span>
-            </div>
-          ))}
-
-          <div className="stats">
-            <div className="r">
-              <span>Active</span>
-              <span>{stats.active}</span>
-            </div>
-            <div className="r">
-              <span>Interview</span>
-              <span>{stats.interview}</span>
-            </div>
-            <div className="r">
-              <span>Offers</span>
-              <span>{stats.offers}</span>
-            </div>
-            <div className="r">
-              <span>Avg match</span>
-              <span>{stats.avg == null ? "—" : stats.avg + "%"}</span>
-            </div>
-            <div className="r">
-              <span>Cycle</span>
-              <span>{stats.cycle == null ? "—" : stats.cycle + "d"}</span>
-            </div>
+                  </article>
+                );
+              })
+            )}
           </div>
-        </aside>
-      </section>
-    </main>
+
+          <aside className="rail" id="rail">
+            <span className="caption">Timeline</span>
+
+            {rail.map((it, i) => (
+              <div className={"dot" + (it.on ? " on" : "")} data-id={it.id} key={i}>
+                <span className="m">{it.label}</span>
+                <span className="t">{it.t}</span>
+              </div>
+            ))}
+
+            <div className="stats">
+              <div className="r">
+                <span>Active</span>
+                <span>{stats.active}</span>
+              </div>
+              <div className="r">
+                <span>Interview</span>
+                <span>{stats.interview}</span>
+              </div>
+              <div className="r">
+                <span>Offers</span>
+                <span>{stats.offers}</span>
+              </div>
+              <div className="r">
+                <span>Avg match</span>
+                <span>{stats.avg == null ? "—" : stats.avg + "%"}</span>
+              </div>
+              <div className="r">
+                <span>Cycle</span>
+                <span>{stats.cycle == null ? "—" : stats.cycle + "d"}</span>
+              </div>
+            </div>
+          </aside>
+        </section>
+      </main>
+    </div>
   );
 }

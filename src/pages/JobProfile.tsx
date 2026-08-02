@@ -400,100 +400,102 @@ export default function JobProfile() {
   }, [navigate]);
 
   return (
-    <div ref={rootRef}>
-      <main className="page">
-        <TopBar />
+    <div className="p-jobprofile">
+      <div ref={rootRef}>
+        <main className="page">
+          <TopBar />
 
-        <section className="layout">
-          <aside className="side">
-            <div className="caption">03 · Job Profile</div>
-            <h1>解析岗位的<br />理想能力花</h1>
-            <p>上传岗位 JD，8 项胜任力维度将生长为这个岗位的理想能力花。花瓣越舒展代表该岗位越看重这项能力；JD 未提及时只开虚线小瓣，不记 0 分。</p>
+          <section className="layout">
+            <aside className="side">
+              <div className="caption">03 · Job Profile</div>
+              <h1>解析岗位的<br />理想能力花</h1>
+              <p>上传岗位 JD，8 项胜任力维度将生长为这个岗位的理想能力花。花瓣越舒展代表该岗位越看重这项能力；JD 未提及时只开虚线小瓣，不记 0 分。</p>
 
-            <div className="steps">
-              <div className="step on" id="s1"><span className="n">01</span> 上传 JD</div>
-              <div className="step" id="s2"><span className="n">02</span> 建立岗位画像</div>
-              <div className="step" id="s3"><span className="n">03</span> 进入匹配</div>
-            </div>
-
-            <div className="actions">
-              <button className="btn ghost" id="backBtn">← 返回</button>
-            </div>
-
-            <div style={{ marginTop: "auto" }}>
-              <div className="caption" style={{ marginBottom: 10 }}>Parser</div>
-              <div className="moon"><i></i><i></i><i></i><i></i><i></i></div>
-            </div>
-          </aside>
-
-          <section className="stage">
-            <div className="stage-head">
-              <span className="caption">Role Ability Flower · 8 competencies</span>
-              <span className="mode" id="stateTag">STATE / EMPTY</span>
-            </div>
-
-            <div className="petal-stage" id="petalStage" data-state="empty">
-              <div className="visual" id="visual">
-                <svg className="flower-svg" id="flowerSvg" viewBox="112 200 506 344">
-                  <g id="backPetals"></g>
-                  <g id="frontPetals"></g>
-                  <g id="stamens"></g>
-                  <g id="stemLeaf"></g>
-                  <g id="notes"></g>
-                </svg>
-
-                <div className="rcard" id="rcard">
-                  <div className="rname" id="rName">jd.png</div>
-                  <div className="rtag">[R]</div>
-                  <div className="lines" id="rLines"></div>
-                  <div className="rmeta"><span id="rMeta">PNG · 480 KB</span><span>JD</span></div>
-
-                  <div className="scan"></div>
-                </div>
-
-                <div className="tip" id="tip">
-                  <h5><span id="tipName"></span><b id="tipScore"></b></h5>
-                  <div className="row"><div className="k">Evidence</div><div className="v" id="tipEvi"></div></div>
-                  <div className="row"><div className="k">Why this score</div><div className="v" id="tipWhy"></div></div>
-                  <div className="row"><div className="k">Action</div><div className="v" id="tipAct"></div></div>
-                </div>
+              <div className="steps">
+                <div className="step on" id="s1"><span className="n">01</span> 上传 JD</div>
+                <div className="step" id="s2"><span className="n">02</span> 建立岗位画像</div>
+                <div className="step" id="s3"><span className="n">03</span> 进入匹配</div>
               </div>
 
-              <div className="state-line" id="stateLine">LET YOUR FLOWER BLOOM</div>
-
-              <div className="stage-actions">
-                <div className="btnrow">
-                  <button className="btn ghost" id="redoBtn" hidden>重新建立岗位画像</button>
-                  <button className="btn" id="mainBtn">上传简历</button>
-                </div>
-                <span className="hintline" id="hintLine">click or drag · PDF / Word / Image</span>
-                <input id="cvFile" type="file" accept=".pdf,.doc,.docx,image/*" hidden />
+              <div className="actions">
+                <button className="btn ghost" id="backBtn">← 返回</button>
               </div>
 
-              <div className="legend" id="legend"></div>
-            </div>
+              <div style={{ marginTop: "auto" }}>
+                <div className="caption" style={{ marginBottom: 10 }}>Parser</div>
+                <div className="moon"><i></i><i></i><i></i><i></i><i></i></div>
+              </div>
+            </aside>
+
+            <section className="stage">
+              <div className="stage-head">
+                <span className="caption">Role Ability Flower · 8 competencies</span>
+                <span className="mode" id="stateTag">STATE / EMPTY</span>
+              </div>
+
+              <div className="petal-stage" id="petalStage" data-state="empty">
+                <div className="visual" id="visual">
+                  <svg className="flower-svg" id="flowerSvg" viewBox="112 200 506 344">
+                    <g id="backPetals"></g>
+                    <g id="frontPetals"></g>
+                    <g id="stamens"></g>
+                    <g id="stemLeaf"></g>
+                    <g id="notes"></g>
+                  </svg>
+
+                  <div className="rcard" id="rcard">
+                    <div className="rname" id="rName">jd.png</div>
+                    <div className="rtag">[R]</div>
+                    <div className="lines" id="rLines"></div>
+                    <div className="rmeta"><span id="rMeta">PNG · 480 KB</span><span>JD</span></div>
+
+                    <div className="scan"></div>
+                  </div>
+
+                  <div className="tip" id="tip">
+                    <h5><span id="tipName"></span><b id="tipScore"></b></h5>
+                    <div className="row"><div className="k">Evidence</div><div className="v" id="tipEvi"></div></div>
+                    <div className="row"><div className="k">Why this score</div><div className="v" id="tipWhy"></div></div>
+                    <div className="row"><div className="k">Action</div><div className="v" id="tipAct"></div></div>
+                  </div>
+                </div>
+
+                <div className="state-line" id="stateLine">LET YOUR FLOWER BLOOM</div>
+
+                <div className="stage-actions">
+                  <div className="btnrow">
+                    <button className="btn ghost" id="redoBtn" hidden>重新建立岗位画像</button>
+                    <button className="btn" id="mainBtn">上传简历</button>
+                  </div>
+                  <span className="hintline" id="hintLine">click or drag · PDF / Word / Image</span>
+                  <input id="cvFile" type="file" accept=".pdf,.doc,.docx,image/*" hidden />
+                </div>
+
+                <div className="legend" id="legend"></div>
+              </div>
+            </section>
           </section>
-        </section>
-      </main>
+        </main>
 
-      <div className="mask" id="mask">
-        <div className="dlg">
-          <h5 id="dlgTitle">Discard profile?</h5>
-          <p id="dlgBody">返回将清空当前简历与已生成的能力花，是否继续？</p>
-          <div className="row">
-            <button className="btn ghost" id="dlgCancel">取消</button>
-            <button className="btn" id="dlgOk">确认返回</button>
+        <div className="mask" id="mask">
+          <div className="dlg">
+            <h5 id="dlgTitle">Discard profile?</h5>
+            <p id="dlgBody">返回将清空当前简历与已生成的能力花，是否继续？</p>
+            <div className="row">
+              <button className="btn ghost" id="dlgCancel">取消</button>
+              <button className="btn" id="dlgOk">确认返回</button>
+            </div>
           </div>
         </div>
-      </div>
 
-      <div className="merge" id="merge">
-        <div className="arena">
-          <div className="mine" id="mergeMine"></div>
-          <div className="role" id="mergeRole"></div>
+        <div className="merge" id="merge">
+          <div className="arena">
+            <div className="mine" id="mergeMine"></div>
+            <div className="role" id="mergeRole"></div>
+          </div>
+          <div className="caps"><span className="cap">Your flower</span><span className="cap">Role flower</span></div>
+          <div className="cap" id="mergeCap">Overlaying two flowers · computing fit</div>
         </div>
-        <div className="caps"><span className="cap">Your flower</span><span className="cap">Role flower</span></div>
-        <div className="cap" id="mergeCap">Overlaying two flowers · computing fit</div>
       </div>
     </div>
   );
