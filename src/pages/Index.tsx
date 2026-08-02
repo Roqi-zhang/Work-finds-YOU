@@ -15,6 +15,8 @@ const PAGES = [
 
 const Index = () => {
   const [active, setActive] = useState(PAGES[0]);
+  const { user, signOut } = useAuth();
+
 
   return (
     <div style={{ height: "100vh", display: "flex", flexDirection: "column", background: "#F1F1F1", fontFamily: "Inter, sans-serif" }}>
