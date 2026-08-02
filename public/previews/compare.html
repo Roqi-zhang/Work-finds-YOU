@@ -174,6 +174,21 @@
     { r: 290, a: 220,  title: "Senior Web",       co: "Cloudflare",loc: "Remote",      m: 64, s: "$180K–220K", yes: "Edge platform",   no: "Legacy code" },
   ];
 
+  // ---- merge locally added jobs (from match.html「加入对比」) ----
+  (function () {
+    let pool = [];
+    try { pool = JSON.parse(localStorage.getItem("wfy.pool") || "[]"); } catch (e) { pool = []; }
+    pool.forEach((p, n) => {
+      if (jobs.some((j) => j.co === p.co && j.title === p.title)) return;
+      jobs.push({
+        r: 290, a: 280 + n * 24, title: p.title, co: p.co, loc: p.loc || "—",
+        m: p.m || 0, s: p.s || "—", yes: p.yes || "刚加入对比", no: p.no || "—",
+      });
+    });
+  })();
+
+
+
   const nodes = document.getElementById("nodes");
   const line = document.getElementById("line");
   const detail = {
