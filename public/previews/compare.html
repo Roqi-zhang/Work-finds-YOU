@@ -244,9 +244,18 @@
     detail.yes.textContent = j.yes;
     detail.no.textContent = j.no;
   }
-  // activate first
-  const first = jobs[0];
-  activate(0, Math.cos(first.a * Math.PI/180) * first.r, Math.sin(first.a * Math.PI/180) * first.r);
+  // activate the job just added from the match page, otherwise the first one
+  const focus = localStorage.getItem("wfy.focus");
+  let start = 0;
+  if (focus) {
+    const slug = (j) => (j.co + "-" + j.title).toLowerCase().replace(/\s+/g, "-");
+    const k = jobs.findIndex((j) => slug(j) === focus);
+    if (k >= 0) start = k;
+    localStorage.removeItem("wfy.focus");
+  }
+  const first = jobs[start];
+  activate(start, Math.cos(first.a * Math.PI/180) * first.r, Math.sin(first.a * Math.PI/180) * first.r);
+
 </script>
 </body>
 </html>
