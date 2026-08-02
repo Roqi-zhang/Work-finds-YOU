@@ -1,4 +1,7 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
+
 
 const PAGES = [
   { key: "index", label: "总览", src: "/previews/index.html" },
