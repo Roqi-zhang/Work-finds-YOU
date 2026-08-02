@@ -46,5 +46,10 @@
 
 ## 技术说明
 
-- 改动文件：`src/pages/Match.tsx`（空状态包裹 + 重设计）、`src/styles/pages/match.css`（空状态与窄屏样式）、`src/pages/JobProfile.tsx`（解析后落库并带 id 跳转）、`src/pages/Delivery.tsx`（时间轴点亮规则）。
-- 不改任何页面的既有布局、跳转入口和数据结构，`wfy.ts` 仅使用现有的 `putJob` / `addToPool`。
+- 改动文件：`src/pages/Match.tsx`（空状态包裹 + 重设计 + 岗位回退顺序）、`src/styles/pages/match.css`（空状态与窄屏样式）、`src/pages/JobProfile.tsx`（解析后仅落库并带 id 跳转）、`src/pages/Delivery.tsx`（时间轴点亮规则）。
+- 不改任何页面的既有布局与跳转入口，`wfy.ts` 仅使用现有的 `putJob` / `addToPool` / `applyToJob`；「加入对比」「直接投递」仍是唯一的入池、入投递入口。
+
+## 二期计划（本次不做）
+
+- 已进入投递管理的岗位重新回到对比池（需要处理状态回退、重复记录合并与时间轴事件语义）。
+
