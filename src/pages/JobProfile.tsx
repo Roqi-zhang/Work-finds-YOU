@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import TopBar from "@/components/swiss/TopBar";
-import { getUI, setUI } from "@/lib/wfy";
+import { getUI, setUI, putJob, slugId } from "@/lib/wfy";
 import "@/styles/pages/jobprofile.css";
 
 export default function JobProfile() {
@@ -328,6 +328,14 @@ export default function JobProfile() {
     const onMain = () => {
       if (state === "empty") { input.click(); return; }
       if (state === "bloomed") {
+        const fileName = rName.textContent || "jd.pdf";
+        const base = fileName.replace(/\.[^.]+$/, "").replace(/[-_]/g, " ");
+        const title = base || "Uploaded Role";
+        const co = "Custom JD";
+        const jobId = slugId(co, title);
+        putJob({ id: jobId, title, co, loc: "Remote", m: 75, s: "待确认", yes: "JD 匹配", no: "待确认" });
+        setUI("match", { jobId });
+
         const svg = root!.querySelector("#flowerSvg") as SVGSVGElement;
         const m = root!.querySelector("#merge") as HTMLElement;
         (root!.querySelector("#mergeMine") as HTMLElement).innerHTML = svg.outerHTML;
@@ -335,7 +343,7 @@ export default function JobProfile() {
         m.classList.add("on");
         requestAnimationFrame(() => setTimeout(() => m.classList.add("go"), 60));
         mergeTimers.push(setTimeout(() => { (root!.querySelector("#mergeCap") as HTMLElement).textContent = "Match computed · entering"; }, 1250));
-        mergeTimers.push(setTimeout(() => { navigate("/match"); }, 1900));
+        mergeTimers.push(setTimeout(() => { navigate("/match?job=" + encodeURIComponent(jobId)); }, 1900));
         return;
       }
       if (state !== "ready") return;
