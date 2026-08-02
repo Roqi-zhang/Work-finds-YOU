@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=1280" />
-<title>02 Profile · Ability Flower · A</title>
+<title>03 Job Profile · Role Ability Flower · A</title>
 <link rel="stylesheet" href="./_shared.css" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -52,7 +52,7 @@
   /* --sd (0..1) = score depth → stroke darkness + weight */
   .petal { fill: var(--paper); stroke: var(--ink-strong); stroke-width: calc(0.55px + var(--sd, .5) * 1.05px);
            stroke-linejoin: round; stroke-linecap: round;
-           opacity: calc(0.10 + var(--sd, 0.5) * 0.75);
+           opacity: calc(.22 + var(--sd, .5) * .78);
            transition: stroke .3s var(--ease), stroke-width .3s var(--ease), opacity .4s var(--ease); cursor: pointer; }
   .petal-g.weak .petal { stroke-dasharray: 4 5; }
   .petal-g:hover .petal { stroke: var(--ink-strong); stroke-width: 1.6; opacity: 1; }
@@ -144,6 +144,23 @@
   .legend .p .str { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 9.5px; letter-spacing: .12em; opacity: .5; }
   .legend .g.fade { animation: fadeUp .5s var(--ease) both; }
   @keyframes fadeUp { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
+
+  /* ---------- merge transition overlay ---------- */
+  .merge { position: fixed; inset: 0; background: var(--paper); z-index: 80; display: none;
+           align-items: center; justify-content: center; flex-direction: column; gap: 26px; }
+  .merge.on { display: flex; animation: fadeIn .35s var(--ease); }
+  .merge .arena { position: relative; width: 660px; height: 380px; }
+  .merge .arena > div { position: absolute; top: 0; width: 340px; height: 380px;
+                        transition: transform 1.15s cubic-bezier(.7,0,.2,1), opacity 1.15s var(--ease); }
+  .merge .arena > div svg { width: 100%; height: 100%; opacity: 1 !important; transform: none !important; animation: none !important; }
+  .merge .arena .petal { animation: none !important; stroke-dasharray: none; }
+  .merge .mine { left: 0; transform: translateX(0) scale(.92); }
+  .merge .role { right: 0; transform: translateX(0) scale(.92); }
+  .merge.go .mine { transform: translateX(160px) scale(1.02); opacity: .75; }
+  .merge.go .role { transform: translateX(-160px) scale(1.02); opacity: .75; }
+  .merge .cap { font-size: 11px; letter-spacing: .26em; text-transform: uppercase; opacity: .55; }
+  .merge .caps { display: flex; gap: 60px; }
+  @keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
 </style>
 </head>
 <body>
@@ -152,27 +169,27 @@
     <div class="logo">Work Finds You / 工作找你</div>
     <nav>
       <a href="./home.html">01 Home</a>
-      <a href="./profile.html" class="on">02 Profile</a>
-      <a href="./jobprofile.html">03 Job</a>
+      <a href="./profile.html">02 Profile</a>
+      <a href="./jobprofile.html" class="on">03 Job</a>
       <a href="./match.html">04 Match</a>
       <a href="./compare.html">05 Compare</a>
       <a href="./delivery.html">06 Delivery</a>
     </nav>
     <div class="right">
-      <span class="caption">Step 01 / 03</span>
+      <span class="caption">Step 02 / 03</span>
       <button class="theme-toggle"></button>
     </div>
   </header>
 
   <section class="layout">
     <aside class="side">
-      <div class="caption">02 · Candidate Profile</div>
-      <h1>创建属于你的<br/>能力花</h1>
-      <p>上传简历，8 项胜任力维度将生长为这朵花的花瓣。花瓣越舒展代表该能力越突出；证据不足时只开虚线小瓣，不记 0 分。</p>
+      <div class="caption">03 · Job Profile</div>
+      <h1>解析岗位的<br/>理想能力花</h1>
+      <p>上传岗位 JD，8 项胜任力维度将生长为这个岗位的理想能力花。花瓣越舒展代表该岗位越看重这项能力；JD 未提及时只开虚线小瓣，不记 0 分。</p>
 
       <div class="steps">
-        <div class="step on" id="s1"><span class="n">01</span> 上传简历</div>
-        <div class="step" id="s2"><span class="n">02</span> 建立画像</div>
+        <div class="step on" id="s1"><span class="n">01</span> 上传 JD</div>
+        <div class="step" id="s2"><span class="n">02</span> 建立岗位画像</div>
         <div class="step" id="s3"><span class="n">03</span> 进入匹配</div>
       </div>
 
@@ -188,7 +205,7 @@
 
     <section class="stage">
       <div class="stage-head">
-        <span class="caption">Ability Flower · 8 competencies</span>
+        <span class="caption">Role Ability Flower · 8 competencies</span>
         <span class="mode" id="stateTag">STATE / EMPTY</span>
       </div>
 
@@ -203,10 +220,10 @@
           </svg>
 
           <div class="rcard" id="rcard">
-            <div class="rname" id="rName">resume.pdf</div>
+            <div class="rname" id="rName">jd.png</div>
             <div class="rtag">[R]</div>
             <div class="lines" id="rLines"></div>
-            <div class="rmeta"><span id="rMeta">PDF · 1.2 MB</span><span>CV</span></div>
+            <div class="rmeta"><span id="rMeta">PNG · 480 KB</span><span>JD</span></div>
             
             <div class="scan"></div>
           </div>
@@ -223,7 +240,7 @@
 
         <div class="stage-actions">
           <div class="btnrow">
-            <button class="btn ghost" id="redoBtn" hidden>重新建立画像</button>
+            <button class="btn ghost" id="redoBtn" hidden>重新建立岗位画像</button>
             <button class="btn" id="mainBtn">上传简历</button>
           </div>
           <span class="hintline" id="hintLine">click or drag · PDF / Word / Image</span>
@@ -245,6 +262,15 @@
       <button class="btn" id="dlgOk">确认返回</button>
     </div>
   </div>
+</div>
+
+<div class="merge" id="merge">
+  <div class="arena">
+    <div class="mine" id="mergeMine"></div>
+    <div class="role" id="mergeRole"></div>
+  </div>
+  <div class="caps"><span class="cap">Your flower</span><span class="cap">Role flower</span></div>
+  <div class="cap" id="mergeCap">Overlaying two flowers · computing fit</div>
 </div>
 
 <a class="preview-crumb" href="./index.html">← Previews</a>
@@ -384,10 +410,6 @@
         const len = r.p.getTotalLength();
         r.p.style.setProperty("--len", len);
         r.p.style.animationDelay = r.delay + "s";
-      } else {
-        // clear any leftover draw-animation state so the placeholder flower is complete
-        r.p.style.removeProperty("--len");
-        r.p.style.removeProperty("animation-delay");
       }
     });
     if (animate) {
@@ -395,13 +417,7 @@
         p.style.setProperty("--len", p.getTotalLength());
         p.style.animationDelay = (0.9 + i * 0.2) + "s";
       });
-    } else {
-      stemRoot.querySelectorAll("path").forEach((p) => {
-        p.style.removeProperty("--len");
-        p.style.removeProperty("animation-delay");
-      });
     }
-
     notesRoot.innerHTML = "";
   }
   paint(DIMS.map((_, i) => ({ score: 2.5, seed: i })), false);
@@ -442,11 +458,6 @@
     const accept = /\.(pdf|docx?|png|jpe?g|webp|gif|bmp|heic|tiff?)$/i;
     let state = "empty";
 
-    // ---- state persistence (survives top-nav page switches) ----
-    const SKEY = "wfy.state.profile";
-    function loadStore() { try { return JSON.parse(localStorage.getItem(SKEY) || "null"); } catch (e) { return null; } }
-    function saveStore(v) { if (v) localStorage.setItem(SKEY, JSON.stringify(v)); else localStorage.removeItem(SKEY); }
-
     // filler text lines inside the resume card
     rLines.innerHTML = Array.from({ length: 14 }, (_, i) =>
       `<i style="width:${[100, 92, 78, 96, 64, 88, 100, 72, 90, 58, 96, 84, 70, 92][i]}%"></i>`).join("");
@@ -455,10 +466,10 @@
       state = next;
       stageEl.dataset.state = next;
       const map = {
-        empty:     ["STATE / EMPTY", "Let your flower bloom", "上传简历", "click or drag · PDF / Word / Image"],
-        ready:     ["STATE / READY", "RESUME READY · WAITING TO BLOOM", "建立画像", ""],
+        empty:     ["STATE / EMPTY", "Let your flower bloom", "上传 JD", "click or drag · PDF / Word / Image"],
+        ready:     ["STATE / READY", "JD READY · WAITING TO BLOOM", "建立岗位画像", ""],
         analysing: ["STATE / LOADING", "ANALYSING…", "分析中", "PARSING · EXTRACTING · SCORING"],
-        bloomed:   ["STATE / SUCCESS · 1 LOW-CONFIDENCE", "YOUR FLOWER HAS BLOOMED", "下一步 →", "hover 花瓣查看证据与得分理由"],
+        bloomed:   ["STATE / SUCCESS · 1 LOW-CONFIDENCE", "THE ROLE FLOWER HAS BLOOMED", "进入匹配 →", "hover 花瓣查看岗位要求与权重理由"],
       }[next];
       stateTag.textContent = map[0];
       stateLine.textContent = map[1];
@@ -482,7 +493,6 @@
         (kb > 1024 ? (kb / 1024).toFixed(1) + " MB" : Math.round(kb) + " KB");
       legend.innerHTML = "";
       setState("ready");
-      saveStore({ state: "ready", name: rName.textContent, meta: rMeta.textContent });
     }
 
     input.addEventListener("change", (e) => handle(e.target.files && e.target.files[0]));
@@ -509,7 +519,6 @@
       input.value = "";
       paint(DIMS.map((_, i) => ({ score: 2.5, seed: i })), false);
       setState("empty");
-      saveStore(null);
     }
 
     // ---- confirm dialog ----
@@ -526,12 +535,12 @@
 
     backBtn.addEventListener("click", () => {
       if (state === "bloomed" || state === "analysing") {
-        confirmDialog("Discard profile?", "返回将清空当前简历与已生成的能力花，是否继续？", "确认返回", () => history.back());
+        confirmDialog("Discard job profile?", "返回将清空当前 JD 与已生成的岗位能力花，是否继续？", "确认返回", () => history.back());
       } else history.back();
     });
 
     redoBtn.addEventListener("click", () => {
-      confirmDialog("Rebuild profile?", "重新建立画像将清空当前结果，需要重新上传简历，是否继续？", "确认重建", () => {
+      confirmDialog("Rebuild job profile?", "重新建立岗位画像将清空当前结果，需要重新上传 JD，是否继续？", "确认重建", () => {
         reset();
         input.click();
       });
@@ -539,7 +548,17 @@
 
     mainBtn.addEventListener("click", () => {
       if (state === "empty") { input.click(); return; }
-      if (state === "bloomed") { location.href = "./jobprofile.html"; return; }
+      if (state === "bloomed") {
+        const svg = document.getElementById("flowerSvg");
+        const m = document.getElementById("merge");
+        document.getElementById("mergeMine").innerHTML = svg.outerHTML;
+        document.getElementById("mergeRole").innerHTML = svg.outerHTML;
+        m.classList.add("on");
+        requestAnimationFrame(() => setTimeout(() => m.classList.add("go"), 60));
+        setTimeout(() => { document.getElementById("mergeCap").textContent = "Match computed · entering"; }, 1250);
+        setTimeout(() => { location.href = "./match.html"; }, 1900);
+        return;
+      }
       if (state !== "ready") return;
 
       setState("analysing");
@@ -559,7 +578,6 @@
         setState("bloomed");
         stageEl.classList.add("bloomed");
         renderPetalAnalysis(result);
-        saveStore({ state: "bloomed", name: rName.textContent, meta: rMeta.textContent, result: result });
       }, 2600);
     });
 
@@ -595,22 +613,7 @@
       });
     }
 
-    // ---- restore the previous state of this page, if any ----
-    (function restore() {
-      const saved = loadStore();
-      if (!saved) { setState("empty"); return; }
-      if (saved.name) { rName.textContent = saved.name; rMeta.textContent = saved.meta || ""; }
-      if (saved.state === "bloomed" && saved.result) {
-        paint(saved.result, false);
-        stageEl.classList.add("bloomed");
-        setState("bloomed");
-        renderPetalAnalysis(saved.result);
-      } else if (saved.state === "ready") {
-        setState("ready");
-      } else {
-        setState("empty");
-      }
-    })();
+    setState("empty");
   })();
 </script>
 </body>

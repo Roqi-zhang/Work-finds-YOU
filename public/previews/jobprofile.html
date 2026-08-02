@@ -410,12 +410,21 @@
         const len = r.p.getTotalLength();
         r.p.style.setProperty("--len", len);
         r.p.style.animationDelay = r.delay + "s";
+      } else {
+        // clear leftover draw-animation state so the placeholder flower is complete
+        r.p.style.removeProperty("--len");
+        r.p.style.removeProperty("animation-delay");
       }
     });
     if (animate) {
       stemRoot.querySelectorAll("path").forEach((p, i) => {
         p.style.setProperty("--len", p.getTotalLength());
         p.style.animationDelay = (0.9 + i * 0.2) + "s";
+      });
+    } else {
+      stemRoot.querySelectorAll("path").forEach((p) => {
+        p.style.removeProperty("--len");
+        p.style.removeProperty("animation-delay");
       });
     }
     notesRoot.innerHTML = "";
@@ -458,6 +467,11 @@
     const accept = /\.(pdf|docx?|png|jpe?g|webp|gif|bmp|heic|tiff?)$/i;
     let state = "empty";
 
+    // ---- state persistence (survives top-nav page switches) ----
+    const SKEY = "wfy.state.jobprofile";
+    function loadStore() { try { return JSON.parse(localStorage.getItem(SKEY) || "null"); } catch (e) { return null; } }
+    function saveStore(v) { if (v) localStorage.setItem(SKEY, JSON.stringify(v)); else localStorage.removeItem(SKEY); }
+
     // filler text lines inside the resume card
     rLines.innerHTML = Array.from({ length: 14 }, (_, i) =>
       `<i style="width:${[100, 92, 78, 96, 64, 88, 100, 72, 90, 58, 96, 84, 70, 92][i]}%"></i>`).join("");
@@ -493,6 +507,7 @@
         (kb > 1024 ? (kb / 1024).toFixed(1) + " MB" : Math.round(kb) + " KB");
       legend.innerHTML = "";
       setState("ready");
+      saveStore({ state: "ready", name: rName.textContent, meta: rMeta.textContent });
     }
 
     input.addEventListener("change", (e) => handle(e.target.files && e.target.files[0]));
@@ -519,6 +534,7 @@
       input.value = "";
       paint(DIMS.map((_, i) => ({ score: 2.5, seed: i })), false);
       setState("empty");
+      saveStore(null);
     }
 
     // ---- confirm dialog ----
@@ -578,6 +594,7 @@
         setState("bloomed");
         stageEl.classList.add("bloomed");
         renderPetalAnalysis(result);
+        saveStore({ state: "bloomed", name: rName.textContent, meta: rMeta.textContent, result: result });
       }, 2600);
     });
 
@@ -613,7 +630,22 @@
       });
     }
 
-    setState("empty");
+    // ---- restore the previous state of this page, if any ----
+    (function restore() {
+      const saved = loadStore();
+      if (!saved) { setState("empty"); return; }
+      if (saved.name) { rName.textContent = saved.name; rMeta.textContent = saved.meta || ""; }
+      if (saved.state === "bloomed" && saved.result) {
+        paint(saved.result, false);
+        stageEl.classList.add("bloomed");
+        setState("bloomed");
+        renderPetalAnalysis(saved.result);
+      } else if (saved.state === "ready") {
+        setState("ready");
+      } else {
+        setState("empty");
+      }
+    })();
   })();
 </script>
 </body>

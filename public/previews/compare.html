@@ -61,6 +61,17 @@
   .controls .grp button { opacity: .5; transition: opacity .3s var(--ease); position: relative; padding: 4px 0; }
   .controls .grp button.on, .controls .grp button:hover { opacity: 1; color: var(--ink-strong); }
   .controls .grp button.on::after { content:""; position: absolute; left:0; right:0; bottom: -4px; height: 0.5px; background: var(--ink-strong); }
+
+  /* ---------- confirm dialog (same as profile) ---------- */
+  .mask { position: fixed; inset: 0; background: color-mix(in srgb, var(--paper) 72%, transparent);
+          backdrop-filter: blur(6px); display: none; align-items: center; justify-content: center; z-index: 60; }
+  .mask.on { display: flex; }
+  .dlg { width: 420px; background: var(--paper); border: 0.5px solid var(--ink); padding: 30px 30px 24px; }
+  .dlg h5 { font-size: 11px; letter-spacing: .24em; text-transform: uppercase; color: var(--ink-strong); }
+  .dlg p { font-size: 13px; line-height: 1.7; opacity: .8; margin-top: 14px; }
+  .dlg .row { display: flex; justify-content: flex-end; gap: 12px; margin-top: 28px; }
+  .dlg .btn { padding: 10px 20px; }
+  .btn:disabled { opacity: .35; pointer-events: none; }
 </style>
 </head>
 <body>
@@ -124,8 +135,8 @@
       <div class="row"><span>Why Yes</span><span id="d-yes">Craft · Product</span></div>
       <div class="row"><span>Why No</span><span id="d-no">Team &gt; 60</span></div>
       <div class="actions">
-        <a class="btn" href="./match.html">查看匹配 →</a>
-        <button class="btn ghost">移出对比</button>
+        <button class="btn" id="applyBtn" type="button">投递 →</button>
+        <button class="btn ghost" id="removeBtn" type="button">移出对比</button>
       </div>
 
       <div style="margin-top:auto; padding-top:16px; border-top: 0.5px solid var(--line);">
@@ -156,40 +167,49 @@
     </div>
   </div>
 </main>
+<div class="mask" id="mask">
+  <div class="dlg">
+    <h5 id="dlgTitle">Remove from pool?</h5>
+    <p id="dlgBody">该岗位将从对比池中移出，是否继续？</p>
+    <div class="row">
+      <button class="btn ghost" id="dlgCancel">取消</button>
+      <button class="btn" id="dlgOk">确认移出</button>
+    </div>
+  </div>
+</div>
 <a class="preview-crumb" href="./index.html">← Previews</a>
 
 <script>
-  const jobs = [
-    { r: 140, a: -30,  title: "Senior Frontend",  co: "Stripe",   loc: "Remote / SF",  m: 78, s: "$180K–220K", yes: "Craft · Product", no: "Team > 60" },
-    { r: 140, a: 90,   title: "Design Engineer",  co: "Linear",   loc: "Remote",       m: 84, s: "$170K–210K", yes: "Craft · Speed",   no: "Small team OK" },
-    { r: 140, a: 210,  title: "Web Platform",     co: "Vercel",   loc: "Hybrid NYC",   m: 72, s: "$160K–200K", yes: "Perf",            no: "Hybrid required" },
-    { r: 220, a: 20,   title: "Staff FE",         co: "Notion",   loc: "Remote",       m: 68, s: "$210K–260K", yes: "Editor systems",  no: "Long tenure need" },
-    { r: 220, a: 80,   title: "Frontend Lead",    co: "Figma",    loc: "SF",           m: 74, s: "$220K–270K", yes: "Design tools",    no: "Onsite" },
-    { r: 220, a: 160,  title: "UI Systems",       co: "Retool",   loc: "Remote",       m: 66, s: "$150K–190K", yes: "Design system",   no: "B2B focus" },
-    { r: 220, a: 240,  title: "Product Eng",      co: "Raycast",  loc: "Remote EU",    m: 81, s: "€120K–160K", yes: "Product craft",   no: "Time zone" },
-    { r: 220, a: 320,  title: "FE / DX",          co: "Warp",     loc: "SF",           m: 63, s: "$170K–210K", yes: "DX focus",        no: "Onsite" },
-    { r: 290, a: 0,    title: "Frontend Arch",    co: "Databricks",loc: "Remote",      m: 59, s: "$230K–290K", yes: "Data UI",         no: "Enterprise" },
-    { r: 290, a: 60,   title: "Web Eng",          co: "OpenAI",   loc: "SF",           m: 71, s: "$220K–260K", yes: "Cutting edge",    no: "Onsite" },
-    { r: 290, a: 140,  title: "UI Engineer",      co: "Anthropic",loc: "Remote",       m: 76, s: "$210K–250K", yes: "Research UI",     no: "Sec review" },
-    { r: 290, a: 220,  title: "Senior Web",       co: "Cloudflare",loc: "Remote",      m: 64, s: "$180K–220K", yes: "Edge platform",   no: "Legacy code" },
-  ];
+  // ---- data layer (swap these two fns for the real API later) ----
+  const readStore = (k, d) => { try { return JSON.parse(localStorage.getItem(k) || d); } catch (e) { return JSON.parse(d); } };
+  const writeStore = (k, v) => localStorage.setItem(k, JSON.stringify(v));
+  const slug = (j) => (j.co + "-" + j.title).toLowerCase().replace(/\s+/g, "-");
 
-  // ---- merge locally added jobs (from match.html「加入对比」) ----
-  (function () {
-    let pool = [];
-    try { pool = JSON.parse(localStorage.getItem("wfy.pool") || "[]"); } catch (e) { pool = []; }
-    pool.forEach((p, n) => {
-      if (jobs.some((j) => j.co === p.co && j.title === p.title)) return;
-      jobs.push({
-        r: 290, a: 280 + n * 24, title: p.title, co: p.co, loc: p.loc || "—",
-        m: p.m || 0, s: p.s || "—", yes: p.yes || "刚加入对比", no: p.no || "—",
-      });
-    });
-  })();
+  const SEED = [
+    { title: "Senior Frontend",  co: "Stripe",    loc: "Remote / SF",  m: 78, s: "$180K–220K", yes: "Craft · Product", no: "Team > 60" },
+    { title: "Design Engineer",  co: "Linear",    loc: "Remote",       m: 84, s: "$170K–210K", yes: "Craft · Speed",   no: "Small team OK" },
+    { title: "Web Platform",     co: "Vercel",    loc: "Hybrid NYC",   m: 72, s: "$160K–200K", yes: "Perf",            no: "Hybrid required" },
+    { title: "Staff FE",         co: "Notion",    loc: "Remote",       m: 68, s: "$210K–260K", yes: "Editor systems",  no: "Long tenure need" },
+    { title: "Frontend Lead",    co: "Figma",     loc: "SF",           m: 88, s: "$220K–270K", yes: "Design tools",    no: "Onsite" },
+    { title: "UI Systems",       co: "Retool",    loc: "Remote",       m: 66, s: "$150K–190K", yes: "Design system",   no: "B2B focus" },
+    { title: "Product Eng",      co: "Raycast",   loc: "Remote EU",    m: 81, s: "€120K–160K", yes: "Product craft",   no: "Time zone" },
+    { title: "FE / DX",          co: "Warp",      loc: "SF",           m: 63, s: "$170K–210K", yes: "DX focus",        no: "Onsite" },
+    { title: "Frontend Arch",    co: "Databricks",loc: "Remote",       m: 59, s: "$230K–290K", yes: "Data UI",         no: "Enterprise" },
+    { title: "Web Eng",          co: "OpenAI",    loc: "SF",           m: 91, s: "$220K–260K", yes: "Cutting edge",    no: "Onsite" },
+    { title: "UI Engineer",      co: "Anthropic", loc: "Remote",       m: 76, s: "$210K–250K", yes: "Research UI",     no: "Sec review" },
+    { title: "Senior Web",       co: "Cloudflare",loc: "Remote",       m: 64, s: "$180K–220K", yes: "Edge platform",   no: "Legacy code" },
+  ].map((j) => Object.assign({ id: slug(j) }, j));
 
+  function loadJobs() {
+    const removed = readStore("wfy.poolRemoved", "[]");
+    const added = readStore("wfy.pool", "[]").map((j) => Object.assign({ id: j.id || slug(j) }, j));
+    const all = SEED.concat(added.filter((a) => !SEED.some((j) => j.id === a.id)));
+    return all.filter((j) => removed.indexOf(j.id) < 0);
+  }
 
+  let jobs = loadJobs();
 
-  const nodes = document.getElementById("nodes");
+  const nodesEl = document.getElementById("nodes");
   const line = document.getElementById("line");
   const detail = {
     title: document.getElementById("d-title"),
@@ -201,41 +221,68 @@
     no: document.getElementById("d-no"),
     k: document.querySelector("#detail .k"),
   };
+  const applyBtn = document.getElementById("applyBtn");
+  const removeBtn = document.getElementById("removeBtn");
+  let selectedId = localStorage.getItem("wfy.state.compare") || null;
 
-  jobs.forEach((j, i) => {
+  // ---- ring by match score: >=85 inner, 70-85 middle, <70 outer ----
+  const RINGS = [140, 220, 290];
+  function ringOf(m) { return m >= 85 ? 0 : (m >= 70 ? 1 : 2); }
+
+  function layout() {
+    const buckets = [[], [], []];
+    jobs.forEach((j) => buckets[ringOf(j.m)].push(j));
+    buckets.forEach((list, ri) => {
+      list.sort((a, b) => b.m - a.m);
+      const n = list.length;
+      list.forEach((j, i) => {
+        j.r = RINGS[ri];
+        j.a = n ? (-90 + (360 / n) * i) : 0;
+      });
+    });
+  }
+
+  function pos(j) {
     const rad = (j.a * Math.PI) / 180;
-    const x = Math.cos(rad) * j.r;
-    const y = Math.sin(rad) * j.r;
-    const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
-    g.setAttribute("transform", `translate(${x} ${y})`);
-    const c = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-    c.setAttribute("class", "node" + (i === 0 ? " active" : ""));
-    c.setAttribute("r", "8");
-    c.dataset.i = i;
-    c.dataset.x = x;
-    c.dataset.y = y;
-    g.appendChild(c);
-    const t = document.createElementNS("http://www.w3.org/2000/svg", "text");
-    t.setAttribute("class", "node-label");
-    t.setAttribute("x", "14");
-    t.setAttribute("y", "4");
-    t.textContent = j.co.toUpperCase();
-    g.appendChild(t);
-    nodes.appendChild(g);
+    return { x: Math.cos(rad) * j.r, y: Math.sin(rad) * j.r };
+  }
 
-    c.addEventListener("mouseenter", () => activate(i, x, y));
-    c.addEventListener("click", () => activate(i, x, y));
-  });
+  function render() {
+    layout();
+    nodesEl.innerHTML = "";
+    jobs.forEach((j) => {
+      const { x, y } = pos(j);
+      const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+      g.setAttribute("transform", `translate(${x} ${y})`);
+      const c = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+      c.setAttribute("class", "node" + (j.id === selectedId ? " active" : ""));
+      c.setAttribute("r", "8");
+      c.dataset.id = j.id;
+      g.appendChild(c);
+      const t = document.createElementNS("http://www.w3.org/2000/svg", "text");
+      t.setAttribute("class", "node-label");
+      t.setAttribute("x", "14");
+      t.setAttribute("y", "4");
+      t.textContent = j.co.toUpperCase();
+      g.appendChild(t);
+      nodesEl.appendChild(g);
+      c.addEventListener("mouseenter", () => activate(j.id));
+      c.addEventListener("click", () => activate(j.id));
+    });
+  }
 
-  function activate(i, x, y) {
-    document.querySelectorAll(".node").forEach(n => n.classList.remove("active"));
-    document.querySelectorAll(".node")[i].classList.add("active");
-    // bezier from (0,0) with curved control points
+  function activate(id) {
+    const i = jobs.findIndex((j) => j.id === id);
+    if (i < 0) { emptyState(); return; }
+    selectedId = id;
+    localStorage.setItem("wfy.state.compare", id);
+    nodesEl.querySelectorAll(".node").forEach((n) => n.classList.toggle("active", n.dataset.id === id));
+    const j = jobs[i];
+    const { x, y } = pos(j);
     const cx = x * 0.35, cy = y * 0.35 - 60 * Math.sign(y || 1);
     line.setAttribute("d", `M 0 0 C ${cx} ${cy}, ${x - cx} ${y - cy}, ${x} ${y}`);
     line.classList.add("on");
-    const j = jobs[i];
-    detail.k.textContent = `${String(i+1).padStart(2,"0")} / ${jobs.length} · Selected`;
+    detail.k.textContent = `${String(i + 1).padStart(2, "0")} / ${jobs.length} · Selected`;
     detail.title.textContent = j.title;
     detail.company.textContent = j.co;
     detail.loc.textContent = j.loc;
@@ -243,19 +290,84 @@
     detail.salary.textContent = j.s;
     detail.yes.textContent = j.yes;
     detail.no.textContent = j.no;
+    if (applyBtn) applyBtn.disabled = false;
+    if (removeBtn) removeBtn.disabled = false;
   }
-  // activate the job just added from the match page, otherwise the first one
-  const focus = localStorage.getItem("wfy.focus");
-  let start = 0;
-  if (focus) {
-    const slug = (j) => (j.co + "-" + j.title).toLowerCase().replace(/\s+/g, "-");
-    const k = jobs.findIndex((j) => slug(j) === focus);
-    if (k >= 0) start = k;
-    localStorage.removeItem("wfy.focus");
-  }
-  const first = jobs[start];
-  activate(start, Math.cos(first.a * Math.PI/180) * first.r, Math.sin(first.a * Math.PI/180) * first.r);
 
+  function emptyState() {
+    selectedId = null;
+    localStorage.removeItem("wfy.state.compare");
+    line.classList.remove("on");
+    detail.k.textContent = "00 / 00 · Empty pool";
+    detail.title.textContent = "对比池为空";
+    detail.company.textContent = "—";
+    detail.loc.textContent = "—";
+    ["match", "salary", "yes", "no"].forEach((k) => (detail[k].textContent = "—"));
+    if (applyBtn) applyBtn.disabled = true;
+    if (removeBtn) removeBtn.disabled = true;
+  }
+
+  // ---- confirm dialog (shared style with profile) ----
+  const mask = document.getElementById("mask");
+  const dlgTitle = document.getElementById("dlgTitle");
+  const dlgBody = document.getElementById("dlgBody");
+  const dlgOk = document.getElementById("dlgOk");
+  const dlgCancel = document.getElementById("dlgCancel");
+  let onConfirm = null;
+  function confirmDialog(title, body, okText, cb) {
+    dlgTitle.textContent = title; dlgBody.textContent = body; dlgOk.textContent = okText;
+    onConfirm = cb; mask.classList.add("on");
+  }
+  function closeDialog() { mask.classList.remove("on"); onConfirm = null; }
+  dlgCancel.addEventListener("click", closeDialog);
+  mask.addEventListener("click", (e) => { if (e.target === mask) closeDialog(); });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeDialog(); });
+  dlgOk.addEventListener("click", () => { const cb = onConfirm; closeDialog(); if (cb) cb(); });
+
+  // ---- remove from pool ----
+  if (removeBtn) removeBtn.addEventListener("click", () => {
+    const j = jobs.find((x) => x.id === selectedId);
+    if (!j) return;
+    confirmDialog("Remove from pool?", `将 ${j.co} · ${j.title} 从对比池中移出，是否继续？`, "确认移出", () => {
+      const idx = jobs.findIndex((x) => x.id === j.id);
+      const removed = readStore("wfy.poolRemoved", "[]");
+      if (removed.indexOf(j.id) < 0) { removed.push(j.id); writeStore("wfy.poolRemoved", removed); }
+      writeStore("wfy.pool", readStore("wfy.pool", "[]").filter((p) => (p.id || slug(p)) !== j.id));
+      jobs = loadJobs();
+      if (!jobs.length) { render(); emptyState(); return; }
+      const next = jobs[Math.min(idx, jobs.length - 1)];
+      selectedId = next.id;
+      render();
+      activate(next.id);
+    });
+  });
+
+  // ---- apply: write into the delivery list, then jump ----
+  if (applyBtn) applyBtn.addEventListener("click", () => {
+    const j = jobs.find((x) => x.id === selectedId);
+    if (!j) return;
+    const list = readStore("wfy.deliveries", "[]");
+    if (!list.some((d) => d.id === j.id)) {
+      const dt = new Date();
+      const M = ["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"];
+      list.unshift({
+        id: j.id, co: j.co, title: j.title, m: j.m, status: "待投递",
+        day: String(dt.getDate()).padStart(2, "0"), mon: M[dt.getMonth()], year: dt.getFullYear(),
+        body: "从对比池投递。匹配 " + j.m + "%，投前 3 步的建议尚未全部完成，先记录下来。",
+        quote: "",
+      });
+      writeStore("wfy.deliveries", list);
+    }
+    localStorage.setItem("wfy.focus", j.id);
+    location.href = "./delivery.html";
+  });
+
+  // ---- boot ----
+  render();
+  const focus = localStorage.getItem("wfy.focus");
+  if (focus && jobs.some((j) => j.id === focus)) { selectedId = focus; localStorage.removeItem("wfy.focus"); }
+  if (!jobs.length) emptyState();
+  else activate(jobs.some((j) => j.id === selectedId) ? selectedId : jobs[0].id);
 </script>
 </body>
 </html>
