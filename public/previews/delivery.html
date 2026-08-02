@@ -176,180 +176,160 @@
 
 <script>
 (function () {
-  const STATUSES = ["待投递", "已投递", "面试中", "结束"];
+  const STATUSES = WFY.STATUSES;
+  const ACTIVE_ON = ["已投递", "面试中"];
+  const MON_NAMES = ["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"];
   const entriesEl = document.getElementById("entries");
   const rail = document.getElementById("rail");
-  const read = (k) => { try { return JSON.parse(localStorage.getItem(k) || "[]"); } catch (e) { return []; } };
-  const write = (k, v) => localStorage.setItem(k, JSON.stringify(v));
-
-  const MONS = { JAN:0, FEB:1, MAR:2, APR:3, MAY:4, JUN:5, JUL:6, AUG:7, SEP:8, OCT:9, NOV:10, DEC:11 };
-  const MON_NAMES = ["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"];
   const pad = (n) => String(n).padStart(2, "0");
-  const ACTIVE_ON = ["已投递", "面试中"];
+  const esc = (s) => String(s == null ? "" : s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  const parts = (iso) => {
+    const d = new Date((iso || "") + "T00:00:00");
+    return isNaN(d) ? { d: "--", mon: "---", y: "----", mm: "--", dd: "--" }
+      : { d: pad(d.getDate()), mon: MON_NAMES[d.getMonth()], y: d.getFullYear(), mm: pad(d.getMonth() + 1), dd: pad(d.getDate()) };
+  };
 
-  // status store: { id: { status, updatedAt } } (legacy: id -> "状态")
-  function readStatusMap() {
-    let raw = {};
-    try { raw = JSON.parse(localStorage.getItem("wfy.entryStatus") || "{}"); } catch (e) { raw = {}; }
-    const out = {};
-    Object.keys(raw).forEach((k) => {
-      const v = raw[k];
-      out[k] = typeof v === "string" ? { status: v } : (v || {});
+  /* ---------- entries ---------- */
+  function renderEntries() {
+    const apps = WFY.getApplications();
+    entriesEl.innerHTML = "";
+
+    if (!apps.length) {
+      const e = document.createElement("div");
+      e.className = "entry";
+      e.innerHTML =
+        `<div class="date"><span class="d">—</span>NO DATA</div>` +
+        `<div class="body"><h2>还没有投递记录</h2>` +
+        `<div class="sub">在匹配页点「直接投递」，或在对比池里选中岗位后点「投递」，记录会出现在这里。</div>` +
+        `<div class="foot"><a href="./compare.html">去对比池 →</a></div></div>`;
+      entriesEl.appendChild(e);
+      return;
+    }
+
+    apps.forEach((a) => {
+      const p = parts(a.appliedAt);
+      const el = document.createElement("article");
+      el.className = "entry";
+      el.dataset.id = a.id;
+      el.innerHTML =
+        `<div class="date"><span class="d">${p.d}</span>${p.mon} · ${p.y}</div>` +
+        `<div class="body">` +
+          `<h2>${esc(a.co)} · ${esc(a.title)}</h2>` +
+          `<div class="sub">匹配 ${a.m}%</div>` +
+          `<p>${esc(a.body)}</p>` +
+          (a.quote ? `<div class="quote">${esc(a.quote)}</div>` : "") +
+        `</div>`;
+
+      const h2 = el.querySelector("h2");
+      const sub = el.querySelector(".sub");
+      const body = el.querySelector(".body");
+
+      // status dropdown
+      const row = document.createElement("div");
+      row.className = "status-row";
+      row.innerHTML = `<span class="lb">投递状态</span><span class="status-sel"><select>` +
+        STATUSES.map((s) => `<option${s === a.status ? " selected" : ""}>${s}</option>`).join("") +
+        `</select></span>`;
+      h2.after(row);
+      row.querySelector("select").addEventListener("change", (e) => {
+        WFY.setStatus(a.id, e.target.value);
+        renderRail();
+      });
+
+      // actions: 查看匹配 / 编辑
+      const foot = document.createElement("div");
+      foot.className = "foot";
+      foot.innerHTML = `<a href="./match.html?job=${encodeURIComponent(a.id)}">查看匹配</a><button type="button">编辑</button>`;
+      body.appendChild(foot);
+
+      const editBtn = foot.querySelector("button");
+      editBtn.addEventListener("click", () => {
+        const on = el.classList.toggle("editing");
+        const p2 = el.querySelector("p");
+        let q = el.querySelector(".quote");
+        if (on && !q) {                      // allow adding a quote while editing
+          q = document.createElement("div");
+          q.className = "quote";
+          p2.after(q);
+        }
+        const targets = [h2, p2, q].filter(Boolean);
+        targets.forEach((t) => { if (on) t.setAttribute("contenteditable", "true"); else t.removeAttribute("contenteditable"); });
+        editBtn.textContent = on ? "完成" : "编辑";
+        if (on) { h2.focus(); return; }
+        // save plain text only — never innerHTML
+        const titleTxt = (h2.textContent || "").split("·");
+        WFY.updateApplication(a.id, {
+          co: (titleTxt[0] || a.co).trim(),
+          title: (titleTxt.slice(1).join("·") || a.title).trim(),
+          body: (p2 && p2.textContent) || "",
+          quote: (q && q.textContent.trim()) || "",
+        });
+        renderEntries();
+        renderRail();
+      });
+
+      entriesEl.appendChild(el);
     });
-    return out;
-  }
-  function writeStatusMap(m) { localStorage.setItem("wfy.entryStatus", JSON.stringify(m)); }
-
-  // extra (non-entry) timeline items are captured before the rail is re-rendered
-  const extras = Array.from(rail.querySelectorAll(".dot:not([data-id])")).map((d) => {
-    const t = (d.querySelector(".t") || {}).textContent || "01·01";
-    const [mm, dd] = t.split("·").map((n) => parseInt(n, 10));
-    return { label: (d.querySelector(".m") || {}).textContent || "", ts: new Date(2026, (mm || 1) - 1, dd || 1).getTime(), on: d.classList.contains("on"), t };
-  });
-
-  // ---- 1. prepend entries added from the match page ----
-  read("wfy.deliveries").slice().reverse().forEach((d) => {
-    if (entriesEl.querySelector(`[data-id="${d.id}"]`)) return;
-    const a = document.createElement("article");
-    a.className = "entry";
-    a.dataset.id = d.id; a.dataset.co = d.co; a.dataset.status = d.status || "待投递";
-    a.innerHTML =
-      `<div class="date"><span class="d">${d.day}</span>${d.mon} · ${d.year}</div>` +
-      `<div class="body">` +
-        `<h2>${d.co} · ${d.title}</h2>` +
-        `<div class="sub">匹配 ${d.m}%</div>` +
-        `<p>${d.body || ""}</p>` +
-        (d.quote ? `<div class="quote">${d.quote}</div>` : "") +
-      `</div>`;
-    entriesEl.prepend(a);
-  });
-
-  // ---- 2. rail rendering driven by entry status + status-change date ----
-  function entryBaseTs(entry) {
-    const dateEl = entry.querySelector(".date");
-    const day = parseInt((dateEl.querySelector(".d") || {}).textContent || "1", 10);
-    const rest = dateEl.textContent.replace(/^\s*\d+/, "").trim(); // "JUL · 2026"
-    const parts = rest.split("·").map((s) => s.trim());
-    const mon = MONS[(parts[0] || "JAN").toUpperCase()] || 0;
-    const year = parseInt(parts[1] || "2026", 10);
-    return new Date(year, mon, day).getTime();
   }
 
+  /* ---------- timeline rail (derived from the event stream) ---------- */
   function renderRail() {
-    const map = readStatusMap();
-    const items = extras.slice();
-    entriesEl.querySelectorAll(".entry").forEach((entry) => {
-      const id = entry.dataset.id;
-      const rec = map[id] || {};
-      const status = entry.dataset.status || "待投递";
-      const ts = rec.updatedAt ? new Date(rec.updatedAt).getTime() : entryBaseTs(entry);
-      const dt = new Date(ts);
-      items.push({
-        id,
-        label: (entry.dataset.co || "") + " · " + status,
-        ts,
-        on: ACTIVE_ON.indexOf(status) > -1,
-        t: pad(dt.getMonth() + 1) + "·" + pad(dt.getDate()),
+    const apps = WFY.getApplications();
+    const items = [];
+    apps.forEach((a) => {
+      const seen = {};
+      a.events.slice().reverse().forEach((ev) => {   // latest event per status
+        if (seen[ev.status]) return;
+        seen[ev.status] = 1;
+        const p = parts(ev.at);
+        items.push({
+          id: a.id, label: a.co + " · " + ev.status, at: ev.at,
+          on: ACTIVE_ON.indexOf(ev.status) > -1 && a.status === ev.status,
+          t: p.mm + "·" + p.dd,
+        });
       });
     });
-    items.sort((a, b) => b.ts - a.ts);
+    items.sort((x, y) => (y.at || "").localeCompare(x.at || ""));
 
     rail.querySelectorAll(".dot").forEach((d) => d.remove());
     const stats = rail.querySelector(".stats");
     items.forEach((it) => {
       const d = document.createElement("div");
       d.className = "dot" + (it.on ? " on" : "");
-      if (it.id) d.dataset.id = it.id;
-      d.innerHTML = `<span class="m">${it.label}</span><span class="t">${it.t}</span>`;
+      d.dataset.id = it.id;
+      d.innerHTML = `<span class="m">${esc(it.label)}</span><span class="t">${it.t}</span>`;
       rail.insertBefore(d, stats);
     });
 
-    // stats
-    let active = 0, interview = 0;
-    entriesEl.querySelectorAll(".entry").forEach((e) => {
-      const s = e.dataset.status || "待投递";
-      if (s !== "结束") active++;
-      if (s === "面试中") interview++;
-    });
+    // stats, all computed
+    const active = apps.filter((a) => a.status !== "结束").length;
+    const interview = apps.filter((a) => a.status === "面试中").length;
+    const offers = apps.filter((a) => a.status === "结束").length;
+    const avg = apps.length ? Math.round(apps.reduce((s, a) => s + (a.m || 0), 0) / apps.length) : null;
+    let cycle = null;
+    const closed = apps.filter((a) => a.status === "结束" && a.appliedAt && a.updatedAt);
+    if (closed.length) {
+      cycle = Math.round(closed.reduce((s, a) =>
+        s + Math.max(0, (new Date(a.updatedAt) - new Date(a.appliedAt)) / 86400000), 0) / closed.length);
+    }
     const rows = stats.querySelectorAll(".r");
-    if (rows[0]) rows[0].lastElementChild.textContent = active;
-    if (rows[1]) rows[1].lastElementChild.textContent = interview;
+    const set = (i, v) => { if (rows[i]) rows[i].lastElementChild.textContent = v; };
+    set(0, active); set(1, interview); set(2, offers);
+    set(3, avg == null ? "—" : avg + "%"); set(4, cycle == null ? "—" : cycle + "d");
   }
 
-  // ---- 3. per-entry enhancements: status select + unified actions + edit mode ----
-  const edits = JSON.parse(localStorage.getItem("wfy.entryEdits") || "{}");
-  const statusMap = readStatusMap();
-
-  entriesEl.querySelectorAll(".entry").forEach((entry) => {
-    const id = entry.dataset.id;
-    const body = entry.querySelector(".body");
-    const h2 = entry.querySelector("h2");
-    const sub = entry.querySelector(".sub");
-    const saved = edits[id];
-    if (saved) {
-      if (saved.title) h2.textContent = saved.title;
-      if (saved.sub) sub.innerHTML = saved.sub;
-      if (saved.text) { const p = entry.querySelector("p"); if (p) p.textContent = saved.text; }
-      if (saved.quote) { const q = entry.querySelector(".quote"); if (q) q.textContent = saved.quote; }
-    }
-    const status = (statusMap[id] || {}).status || entry.dataset.status || "待投递";
-    entry.dataset.status = status;
-
-    const row = document.createElement("div");
-    row.className = "status-row";
-    row.innerHTML = `<span class="lb">投递状态</span><span class="status-sel"><select>` +
-      STATUSES.map((s) => `<option${s === status ? " selected" : ""}>${s}</option>`).join("") +
-      `</select></span>`;
-    h2.after(row);
-
-    row.querySelector("select").addEventListener("change", (e) => {
-      const v = e.target.value;
-      entry.dataset.status = v;
-      const m = readStatusMap();
-      m[id] = { status: v, updatedAt: new Date().toISOString() };
-      writeStatusMap(m);
-      renderRail();
-    });
-
-    // unified action row: 查看匹配 / 编辑
-    entry.querySelectorAll(".foot").forEach((f) => f.remove());
-    const foot = document.createElement("div");
-    foot.className = "foot";
-    foot.innerHTML = `<a href="./match.html?job=${encodeURIComponent(id)}">查看匹配</a><button type="button">编辑</button>`;
-    body.appendChild(foot);
-
-    const editBtn = foot.querySelector("button");
-    editBtn.addEventListener("click", () => {
-      const on = entry.classList.toggle("editing");
-      const targets = [h2, sub, entry.querySelector("p"), entry.querySelector(".quote")].filter(Boolean);
-      targets.forEach((t) => { if (on) t.setAttribute("contenteditable", "true"); else t.removeAttribute("contenteditable"); });
-      editBtn.textContent = on ? "完成" : "编辑";
-      if (on) { h2.focus(); return; }
-      const store = JSON.parse(localStorage.getItem("wfy.entryEdits") || "{}");
-      store[id] = {
-        title: h2.textContent,
-        sub: sub.innerHTML,
-        text: (entry.querySelector("p") || {}).textContent || "",
-        quote: (entry.querySelector(".quote") || {}).textContent || "",
-      };
-      localStorage.setItem("wfy.entryEdits", JSON.stringify(store));
-    });
-  });
-
+  renderEntries();
   renderRail();
 
-  // ---- 4. focus the entry just created / touched from the match page ----
-  const focus = localStorage.getItem("wfy.focus");
+  // focus the entry created from match / compare
+  const focus = WFY.focusId();
   if (focus) {
     const el = entriesEl.querySelector(`[data-id="${focus}"]`);
     if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
-    localStorage.removeItem("wfy.focus");
   }
 })();
-
-
-
 </script>
 </body>
 
 </html>
+
