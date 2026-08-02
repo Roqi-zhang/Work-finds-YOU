@@ -37,6 +37,16 @@ body { overflow-x: hidden; }
   box-shadow: 0 0 0 24px var(--paper);
   position: relative;
 }
+.p-match .moon-score .m.empty {
+  background: transparent;
+  border-style: dashed;
+  box-shadow: 0 0 0 16px var(--paper);
+}
+.p-match .moon-score .m.empty::before {
+  content: ""; position: absolute; inset: 24px;
+  border: 0.5px dashed var(--line); border-radius: 50%;
+  opacity: .5;
+}
 .p-match .moon-score .lbl {
   position: absolute; inset: auto 0 -44px 0; text-align: center;
   font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 11px; letter-spacing: 0.24em; text-transform: uppercase;
@@ -58,6 +68,8 @@ body { overflow-x: hidden; }
 .p-match .cta-row { display: flex; gap: 16px; align-items: center; }
 .p-match .btn { border: 0.5px solid var(--ink); padding: 12px 22px; font-size: 12px; letter-spacing: 0.2em; text-transform: uppercase; border-radius: 999px; transition: all .3s var(--ease); background: transparent; color: inherit; cursor: pointer; }
 .p-match .btn:hover { background: var(--ink-strong); color: var(--paper); }
+.p-match .btn.ghost { border-color: var(--line); opacity: .7; }
+.p-match .btn.ghost:hover { opacity: 1; border-color: var(--ink); background: var(--ink-strong); color: var(--paper); }
 .p-match /* 01 decision fields */
 .verdict { font-size: 13px; line-height: 1.5; color: var(--ink-strong); max-width: 32ch; margin-top: 8px; }
 .p-match .fields { display: grid; grid-template-columns: 1fr 1fr; gap: 0; margin-top: 32px; border-top: 0.5px solid var(--line); }

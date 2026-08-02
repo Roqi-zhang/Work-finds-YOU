@@ -11,7 +11,6 @@ import {
 } from "@/lib/wfy";
 import "@/styles/pages/delivery.css";
 
-const ACTIVE_ON = ["已投递", "面试中"];
 const MON_NAMES = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
 const pad = (n: number) => String(n).padStart(2, "0");
 
@@ -48,6 +47,7 @@ export default function Delivery() {
     const items: RailItem[] = [];
     apps.forEach((a) => {
       const seen: Record<string, number> = {};
+      let isFirst = true;
       a.events
         .slice()
         .reverse()
@@ -59,9 +59,10 @@ export default function Delivery() {
             id: a.id,
             label: a.co + " · " + ev.status,
             at: ev.at,
-            on: ACTIVE_ON.indexOf(ev.status) > -1 && a.status === ev.status,
+            on: isFirst,
             t: p.mm + "·" + p.dd,
           });
+          isFirst = false;
         });
     });
     items.sort((x, y) => (y.at || "").localeCompare(x.at || ""));
