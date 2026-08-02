@@ -287,7 +287,10 @@
 
     const dot = rail.querySelector(`[data-id="${id}"] .m`);
     const mark = sub.querySelector(".mark");
-    const tail = (sub.textContent.split("·").slice(1).join("·") || "").trim();
+    const subClone = sub.cloneNode(true);
+    const cloneMark = subClone.querySelector(".mark"); if (cloneMark) cloneMark.remove();
+    const tail = (subClone.textContent.split("·").slice(1).join("·") || "").trim();
+
     row.querySelector("select").addEventListener("change", (e) => {
       const v = e.target.value;
       entry.dataset.status = v;
