@@ -158,15 +158,16 @@ export default function JobProfile() {
       });
       if (animate) {
         stemRoot.querySelectorAll("path").forEach((p, i) => {
-          (p as SVGPathElement).style.setProperty("--len", String((p as SVGPathElement).getTotalLength()));
-          (p as HTMLElement).style.animationDelay = (0.9 + i * 0.2) + "s";
+          p.style.setProperty("--len", String(p.getTotalLength()));
+          p.style.animationDelay = 0.9 + i * 0.2 + "s";
         });
       } else {
         stemRoot.querySelectorAll("path").forEach((p) => {
-          (p as HTMLElement).style.removeProperty("--len");
-          (p as HTMLElement).style.removeProperty("animation-delay");
+          p.style.removeProperty("--len");
+          p.style.removeProperty("animation-delay");
         });
       }
+
       notesRoot.innerHTML = "";
     }
     paint(DIMS.map((_, i) => ({ score: 2.5, seed: i })), false);
