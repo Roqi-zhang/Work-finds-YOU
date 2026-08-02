@@ -225,7 +225,7 @@
     <div>
       <div class="k">01 · 一句话决策</div>
       <h2>一句话<br/>决策。</h2>
-      
+      <p class="verdict">你的系统设计与前端工艺已达标，但 CI/CD 证据缺失；补完这一块再投，胜算会从「中」抬到「中高」。</p>
       <div class="fold" data-src-id="d.verdict">
         <button class="ft" data-fold aria-expanded="false"><span>依据 · 整体推理链</span><span class="car">↓</span></button>
         <div class="fb"><div class="fb-in">
