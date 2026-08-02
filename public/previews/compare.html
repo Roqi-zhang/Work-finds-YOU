@@ -200,7 +200,7 @@
   };
   const applyBtn = document.getElementById("applyBtn");
   const removeBtn = document.getElementById("removeBtn");
-  let selectedId = localStorage.getItem("wfy.state.compare") || null;
+  let selectedId = WFY.getUI("compare").selectedId || null;
 
   // ---- ring by match score: >=85 inner, 70-85 middle, <70 outer ----
   const RINGS = [140, 220, 290];
