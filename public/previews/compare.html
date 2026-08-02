@@ -273,7 +273,7 @@
 
   function emptyState() {
     selectedId = null;
-    localStorage.removeItem("wfy.state.compare");
+    WFY.setUI("compare", { selectedId: null });
     line.classList.remove("on");
     detail.k.textContent = "00 / 00 · Empty pool";
     detail.title.textContent = "对比池为空";
