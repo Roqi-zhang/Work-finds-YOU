@@ -57,13 +57,10 @@ export default function Match() {
   const navigate = useNavigate();
 
   const jobId = useMemo(() => {
-    const pool = getPool();
     return (
       jobParam(search) ||
       focusId(search) ||
       (getUI<UIState>("match").jobId as string | undefined) ||
-      (getUI<{ selectedId?: string }>("compare").selectedId as string | undefined) ||
-      (pool[0] && pool[0].id) ||
       null
     );
   }, [search]);
@@ -165,7 +162,7 @@ export default function Match() {
 
   if (!report) {
     return (
-      <>
+      <div className="p-match">
         {bgDial}
         <main className="page content">
           <TopBar />
@@ -173,28 +170,28 @@ export default function Match() {
             <div>
               <div className="k">01 · Overview</div>
               <h2>
-                未选择
+                还没有
                 <br />
                 岗位。
               </h2>
-              <p>还没有指定要分析的岗位。先在对比池里选一个岗位，或在岗位画像页解析一份 JD，再回到这里查看匹配报告。</p>
+              <p>上传一份 JD 建立岗位画像，或从对比池里选择一个岗位，即可查看匹配分析报告。</p>
               <div className="cta-row" style={{ marginTop: 32 }}>
-                <button className="btn" type="button" onClick={() => navigate("/compare")}>
-                  去对比池 →
-                </button>
                 <button className="btn" type="button" onClick={() => navigate("/jobprofile")}>
-                  去岗位画像 →
+                  上传 JD 建立岗位画像 →
+                </button>
+                <button className="btn ghost" type="button" onClick={() => navigate("/compare")}>
+                  从对比池选择 →
                 </button>
               </div>
             </div>
             <div className="moon-score">
-              <div className="m" style={{ background: "var(--paper)" }}>
-                <div className="lbl">No report</div>
+              <div className="m empty">
+                <div className="lbl">AWAITING JD</div>
               </div>
             </div>
           </section>
         </main>
-      </>
+      </div>
     );
   }
 
