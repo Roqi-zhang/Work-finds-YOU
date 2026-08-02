@@ -307,9 +307,7 @@
     if (!j) return;
     confirmDialog("Remove from pool?", `将 ${j.co} · ${j.title} 从对比池中移出，是否继续？`, "确认移出", () => {
       const idx = jobs.findIndex((x) => x.id === j.id);
-      const removed = readStore("wfy.poolRemoved", "[]");
-      if (removed.indexOf(j.id) < 0) { removed.push(j.id); writeStore("wfy.poolRemoved", removed); }
-      writeStore("wfy.pool", readStore("wfy.pool", "[]").filter((p) => (p.id || slug(p)) !== j.id));
+      WFY.removeFromPool(j.id);
       jobs = loadJobs();
       if (!jobs.length) { render(); emptyState(); return; }
       const next = jobs[Math.min(idx, jobs.length - 1)];
@@ -319,30 +317,18 @@
     });
   });
 
-  // ---- apply: write into the delivery list, then jump ----
+  // ---- apply: write into the application list, then jump ----
   if (applyBtn) applyBtn.addEventListener("click", () => {
     const j = jobs.find((x) => x.id === selectedId);
     if (!j) return;
-    const list = readStore("wfy.deliveries", "[]");
-    if (!list.some((d) => d.id === j.id)) {
-      const dt = new Date();
-      const M = ["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"];
-      list.unshift({
-        id: j.id, co: j.co, title: j.title, m: j.m, status: "待投递",
-        day: String(dt.getDate()).padStart(2, "0"), mon: M[dt.getMonth()], year: dt.getFullYear(),
-        body: "从对比池投递。匹配 " + j.m + "%，投前 3 步的建议尚未全部完成，先记录下来。",
-        quote: "",
-      });
-      writeStore("wfy.deliveries", list);
-    }
-    localStorage.setItem("wfy.focus", j.id);
-    location.href = "./delivery.html";
+    WFY.applyToJob(j);
+    WFY.goto("delivery", j.id);
   });
 
   // ---- boot ----
   render();
-  const focus = localStorage.getItem("wfy.focus");
-  if (focus && jobs.some((j) => j.id === focus)) { selectedId = focus; localStorage.removeItem("wfy.focus"); }
+  const focus = WFY.focusId();
+  if (focus && jobs.some((j) => j.id === focus)) selectedId = focus;
   if (!jobs.length) emptyState();
   else activate(jobs.some((j) => j.id === selectedId) ? selectedId : jobs[0].id);
 </script>
