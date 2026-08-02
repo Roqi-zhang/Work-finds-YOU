@@ -471,7 +471,8 @@
   (function () {
     const esc = (s) => String(s == null ? "" : s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
     const q = (s) => document.querySelector(s);
-    const jobId = WFY.jobParam() || WFY.getUI("match").jobId || null;
+    const pool = WFY.getPool();
+    const jobId = WFY.jobParam() || WFY.getUI("match").jobId || WFY.getUI("compare").selectedId || (pool[0] && pool[0].id) || null;
     const report = jobId ? WFY.getMatchReport(jobId) : null;
 
     const poolBtn = document.getElementById("addPoolBtn");
