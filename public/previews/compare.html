@@ -252,7 +252,7 @@
     const i = jobs.findIndex((j) => j.id === id);
     if (i < 0) { emptyState(); return; }
     selectedId = id;
-    localStorage.setItem("wfy.state.compare", id);
+    WFY.setUI("compare", { selectedId: id });
     nodesEl.querySelectorAll(".node").forEach((n) => n.classList.toggle("active", n.dataset.id === id));
     const j = jobs[i];
     const { x, y } = pos(j);
