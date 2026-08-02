@@ -494,7 +494,9 @@
         });
         write("wfy.deliveries", list);
       }
+      localStorage.setItem("wfy.focus", JOB.id);
       location.href = "./delivery.html";
+
     });
   })();
 </script>
