@@ -469,9 +469,8 @@
     let state = "empty";
 
     // ---- state persistence (survives top-nav page switches) ----
-    const SKEY = "wfy.state.jobprofile";
-    function loadStore() { try { return JSON.parse(localStorage.getItem(SKEY) || "null"); } catch (e) { return null; } }
-    function saveStore(v) { if (v) localStorage.setItem(SKEY, JSON.stringify(v)); else localStorage.removeItem(SKEY); }
+    function loadStore() { const v = WFY.getUI("jobprofile"); return v && v.state ? v : null; }
+    function saveStore(v) { WFY.setUI("jobprofile", v || {}); }
 
     // filler text lines inside the resume card
     rLines.innerHTML = Array.from({ length: 14 }, (_, i) =>
