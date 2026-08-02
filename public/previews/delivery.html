@@ -226,5 +226,103 @@
   </section>
 </main>
 <a class="preview-crumb" href="./index.html">← Previews</a>
+
+<script>
+(function () {
+  const STATUSES = ["待投递", "已投递", "面试中", "结束"];
+  const entriesEl = document.getElementById("entries");
+  const rail = document.getElementById("rail");
+  const read = (k) => { try { return JSON.parse(localStorage.getItem(k) || "[]"); } catch (e) { return []; } };
+  const write = (k, v) => localStorage.setItem(k, JSON.stringify(v));
+
+  // ---- 1. prepend entries added from the match page ----
+  read("wfy.deliveries").slice().reverse().forEach((d) => {
+    if (entriesEl.querySelector(`[data-id="${d.id}"]`)) return;
+    const a = document.createElement("article");
+    a.className = "entry";
+    a.dataset.id = d.id; a.dataset.co = d.co; a.dataset.status = d.status || "待投递";
+    a.innerHTML =
+      `<div class="date"><span class="d">${d.day}</span>${d.mon} · ${d.year}</div>` +
+      `<div class="body">` +
+        `<h2>${d.co} · ${d.title}</h2>` +
+        `<div class="sub">${d.status || "待投递"} · 匹配 ${d.m}%</div>` +
+        `<p>${d.body || ""}</p>` +
+        (d.quote ? `<div class="quote">${d.quote}</div>` : "") +
+      `</div>`;
+    entriesEl.prepend(a);
+    if (!rail.querySelector(`[data-id="${d.id}"]`)) {
+      const dot = document.createElement("div");
+      dot.className = "dot on"; dot.dataset.id = d.id;
+      dot.innerHTML = `<span class="m">${d.co} · ${d.status || "待投递"}</span><span class="t">${d.mon.slice(0,3)}·${d.day}</span>`;
+      rail.querySelector(".caption").after(dot);
+    }
+  });
+
+  // ---- 2. per-entry enhancements: status select + unified actions + edit mode ----
+  const edits = JSON.parse(localStorage.getItem("wfy.entryEdits") || "{}");
+  const overrides = JSON.parse(localStorage.getItem("wfy.entryStatus") || "{}");
+
+  entriesEl.querySelectorAll(".entry").forEach((entry) => {
+    const id = entry.dataset.id;
+    const body = entry.querySelector(".body");
+    const h2 = entry.querySelector("h2");
+    const sub = entry.querySelector(".sub");
+    const saved = edits[id];
+    if (saved) {
+      if (saved.title) h2.textContent = saved.title;
+      if (saved.sub) sub.innerHTML = saved.sub;
+      if (saved.text) { const p = entry.querySelector("p"); if (p) p.textContent = saved.text; }
+      if (saved.quote) { const q = entry.querySelector(".quote"); if (q) q.textContent = saved.quote; }
+    }
+    const status = overrides[id] || entry.dataset.status || "待投递";
+    entry.dataset.status = status;
+
+    // status dropdown right under the title
+    const row = document.createElement("div");
+    row.className = "status-row";
+    row.innerHTML = `<span class="lb">投递状态</span><span class="status-sel"><select>` +
+      STATUSES.map((s) => `<option${s === status ? " selected" : ""}>${s}</option>`).join("") +
+      `</select></span>`;
+    h2.after(row);
+
+    const dot = rail.querySelector(`[data-id="${id}"] .m`);
+    row.querySelector("select").addEventListener("change", (e) => {
+      const v = e.target.value;
+      entry.dataset.status = v;
+      const mark = sub.querySelector(".mark");
+      sub.textContent = v + sub.textContent.replace(/^[^·]*/, "");
+      if (mark) sub.appendChild(mark);
+      if (dot) dot.textContent = entry.dataset.co + " · " + v;
+      const map = JSON.parse(localStorage.getItem("wfy.entryStatus") || "{}");
+      map[id] = v; localStorage.setItem("wfy.entryStatus", JSON.stringify(map));
+    });
+
+    // unified action row: 查看匹配 / 编辑
+    entry.querySelectorAll(".foot").forEach((f) => f.remove());
+    const foot = document.createElement("div");
+    foot.className = "foot";
+    foot.innerHTML = `<a href="./match.html?job=${encodeURIComponent(id)}">查看匹配</a><button type="button">编辑</button>`;
+    body.appendChild(foot);
+
+    const editBtn = foot.querySelector("button");
+    editBtn.addEventListener("click", () => {
+      const on = entry.classList.toggle("editing");
+      const targets = [h2, sub, entry.querySelector("p"), entry.querySelector(".quote")].filter(Boolean);
+      targets.forEach((t) => { if (on) t.setAttribute("contenteditable", "true"); else t.removeAttribute("contenteditable"); });
+      editBtn.textContent = on ? "完成" : "编辑";
+      if (on) { h2.focus(); return; }
+      const store = JSON.parse(localStorage.getItem("wfy.entryEdits") || "{}");
+      store[id] = {
+        title: h2.textContent,
+        sub: sub.innerHTML,
+        text: (entry.querySelector("p") || {}).textContent || "",
+        quote: (entry.querySelector(".quote") || {}).textContent || "",
+      };
+      localStorage.setItem("wfy.entryEdits", JSON.stringify(store));
+    });
+  });
+})();
+</script>
 </body>
+
 </html>
