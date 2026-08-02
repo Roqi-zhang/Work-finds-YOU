@@ -1,7 +1,7 @@
 /* =============================================================
    WFY data layer (TS port of public/previews/_data.js)
    The ONLY place that touches storage. Swap the bodies of the
-   get*/put* functions for fetch calls when the API lands.
+   getters and setters for fetch calls when the API lands.
    ============================================================= */
 
 export type Job = {
