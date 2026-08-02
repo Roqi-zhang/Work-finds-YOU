@@ -235,7 +235,7 @@
     line.setAttribute("d", `M 0 0 C ${cx} ${cy}, ${x - cx} ${y - cy}, ${x} ${y}`);
     line.classList.add("on");
     const j = jobs[i];
-    detail.k.textContent = `${String(i+1).padStart(2,"0")} / 12 · Selected`;
+    detail.k.textContent = `${String(i+1).padStart(2,"0")} / ${jobs.length} · Selected`;
     detail.title.textContent = j.title;
     detail.company.textContent = j.co;
     detail.loc.textContent = j.loc;
