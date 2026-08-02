@@ -80,36 +80,7 @@
   }
   .stats .r { display: flex; justify-content: space-between; font-size: 12px; }
   .stats .r span:last-child { font-family: "JetBrains Mono", ui-monospace, monospace; color: var(--ink-strong); }
-
-  /* status dropdown (swiss, no native chrome) */
-  .status-row { display: flex; align-items: center; gap: 12px; margin: 10px 0 12px; }
-  .status-row .lb { font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase; opacity: .5;
-    font-family: "JetBrains Mono", ui-monospace, monospace; }
-  .status-sel { position: relative; display: inline-block; }
-  .status-sel select {
-    appearance: none; -webkit-appearance: none; background: transparent; color: inherit;
-    border: 0.5px solid var(--line); border-radius: 0; padding: 6px 30px 6px 12px;
-    font: inherit; font-size: 12px; letter-spacing: 0.06em; cursor: pointer;
-    transition: border-color .3s var(--ease);
-  }
-  .status-sel select:hover, .status-sel select:focus { border-color: var(--ink-strong); outline: none; }
-  .status-sel::after {
-    content: "↓"; position: absolute; right: 11px; top: 50%; transform: translateY(-50%);
-    font-size: 10px; opacity: .5; pointer-events: none;
-  }
-
-  .entry .foot button {
-    background: none; border: none; padding: 0 0 2px; font: inherit;
-    font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase;
-    border-bottom: 0.5px solid var(--line); cursor: pointer; color: inherit;
-  }
-  .entry .foot button:hover { color: var(--ink-strong); border-color: var(--ink-strong); }
-  .entry.editing h2, .entry.editing p, .entry.editing .quote, .entry.editing .sub {
-    outline: 0.5px dashed var(--line); outline-offset: 6px;
-  }
-  .entry.editing [contenteditable]:focus { outline-color: var(--ink-strong); outline-style: solid; }
 </style>
-
 </head>
 <body>
 <main class="page">
@@ -155,63 +126,80 @@
   </div>
 
   <section class="journal">
-    <div class="entries" id="entries">
-      <article class="entry" data-id="stripe-senior-frontend" data-co="Stripe" data-status="已投递">
+    <div class="entries">
+      <article class="entry">
         <div class="date"><span class="d">12</span>JUL · 2026</div>
         <div class="body">
           <h2>Stripe · Senior Frontend</h2>
           <div class="sub">投递 · 匹配 78% <span class="mark w">W</span></div>
           <p>今天把改过的自我介绍投出去了。CI/CD 那段补上后整体读起来更完整，团队规模的偏好我先没说，等到面试再谈。</p>
           <div class="quote">"我更在意工艺被认真对待——比起团队大小，这才是我最想问的问题。"</div>
+          <div class="foot">
+            <a href="./match.html">查看匹配详情</a>
+            <a href="#">进入面试准备</a>
+            <a href="#">编辑</a>
+          </div>
         </div>
       </article>
 
-      <article class="entry" data-id="linear-design-engineer" data-co="Linear" data-status="面试中">
+      <article class="entry">
         <div class="date"><span class="d">10</span>JUL · 2026</div>
         <div class="body">
           <h2>Linear · Design Engineer</h2>
           <div class="sub">初筛通过 · 匹配 84% <span class="mark">I</span></div>
           <p>HR 回信说下周约一次 45 分钟的技术对话。对方直接问了我关于「输入延迟感」的看法，说明他们真的在意 craft，这是我今年遇到最有共鸣的团队之一。</p>
+          <div class="foot">
+            <a href="#">面试笔记</a>
+            <a href="#">时间线</a>
+          </div>
         </div>
       </article>
 
-      <article class="entry" data-id="raycast-product-engineer" data-co="Raycast" data-status="面试中">
+      <article class="entry">
         <div class="date"><span class="d">07</span>JUL · 2026</div>
         <div class="body">
           <h2>Raycast · Product Engineer</h2>
           <div class="sub">面试中 · 匹配 81%</div>
           <p>技术二面聊得不错，最后 20 分钟主要在讨论时区。他们希望有 4 小时和欧洲重叠，我现在能做到的是 2 小时；这是个真正需要谈的分歧。</p>
+          <div class="foot">
+            <a href="#">复盘</a>
+            <a href="#">拒 / 接的决定</a>
+          </div>
         </div>
       </article>
 
-      <article class="entry" data-id="vercel-web-platform" data-co="Vercel" data-status="结束">
+      <article class="entry">
         <div class="date"><span class="d">02</span>JUL · 2026</div>
         <div class="body">
           <h2>Vercel · Web Platform</h2>
           <div class="sub">未通过 · 匹配 72% <span class="mark w">W</span></div>
           <p>拒信里提到"我们希望候选人能全职在纽约"。这是画像上明确写着的 Remote 偏好被现实撞了一下。加入知识库，作为对下一次决策的参考。</p>
+          <div class="foot">
+            <a href="#">写入复盘</a>
+          </div>
         </div>
       </article>
 
-      <article class="entry" data-id="figma-frontend-lead" data-co="Figma" data-status="结束">
+      <article class="entry">
         <div class="date"><span class="d">28</span>JUN · 2026</div>
         <div class="body">
           <h2>Figma · Frontend Lead</h2>
           <div class="sub">已入职 · 匹配 74%</div>
           <p>三周前的记录：Onsite 谈成 3 天到岗。签下的那一刻我意识到——如果没有对比页把它和 Stripe 并排看一眼，我可能会更犹豫。</p>
+          <div class="foot">
+            <a href="#">归档</a>
+          </div>
         </div>
       </article>
     </div>
 
-
-    <aside class="rail" id="rail">
+    <aside class="rail">
       <span class="caption">Timeline</span>
-      <div class="dot on" data-id="stripe-senior-frontend"><span class="m">Stripe · applied</span><span class="t">07·12</span></div>
-      <div class="dot on" data-id="linear-design-engineer"><span class="m">Linear · screen ↑</span><span class="t">07·10</span></div>
-      <div class="dot on" data-id="raycast-product-engineer"><span class="m">Raycast · interview</span><span class="t">07·07</span></div>
-      <div class="dot" data-id="vercel-web-platform"><span class="m">Vercel · rejected</span><span class="t">07·02</span></div>
-      <div class="dot" data-id="figma-frontend-lead"><span class="m">Figma · signed ✓</span><span class="t">06·28</span></div>
-
+      <div class="dot on"><span class="m">Stripe · applied</span><span class="t">07·12</span></div>
+      <div class="dot on"><span class="m">Linear · screen ↑</span><span class="t">07·10</span></div>
+      <div class="dot on"><span class="m">Raycast · interview</span><span class="t">07·07</span></div>
+      <div class="dot"><span class="m">Vercel · rejected</span><span class="t">07·02</span></div>
+      <div class="dot"><span class="m">Figma · signed ✓</span><span class="t">06·28</span></div>
       <div class="dot"><span class="m">Notion · archived</span><span class="t">06·20</span></div>
       <div class="dot"><span class="m">Warp · declined</span><span class="t">06·14</span></div>
 
@@ -226,117 +214,5 @@
   </section>
 </main>
 <a class="preview-crumb" href="./index.html">← Previews</a>
-
-<script>
-(function () {
-  const STATUSES = ["待投递", "已投递", "面试中", "结束"];
-  const entriesEl = document.getElementById("entries");
-  const rail = document.getElementById("rail");
-  const read = (k) => { try { return JSON.parse(localStorage.getItem(k) || "[]"); } catch (e) { return []; } };
-  const write = (k, v) => localStorage.setItem(k, JSON.stringify(v));
-
-  // ---- 1. prepend entries added from the match page ----
-  read("wfy.deliveries").slice().reverse().forEach((d) => {
-    if (entriesEl.querySelector(`[data-id="${d.id}"]`)) return;
-    const a = document.createElement("article");
-    a.className = "entry";
-    a.dataset.id = d.id; a.dataset.co = d.co; a.dataset.status = d.status || "待投递";
-    a.innerHTML =
-      `<div class="date"><span class="d">${d.day}</span>${d.mon} · ${d.year}</div>` +
-      `<div class="body">` +
-        `<h2>${d.co} · ${d.title}</h2>` +
-        `<div class="sub">${d.status || "待投递"} · 匹配 ${d.m}%</div>` +
-        `<p>${d.body || ""}</p>` +
-        (d.quote ? `<div class="quote">${d.quote}</div>` : "") +
-      `</div>`;
-    entriesEl.prepend(a);
-    if (!rail.querySelector(`[data-id="${d.id}"]`)) {
-      const dot = document.createElement("div");
-      dot.className = "dot on"; dot.dataset.id = d.id;
-      dot.innerHTML = `<span class="m">${d.co} · ${d.status || "待投递"}</span><span class="t">${d.mon.slice(0,3)}·${d.day}</span>`;
-      rail.querySelector(".caption").after(dot);
-    }
-  });
-
-  // ---- 2. per-entry enhancements: status select + unified actions + edit mode ----
-  const edits = JSON.parse(localStorage.getItem("wfy.entryEdits") || "{}");
-  const overrides = JSON.parse(localStorage.getItem("wfy.entryStatus") || "{}");
-
-  entriesEl.querySelectorAll(".entry").forEach((entry) => {
-    const id = entry.dataset.id;
-    const body = entry.querySelector(".body");
-    const h2 = entry.querySelector("h2");
-    const sub = entry.querySelector(".sub");
-    const saved = edits[id];
-    if (saved) {
-      if (saved.title) h2.textContent = saved.title;
-      if (saved.sub) sub.innerHTML = saved.sub;
-      if (saved.text) { const p = entry.querySelector("p"); if (p) p.textContent = saved.text; }
-      if (saved.quote) { const q = entry.querySelector(".quote"); if (q) q.textContent = saved.quote; }
-    }
-    const status = overrides[id] || entry.dataset.status || "待投递";
-    entry.dataset.status = status;
-
-    // status dropdown right under the title
-    const row = document.createElement("div");
-    row.className = "status-row";
-    row.innerHTML = `<span class="lb">投递状态</span><span class="status-sel"><select>` +
-      STATUSES.map((s) => `<option${s === status ? " selected" : ""}>${s}</option>`).join("") +
-      `</select></span>`;
-    h2.after(row);
-
-    const dot = rail.querySelector(`[data-id="${id}"] .m`);
-    const mark = sub.querySelector(".mark");
-    const subClone = sub.cloneNode(true);
-    const cloneMark = subClone.querySelector(".mark"); if (cloneMark) cloneMark.remove();
-    const tail = (subClone.textContent.split("·").slice(1).join("·") || "").trim();
-
-    row.querySelector("select").addEventListener("change", (e) => {
-      const v = e.target.value;
-      entry.dataset.status = v;
-      sub.textContent = tail ? v + " · " + tail : v;
-      if (mark) { sub.appendChild(document.createTextNode(" ")); sub.appendChild(mark); }
-      if (dot) dot.textContent = entry.dataset.co + " · " + v;
-
-      const map = JSON.parse(localStorage.getItem("wfy.entryStatus") || "{}");
-      map[id] = v; localStorage.setItem("wfy.entryStatus", JSON.stringify(map));
-    });
-
-    // unified action row: 查看匹配 / 编辑
-    entry.querySelectorAll(".foot").forEach((f) => f.remove());
-    const foot = document.createElement("div");
-    foot.className = "foot";
-    foot.innerHTML = `<a href="./match.html?job=${encodeURIComponent(id)}">查看匹配</a><button type="button">编辑</button>`;
-    body.appendChild(foot);
-
-    const editBtn = foot.querySelector("button");
-    editBtn.addEventListener("click", () => {
-      const on = entry.classList.toggle("editing");
-      const targets = [h2, sub, entry.querySelector("p"), entry.querySelector(".quote")].filter(Boolean);
-      targets.forEach((t) => { if (on) t.setAttribute("contenteditable", "true"); else t.removeAttribute("contenteditable"); });
-      editBtn.textContent = on ? "完成" : "编辑";
-      if (on) { h2.focus(); return; }
-      const store = JSON.parse(localStorage.getItem("wfy.entryEdits") || "{}");
-      store[id] = {
-        title: h2.textContent,
-        sub: sub.innerHTML,
-        text: (entry.querySelector("p") || {}).textContent || "",
-        quote: (entry.querySelector(".quote") || {}).textContent || "",
-      };
-      localStorage.setItem("wfy.entryEdits", JSON.stringify(store));
-    });
-  });
-
-  // ---- 3. focus the entry just created / touched from the match page ----
-  const focus = localStorage.getItem("wfy.focus");
-  if (focus) {
-    const el = entriesEl.querySelector(`[data-id="${focus}"]`);
-    if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
-    localStorage.removeItem("wfy.focus");
-  }
-})();
-
-</script>
 </body>
-
 </html>

@@ -174,21 +174,6 @@
     { r: 290, a: 220,  title: "Senior Web",       co: "Cloudflare",loc: "Remote",      m: 64, s: "$180K–220K", yes: "Edge platform",   no: "Legacy code" },
   ];
 
-  // ---- merge locally added jobs (from match.html「加入对比」) ----
-  (function () {
-    let pool = [];
-    try { pool = JSON.parse(localStorage.getItem("wfy.pool") || "[]"); } catch (e) { pool = []; }
-    pool.forEach((p, n) => {
-      if (jobs.some((j) => j.co === p.co && j.title === p.title)) return;
-      jobs.push({
-        r: 290, a: 280 + n * 24, title: p.title, co: p.co, loc: p.loc || "—",
-        m: p.m || 0, s: p.s || "—", yes: p.yes || "刚加入对比", no: p.no || "—",
-      });
-    });
-  })();
-
-
-
   const nodes = document.getElementById("nodes");
   const line = document.getElementById("line");
   const detail = {
@@ -235,7 +220,7 @@
     line.setAttribute("d", `M 0 0 C ${cx} ${cy}, ${x - cx} ${y - cy}, ${x} ${y}`);
     line.classList.add("on");
     const j = jobs[i];
-    detail.k.textContent = `${String(i+1).padStart(2,"0")} / ${jobs.length} · Selected`;
+    detail.k.textContent = `${String(i+1).padStart(2,"0")} / 12 · Selected`;
     detail.title.textContent = j.title;
     detail.company.textContent = j.co;
     detail.loc.textContent = j.loc;
@@ -244,18 +229,9 @@
     detail.yes.textContent = j.yes;
     detail.no.textContent = j.no;
   }
-  // activate the job just added from the match page, otherwise the first one
-  const focus = localStorage.getItem("wfy.focus");
-  let start = 0;
-  if (focus) {
-    const slug = (j) => (j.co + "-" + j.title).toLowerCase().replace(/\s+/g, "-");
-    const k = jobs.findIndex((j) => slug(j) === focus);
-    if (k >= 0) start = k;
-    localStorage.removeItem("wfy.focus");
-  }
-  const first = jobs[start];
-  activate(start, Math.cos(first.a * Math.PI/180) * first.r, Math.sin(first.a * Math.PI/180) * first.r);
-
+  // activate first
+  const first = jobs[0];
+  activate(0, Math.cos(first.a * Math.PI/180) * first.r, Math.sin(first.a * Math.PI/180) * first.r);
 </script>
 </body>
 </html>

@@ -206,10 +206,9 @@
       <h2>78%<br/>match.</h2>
       <p>基于你的花瓣画像与该岗位的 24 个维度做对齐。整体处于「可推进」区间，主要匹配点集中在系统设计与前端工艺，主要风险集中在团队规模偏好。</p>
       <div class="cta-row" style="margin-top:32px;">
-        <button class="btn" id="addPoolBtn" type="button">加入对比 →</button>
-        <button class="btn" id="applyBtn" type="button">直接投递 →</button>
+        <a class="btn" href="./compare.html">加入对比 →</a>
+        <a class="btn" href="./delivery.html">直接投递 →</a>
       </div>
-
     </div>
     <div class="moon-score">
       <div class="m"><div class="lbl">Overall · 78</div></div>
@@ -460,50 +459,15 @@
 
     </div>
 
+    <div class="cta-row" style="margin-top:48px;">
+      <a class="btn" href="./compare.html">加入对比 →</a>
+      <a class="btn" href="./delivery.html">进入投递 →</a>
+    </div>
   </section>
-
 </main>
 <a class="preview-crumb" href="./index.html">← Previews</a>
 
 <script>
-  // ---- current job (static prototype data) ----
-  (function () {
-    const JOB = { id: "stripe-senior-frontend", co: "Stripe", title: "Senior Frontend", loc: "Remote / SF", m: 78, s: "$180K–220K", yes: "Craft · Product", no: "Team > 60" };
-    const read = (k) => { try { return JSON.parse(localStorage.getItem(k) || "[]"); } catch (e) { return []; } };
-    const write = (k, v) => localStorage.setItem(k, JSON.stringify(v));
-
-    const pool = document.getElementById("addPoolBtn");
-    const apply = document.getElementById("applyBtn");
-    if (pool) pool.addEventListener("click", () => {
-      const list = read("wfy.pool");
-      if (!list.some((j) => j.id === JOB.id)) { list.push(JOB); write("wfy.pool", list); }
-      localStorage.setItem("wfy.focus", JOB.id);
-      location.href = "./compare.html";
-
-    });
-    if (apply) apply.addEventListener("click", () => {
-      const list = read("wfy.deliveries");
-      if (!list.some((j) => j.id === JOB.id)) {
-        const d = new Date();
-        const M = ["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"];
-        list.unshift({
-          id: JOB.id, co: JOB.co, title: JOB.title, m: JOB.m, status: "待投递",
-          day: String(d.getDate()).padStart(2, "0"), mon: M[d.getMonth()], year: d.getFullYear(),
-          body: "从匹配页直接投递。匹配 " + JOB.m + "%，投前 3 步的建议尚未全部完成，先记录下来。",
-          quote: "",
-        });
-        write("wfy.deliveries", list);
-      }
-      localStorage.setItem("wfy.focus", JOB.id);
-      location.href = "./delivery.html";
-
-    });
-  })();
-</script>
-
-<script>
-
-
   // draw tick marks around bg dial
   (function () {
     const g = document.getElementById("bg-ticks");
