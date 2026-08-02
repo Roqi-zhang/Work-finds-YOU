@@ -295,7 +295,7 @@
       const v = e.target.value;
       entry.dataset.status = v;
       sub.textContent = tail ? v + " · " + tail : v;
-      if (mark) sub.appendChild(mark);
+      if (mark) { sub.appendChild(document.createTextNode(" ")); sub.appendChild(mark); }
       if (dot) dot.textContent = entry.dataset.co + " · " + v;
 
       const map = JSON.parse(localStorage.getItem("wfy.entryStatus") || "{}");
