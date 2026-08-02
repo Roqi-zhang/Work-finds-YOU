@@ -1,0 +1,568 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=1280" />
+<title>03 Match · Scroll Narrative · B</title>
+<link rel="stylesheet" href="./_shared.css" />
+<script src="./_shared.js"></script>
+<style>
+  body { overflow-x: hidden; }
+  .page { padding-bottom: 0; }
+
+  /* fixed background dial */
+  .bg-dial {
+    position: fixed; inset: 0; pointer-events: none; z-index: 0;
+    display: flex; align-items: center; justify-content: center;
+    opacity: .35;
+  }
+  [data-theme="dark"] .bg-dial { opacity: .22; }
+  .bg-dial svg { width: 1400px; height: 1400px; }
+  .bg-dial .ring { fill: none; stroke: var(--ink); stroke-width: 0.5; }
+  .bg-dial .rotor { transform-origin: 700px 700px; animation: dialspin 60s linear infinite; }
+  .bg-dial .hand { stroke: var(--ink-strong); stroke-width: 1; transform-origin: 700px 700px; transition: transform 1.2s var(--ease); }
+  @keyframes dialspin { to { transform: rotate(360deg); } }
+
+  .content { position: relative; z-index: 1; }
+
+  .screen {
+    min-height: 92vh;
+    padding: 80px 0;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 64px;
+    align-items: center;
+    border-bottom: 0.5px solid var(--line);
+  }
+  .screen:last-of-type { border-bottom: 0; }
+  .screen .k { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 10px; letter-spacing: 0.24em; text-transform: uppercase; opacity: .55; }
+  .screen h2 { font-size: 96px; font-weight: 500; letter-spacing: -0.035em; line-height: 0.92; color: var(--ink-strong); margin-top: 20px; }
+  .screen p { font-size: 15px; max-width: 42ch; margin-top: 24px; opacity: .85; }
+
+  /* moon score */
+  .moon-score {
+    display: flex; align-items: center; justify-content: center; height: 340px;
+  }
+  .moon-score .m {
+    width: 220px; height: 220px; border-radius: 50%;
+    border: 0.5px solid var(--ink);
+    background: linear-gradient(90deg, var(--ink-strong) 0 78%, var(--paper) 78% 100%);
+    box-shadow: 0 0 0 24px var(--paper);
+    position: relative;
+  }
+  .moon-score .lbl {
+    position: absolute; inset: auto 0 -44px 0; text-align: center;
+    font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 11px; letter-spacing: 0.24em; text-transform: uppercase;
+  }
+
+  .bars { display: flex; flex-direction: column; gap: 14px; }
+  .bar { display: grid; grid-template-columns: 120px 1fr 40px; gap: 16px; align-items: center; font-size: 12px; }
+  .bar .n { text-transform: uppercase; letter-spacing: 0.14em; opacity: .7; }
+  .bar .t { height: 0.5px; background: var(--line); position: relative; }
+  .bar .t::after { content: ""; position: absolute; inset: 0; width: var(--v, 60%); background: var(--ink-strong); height: 1px; top: -0.5px; }
+  .bar .v { font-family: "JetBrains Mono", ui-monospace, monospace; text-align: right; opacity: .8; }
+
+  .risklist { display: flex; flex-direction: column; }
+  .risklist .row {
+    display: grid; grid-template-columns: 60px 1fr auto; gap: 20px; align-items: baseline;
+    padding: 18px 0; border-top: 0.5px solid var(--line); font-size: 15px;
+  }
+  .risklist .row .k { padding-top: 4px; }
+  .risklist .row .t { color: var(--ink-strong); font-size: 22px; letter-spacing: -0.01em; }
+  .risklist .row .d { font-size: 13px; opacity: .75; margin-top: 6px; max-width: 42ch; }
+
+  .cta-row { display: flex; gap: 16px; align-items: center; }
+  .btn { border: 0.5px solid var(--ink); padding: 12px 22px; font-size: 12px; letter-spacing: 0.2em; text-transform: uppercase; border-radius: 999px; transition: all .3s var(--ease); }
+  .btn:hover { background: var(--ink-strong); color: var(--paper); }
+
+  /* 01 decision fields */
+  .verdict { font-size: 13px; line-height: 1.5; color: var(--ink-strong); max-width: 32ch; margin-top: 8px; }
+  .fields { display: grid; grid-template-columns: 1fr 1fr; gap: 0; margin-top: 32px; border-top: 0.5px solid var(--line); }
+  .fields .f { padding: 16px 0; border-bottom: 0.5px solid var(--line); }
+  .fields .f:nth-child(odd) { padding-right: 24px; border-right: 0.5px solid var(--line); }
+  .fields .f:nth-child(even) { padding-left: 24px; }
+  .fields .fn { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase; opacity: .55; }
+  .fields .fv { font-size: 26px; letter-spacing: -0.02em; color: var(--ink-strong); margin-top: 8px; }
+  .fields .fv small { font-size: 12px; letter-spacing: 0.16em; text-transform: uppercase; opacity: .5; margin-left: 8px; }
+
+  /* 04 evidence accordion */
+  .ev { grid-column: 1 / -1; }
+  .ev-toggle {
+    width: 100%; display: flex; align-items: center; justify-content: space-between;
+    padding: 22px 0; border-top: 0.5px solid var(--line); border-bottom: 0.5px solid var(--line);
+    font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 11px; letter-spacing: 0.24em; text-transform: uppercase;
+    color: var(--ink-strong); transition: opacity .3s var(--ease);
+  }
+  .ev-toggle:hover { opacity: .6; }
+  .ev-toggle .car { transition: transform .4s var(--ease); }
+  .ev.open .ev-toggle .car { transform: rotate(180deg); }
+  .ev-body { max-height: 0; overflow: hidden; transition: max-height .6s var(--ease); }
+  .ev.open .ev-body { max-height: 3200px; }
+  .ev-block { padding: 40px 0; border-bottom: 0.5px solid var(--line); display: grid; grid-template-columns: 200px 1fr; gap: 48px; }
+  .ev-block > .k { padding-top: 4px; }
+  .cera { display: flex; flex-direction: column; gap: 18px; }
+  .cera .r { display: grid; grid-template-columns: 110px 1fr; gap: 20px; align-items: baseline; font-size: 14px; }
+  .cera .r .kk { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; opacity: .55; }
+  .cera .r .vv { max-width: 56ch; opacity: .9; }
+  .srcs { display: flex; flex-direction: column; }
+  .srcs a { display: grid; grid-template-columns: 1fr auto; gap: 20px; padding: 12px 0; border-bottom: 0.5px solid var(--line); font-size: 13px; opacity: .8; }
+  .srcs a:hover { opacity: 1; color: var(--ink-strong); }
+  .reason { display: flex; flex-direction: column; }
+  .reason .r { display: grid; grid-template-columns: 140px 1fr; gap: 20px; padding: 12px 0; border-bottom: 0.5px solid var(--line); font-size: 13px; }
+  .reason .r .n { text-transform: uppercase; letter-spacing: 0.14em; opacity: .6; font-size: 11px; }
+  .tags { margin-top: 10px; display: flex; gap: 8px; }
+  .tags span { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; border: 0.5px solid var(--line); border-radius: 999px; padding: 4px 10px; opacity: .7; }
+
+  /* per-conclusion evidence fold */
+  .fold { margin-top: 12px; }
+  .fold > .ft {
+    width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    padding: 8px 0; border-top: 0.5px solid var(--line);
+    font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase;
+    opacity: .55; transition: opacity .3s var(--ease);
+  }
+  .fold > .ft:hover { opacity: 1; color: var(--ink-strong); }
+  .fold > .ft .car { transition: transform .4s var(--ease); }
+  .fold.open > .ft { opacity: 1; color: var(--ink-strong); }
+  .fold.open > .ft .car { transform: rotate(180deg); }
+  .fold > .fb { max-height: 0; overflow: hidden; transition: max-height .5s var(--ease); }
+  .fold.open > .fb { max-height: 800px; }
+  .fold .fb-in { padding: 12px 0 16px; display: flex; flex-direction: column; gap: 10px; }
+  .fold .fr { display: grid; grid-template-columns: 96px 1fr; gap: 16px; align-items: baseline; font-size: 13px; }
+  .fold .fr .fk { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; opacity: .5; }
+  .fold .fr .fv { font-size: 13px; opacity: .85; max-width: 52ch; }
+  .fields .fold { margin-top: 14px; }
+
+  /* 04 analysis steps + reasoning trace */
+  .steps { display: flex; flex-direction: column; }
+  .steps .r { display: grid; grid-template-columns: 40px 160px 1fr; gap: 20px; padding: 12px 0; border-bottom: 0.5px solid var(--line); font-size: 13px; }
+  .steps .r .n, .steps .r .s { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; opacity: .55; }
+  .trace { border: 0.5px dashed var(--line); padding: 20px; }
+  .trace .empty { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; opacity: .45; }
+  .trace .r { display: grid; grid-template-columns: 90px 150px 1fr; gap: 16px; padding: 10px 0; border-bottom: 0.5px solid var(--line); font-size: 12px; opacity: .8; }
+  .trace .r:last-child { border-bottom: 0; }
+
+
+  /* progress dots on the right side */
+  .progress {
+    position: fixed; right: 28px; top: 50%; transform: translateY(-50%); z-index: 20;
+    display: flex; flex-direction: column; gap: 12px; align-items: center;
+    font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase;
+  }
+  .progress a { display: flex; align-items: center; gap: 10px; opacity: .5; transition: opacity .3s var(--ease); }
+  .progress a:hover, .progress a.on { opacity: 1; color: var(--ink-strong); }
+  .progress a::before {
+    content: ""; width: 6px; height: 6px; border-radius: 50%; border: 0.5px solid var(--ink);
+  }
+  .progress a.on::before { background: var(--ink-strong); border-color: var(--ink-strong); }
+
+</style>
+</head>
+<body>
+
+<div class="bg-dial" aria-hidden="true">
+  <svg viewBox="0 0 1400 1400">
+    <g class="rotor">
+      <circle class="ring" cx="700" cy="700" r="680" />
+      <circle class="ring" cx="700" cy="700" r="540" />
+      <circle class="ring" cx="700" cy="700" r="400" />
+      <circle class="ring" cx="700" cy="700" r="260" />
+      <!-- ticks -->
+      <g id="bg-ticks"></g>
+    </g>
+    <line class="hand" id="hand" x1="700" y1="700" x2="700" y2="120" />
+  </svg>
+</div>
+
+<main class="page content">
+  <header class="topbar">
+    <div class="logo">Work Finds You / 工作找你</div>
+    <nav>
+      <a href="./home.html">01 Home</a>
+      <a href="./profile.html">02 Profile</a>
+      <a href="./jobprofile.html">03 Job</a>
+      <a href="./match.html" class="on">04 Match</a>
+      <a href="./compare.html">05 Compare</a>
+      <a href="./delivery.html">06 Delivery</a>
+    </nav>
+    <div class="right">
+      <span class="caption">Senior Frontend · Stripe</span>
+      <button class="theme-toggle"></button>
+    </div>
+  </header>
+
+  <nav class="progress">
+    <a href="#s1" class="on" data-hand="-140">01 Overview</a>
+    <a href="#s2" data-hand="-70">02 决策</a>
+    <a href="#s3" data-hand="0">03 判断</a>
+    <a href="#s4" data-hand="70">04 投前 3 步</a>
+    <a href="#s5" data-hand="140">05 来源</a>
+
+  </nav>
+
+  <section class="screen" id="s1">
+    <div>
+      <div class="k">01 · Overview</div>
+      <h2>78%<br/>match.</h2>
+      <p>基于你的花瓣画像与该岗位的 24 个维度做对齐。整体处于「可推进」区间，主要匹配点集中在系统设计与前端工艺，主要风险集中在团队规模偏好。</p>
+      <div class="cta-row" style="margin-top:32px;">
+        <button class="btn" id="addPoolBtn" type="button">加入对比 →</button>
+        <button class="btn" id="applyBtn" type="button">直接投递 →</button>
+      </div>
+
+    </div>
+    <div class="moon-score">
+      <div class="m"><div class="lbl">Overall · 78</div></div>
+    </div>
+  </section>
+
+  <section class="screen" id="s2">
+    <div class="moon-score">
+      <div class="m" style="background: linear-gradient(90deg, var(--ink-strong) 0 78%, var(--paper) 78% 100%);">
+        <div class="lbl">Decision · Go</div>
+      </div>
+    </div>
+    <div>
+      <div class="k">01 · 一句话决策</div>
+      <h2>一句话<br/>决策。</h2>
+      <p class="verdict">你的系统设计与前端工艺已达标，但 CI/CD 证据缺失；补完这一块再投，胜算会从「中」抬到「中高」。</p>
+      <div class="fold" data-src-id="d.verdict">
+        <button class="ft" data-fold aria-expanded="false"><span>依据 · 整体推理链</span><span class="car">↓</span></button>
+        <div class="fb"><div class="fb-in">
+          <div class="fr"><span class="fk">判定依据</span><span class="fv">8 个维度中 6 个达标，唯一硬缺口「工程素养 54」属于表达缺失而非能力缺失。</span></div>
+          <div class="fr"><span class="fk">引用来源</span><span class="fv">JD 第 4 条 · 简历第 2 段 · 画像 v3 维度分</span></div>
+          <div class="fr"><span class="fk">置信度</span><span class="fv">中高</span></div>
+        </div></div>
+      </div>
+      <div class="fields">
+        <div class="f"><div class="fn">是否优先投</div><div class="fv">改完再投</div>
+          <div class="fold" data-src-id="d.priorityFlag">
+            <button class="ft" data-fold aria-expanded="false"><span>依据</span><span class="car">↓</span></button>
+            <div class="fb"><div class="fb-in">
+              <div class="fr"><span class="fk">判定依据</span><span class="fv">硬性要求命中率 6/8，缺口可在 3 小时内补齐，立即投会浪费一次机会。</span></div>
+              <div class="fr"><span class="fk">引用来源</span><span class="fv">JD 第 4 条「owns deployment pipeline」</span></div>
+              <div class="fr"><span class="fk">置信度</span><span class="fv">高</span></div>
+            </div></div>
+          </div>
+        </div>
+        <div class="f"><div class="fn">匹配分</div><div class="fv">78<small>/ 100</small></div>
+          <div class="fold" data-src-id="d.score">
+            <button class="ft" data-fold aria-expanded="false"><span>依据</span><span class="car">↓</span></button>
+            <div class="fb"><div class="fb-in">
+              <div class="fr"><span class="fk">判定依据</span><span class="fv">8 维加权平均：技能类权重 0.5（均分 89），工程与动机类权重 0.3（均分 51）。</span></div>
+              <div class="fr"><span class="fk">引用来源</span><span class="fv">分项评分表（见 04）</span></div>
+              <div class="fr"><span class="fk">置信度</span><span class="fv">高</span></div>
+            </div></div>
+          </div>
+        </div>
+        <div class="f"><div class="fn">胜算等级</div><div class="fv">中<small>Medium</small></div>
+          <div class="fold" data-src-id="d.winLevel">
+            <button class="ft" data-fold aria-expanded="false"><span>依据</span><span class="car">↓</span></button>
+            <div class="fb"><div class="fb-in">
+              <div class="fr"><span class="fk">判定依据</span><span class="fv">匹配分处于 70–80 区间，且存在 1 个明确扣分项与 1 个面试风险点。</span></div>
+              <div class="fr"><span class="fk">引用来源</span><span class="fv">同类岗位对照 · 4 个同级 JD 的要求交集</span></div>
+              <div class="fr"><span class="fk">置信度</span><span class="fv">中</span></div>
+            </div></div>
+          </div>
+        </div>
+        <div class="f"><div class="fn">投递优先级</div><div class="fv">Top 3</div>
+          <div class="fold" data-src-id="d.rank">
+            <button class="ft" data-fold aria-expanded="false"><span>依据</span><span class="car">↓</span></button>
+            <div class="fb"><div class="fb-in">
+              <div class="fr"><span class="fk">判定依据</span><span class="fv">在当前对比池 9 个岗位中排名第 3，薪资与技术栈契合度靠前，仅工程链路要求偏高。</span></div>
+              <div class="fr"><span class="fk">引用来源</span><span class="fv">对比池快照 · 2026-07-30</span></div>
+              <div class="fr"><span class="fk">置信度</span><span class="fv">中</span></div>
+            </div></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <section class="screen" id="s3">
+    <div>
+      <div class="k">02 · 三个关键判断</div>
+      <h2>优势、缺口、<br/>风险。</h2>
+      <div class="risklist" style="margin-top:32px;">
+        <div class="row">
+          <span class="k mark">最大优势</span>
+          <div>
+            <div class="t">复杂前端系统的独立交付能力</div>
+            <div class="d">主导过 3 个百万级 DAU 前端重构，与该岗位「负责支付前端架构」的核心诉求直接对齐。</div>
+            <div class="tags"><span>专业技能</span><span>执行交付</span></div>
+            <div class="fold" data-src-id="j.strength">
+              <button class="ft" data-fold aria-expanded="false"><span>依据</span><span class="car">↓</span></button>
+              <div class="fb"><div class="fb-in">
+                <div class="fr"><span class="fk">我方证据</span><span class="fv">简历第 1 段：「主导交易前端重构，拆分 12 个模块，日活 320 万」。</span></div>
+                <div class="fr"><span class="fk">岗位要求</span><span class="fv">JD 第 1 条：「Own the architecture of our payments front-end」。</span></div>
+                <div class="fr"><span class="fk">推理</span><span class="fv">规模量级与 owner 角色同时命中，属于可直接复用的经验，而非近似经验。</span></div>
+                <div class="fr"><span class="fk">影响</span><span class="fv">+12 分（专业技能 / 执行交付）</span></div>
+              </div></div>
+            </div>
+          </div>
+        </div>
+        <div class="row">
+          <span class="k mark w">最大缺口</span>
+          <div>
+            <div class="t">缺少可验证的 CI/CD 与线上排障证据</div>
+            <div class="d">JD 明确要求参与部署链路与值班，简历中无相关描述，画像该维度 54 分。</div>
+            <div class="tags"><span>工程素养</span></div>
+            <div class="fold" data-src-id="j.gap">
+              <button class="ft" data-fold aria-expanded="false"><span>依据</span><span class="car">↓</span></button>
+              <div class="fb"><div class="fb-in">
+                <div class="fr"><span class="fk">我方证据</span><span class="fv">简历第 2 段仅有「负责发布流程优化」，无工具、无指标、无值班记录。</span></div>
+                <div class="fr"><span class="fk">岗位要求</span><span class="fv">JD 第 4 条：「owns deployment pipeline &amp; participates in on-call」。</span></div>
+                <div class="fr"><span class="fk">推理</span><span class="fv">要求为硬性且可量化，模糊表述在初筛阶段无法被判定为命中。</span></div>
+                <div class="fr"><span class="fk">影响</span><span class="fv">−8 分（工程素养 54）</span></div>
+              </div></div>
+            </div>
+          </div>
+        </div>
+        <div class="row">
+          <span class="k mark i">最大风险</span>
+          <div>
+            <div class="t">团队规模偏好与岗位环境不一致</div>
+            <div class="d">该团队 60+ 人、跨时区协作，你的画像偏好 ≤ 20 人小团队，面试中大概率被追问。</div>
+            <div class="tags"><span>协作沟通</span><span>动机稳定性</span></div>
+            <div class="fold" data-src-id="j.risk">
+              <button class="ft" data-fold aria-expanded="false"><span>依据</span><span class="car">↓</span></button>
+              <div class="fb"><div class="fb-in">
+                <div class="fr"><span class="fk">我方证据</span><span class="fv">画像动机维度：近 3 段经历团队规模 8 / 15 / 18 人，平均在职 14 个月。</span></div>
+                <div class="fr"><span class="fk">岗位要求</span><span class="fv">公司公开信息：支付团队 60+ 人，横跨 3 个时区，异步协作为主。</span></div>
+                <div class="fr"><span class="fk">推理</span><span class="fv">环境差异会同时触发「适配成本」与「稳定性」两类面试追问。</span></div>
+                <div class="fr"><span class="fk">影响</span><span class="fv">−6 分（协作沟通 / 动机稳定性）</span></div>
+              </div></div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+    <div class="moon-score">
+      <div class="m" style="background: linear-gradient(90deg, var(--ink-strong) 0 42%, var(--paper) 42% 100%);">
+        <div class="lbl">Risk · 42</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="screen" id="s4">
+    <div class="moon-score">
+      <div class="m" style="background: linear-gradient(90deg, var(--ink-strong) 0 66%, var(--paper) 66% 100%);">
+        <div class="lbl">Actions · 3</div>
+      </div>
+    </div>
+    <div>
+      <div class="k">03 · 投前 3 步</div>
+      <h2>投前<br/>3 步。</h2>
+      <div class="risklist" style="margin-top:32px;">
+        <div class="row">
+          <span class="k">01</span>
+          <div><div class="t">简历如何完善</div><div class="d">在最近一段经历下新增一条：主导 CI/CD 流水线改造，构建时长 18min → 6min，并注明线上故障复盘参与次数。</div>
+            <div class="fold" data-src-id="s.resume">
+              <button class="ft" data-fold aria-expanded="false"><span>依据</span><span class="car">↓</span></button>
+              <div class="fb"><div class="fb-in">
+                <div class="fr"><span class="fk">为什么</span><span class="fv">对应「最大缺口：缺少可验证的 CI/CD 与线上排障证据」。</span></div>
+                <div class="fr"><span class="fk">预期效果</span><span class="fv">匹配分 78 → 86，胜算等级 中 → 中高。</span></div>
+                <div class="fr"><span class="fk">参考写法</span><span class="fv">「主导前端 CI/CD 改造：引入并行构建与缓存策略，构建时长 18min → 6min；参与 6 次线上故障复盘，主写 2 份 RCA。」</span></div>
+              </div></div>
+            </div>
+          </div>
+        </div>
+        <div class="row">
+          <span class="k">02</span>
+          <div><div class="t">作品集 / 项目表达要补什么</div><div class="d">补一页支付类前端架构图：模块划分、错误兜底、灰度发布策略，替换掉当前偏视觉的展示页。</div>
+            <div class="fold" data-src-id="s.portfolio">
+              <button class="ft" data-fold aria-expanded="false"><span>依据</span><span class="car">↓</span></button>
+              <div class="fb"><div class="fb-in">
+                <div class="fr"><span class="fk">为什么</span><span class="fv">JD 强调支付领域上下文，画像「产品理解」在该领域缺少证据。</span></div>
+                <div class="fr"><span class="fk">预期效果</span><span class="fv">产品理解 82 → 88，强化「可直接上手」印象。</span></div>
+                <div class="fr"><span class="fk">参考写法</span><span class="fv">一页三栏：支付链路模块划分 / 失败与重试兜底 / 灰度与回滚策略，每栏一句结论 + 一个指标。</span></div>
+              </div></div>
+            </div>
+          </div>
+        </div>
+        <div class="row">
+          <span class="k">03</span>
+          <div><div class="t">面试 / 自我介绍要准备什么</div><div class="d">准备一段 60 秒回答：为什么愿意进入 60+ 人跨时区团队，用一段实际跨团队协作经历作为证据。</div>
+            <div class="fold" data-src-id="s.interview">
+              <button class="ft" data-fold aria-expanded="false"><span>依据</span><span class="car">↓</span></button>
+              <div class="fb"><div class="fb-in">
+                <div class="fr"><span class="fk">为什么</span><span class="fv">对应「最大风险：团队规模偏好与岗位环境不一致」，这是面试必问点。</span></div>
+                <div class="fr"><span class="fk">预期效果</span><span class="fv">降低动机稳定性质疑，风险分 42 → 30。</span></div>
+                <div class="fr"><span class="fk">参考写法</span><span class="fv">「我此前在小团队负责全链路，但与海外风控团队做过 8 个月异步协作，习惯用文档与录屏推进决策，这正是我想进入更大规模组织的原因。」</span></div>
+              </div></div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <section class="screen" id="s5" style="display:block; min-height:auto; padding:80px 0;">
+    <div class="k">04 · 资料来源 · 分析思路</div>
+    <h2 style="font-size:64px; font-weight:500; letter-spacing:-0.03em; line-height:.95; color:var(--ink-strong); margin:16px 0 40px;">资料来源与<br/>分析思路。</h2>
+
+    <div class="ev" id="ev">
+      <button class="ev-toggle" id="evToggle" aria-expanded="false">
+        <span>展开 · Sources / Pipeline / Scores / Reasoning Trace</span>
+        <span class="car">↓</span>
+      </button>
+      <div class="ev-body">
+        <div class="ev-block">
+          <div class="k">资料来源</div>
+          <div class="srcs">
+            <a href="#"><span>岗位 JD 原文 · Senior Frontend Engineer, Payments</span><span class="k">2026-07-28</span></a>
+            <a href="#"><span>公司公开信息 · 团队规模与技术博客</span><span class="k">2026-07-26</span></a>
+            <a href="#"><span>同类岗位对照 · 4 个同级 JD 的能力要求交集</span><span class="k">2026-07-25</span></a>
+            <a href="#"><span>你的画像快照 · Profile v3</span><span class="k">2026-07-30</span></a>
+          </div>
+        </div>
+
+        <div class="ev-block">
+          <div class="k">分析步骤</div>
+          <div class="steps">
+            <div class="r"><span class="n">01</span><span class="s">解析 JD</span><span>抽取硬性要求 8 条、软性偏好 5 条，标注可验证性。</span></div>
+            <div class="r"><span class="n">02</span><span class="s">解析画像</span><span>读取 Profile v3 的 8 维能力分与证据引用位置。</span></div>
+            <div class="r"><span class="n">03</span><span class="s">维度对齐</span><span>将 JD 要求逐条映射到 8 个能力维度，标记命中 / 部分命中 / 缺失。</span></div>
+            <div class="r"><span class="n">04</span><span class="s">打分</span><span>按维度权重加权得出匹配分，并输出扣分归因。</span></div>
+            <div class="r"><span class="n">05</span><span class="s">生成建议</span><span>由扣分归因反推「投前 3 步」，每步绑定其对应缺口 ID。</span></div>
+          </div>
+        </div>
+
+        <div class="ev-block">
+          <div class="k">分项评分</div>
+          <div class="bars">
+            <div class="bar"><span class="n">专业技能</span><span class="t" style="--v:94%"></span><span class="v">94</span></div>
+            <div class="bar"><span class="n">系统设计</span><span class="t" style="--v:88%"></span><span class="v">88</span></div>
+            <div class="bar"><span class="n">执行交付</span><span class="t" style="--v:85%"></span><span class="v">85</span></div>
+            <div class="bar"><span class="n">产品理解</span><span class="t" style="--v:82%"></span><span class="v">82</span></div>
+            <div class="bar"><span class="n">协作沟通</span><span class="t" style="--v:78%"></span><span class="v">78</span></div>
+            <div class="bar"><span class="n">学习成长</span><span class="t" style="--v:76%"></span><span class="v">76</span></div>
+            <div class="bar"><span class="n">工程素养</span><span class="t" style="--v:54%"></span><span class="v">54</span></div>
+            <div class="bar"><span class="n">动机稳定性</span><span class="t" style="--v:48%"></span><span class="v">48</span></div>
+          </div>
+        </div>
+
+        <div class="ev-block">
+          <div class="k">推理记录</div>
+          <div class="trace" id="trace" data-src-id="model.trace">
+            <div class="r"><span class="k">11:02:14</span><span class="s">parse_jd</span><span>抽取 13 条要求，其中 4 条标记为硬性且可验证。</span></div>
+            <div class="r"><span class="k">11:02:19</span><span class="s">align_dimensions</span><span>6/8 维度命中，缺口集中于「工程素养」。</span></div>
+            <div class="r"><span class="k">11:02:23</span><span class="s">score</span><span>加权匹配分 78，主要扣分项 −8 / −6。</span></div>
+            <div class="r"><span class="k">11:02:27</span><span class="s">strategy</span><span>生成 3 条行动建议，预计补齐后 86。</span></div>
+            <div class="empty" style="margin-top:16px;">以上为占位记录 · 接入模型后此处直接渲染真实 reasoning trace</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    </div>
+
+  </section>
+
+</main>
+<a class="preview-crumb" href="./index.html">← Previews</a>
+
+<script>
+  // ---- current job (static prototype data) ----
+  (function () {
+    const JOB = { id: "stripe-senior-frontend", co: "Stripe", title: "Senior Frontend", loc: "Remote / SF", m: 78, s: "$180K–220K", yes: "Craft · Product", no: "Team > 60" };
+    const read = (k) => { try { return JSON.parse(localStorage.getItem(k) || "[]"); } catch (e) { return []; } };
+    const write = (k, v) => localStorage.setItem(k, JSON.stringify(v));
+
+    const pool = document.getElementById("addPoolBtn");
+    const apply = document.getElementById("applyBtn");
+    if (pool) pool.addEventListener("click", () => {
+      const list = read("wfy.pool");
+      if (!list.some((j) => j.id === JOB.id)) { list.push(JOB); write("wfy.pool", list); }
+      localStorage.setItem("wfy.focus", JOB.id);
+      location.href = "./compare.html";
+
+    });
+    if (apply) apply.addEventListener("click", () => {
+      const list = read("wfy.deliveries");
+      if (!list.some((j) => j.id === JOB.id)) {
+        const d = new Date();
+        const M = ["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"];
+        list.unshift({
+          id: JOB.id, co: JOB.co, title: JOB.title, m: JOB.m, status: "待投递",
+          day: String(d.getDate()).padStart(2, "0"), mon: M[d.getMonth()], year: d.getFullYear(),
+          body: "从匹配页直接投递。匹配 " + JOB.m + "%，投前 3 步的建议尚未全部完成，先记录下来。",
+          quote: "",
+        });
+        write("wfy.deliveries", list);
+      }
+      localStorage.setItem("wfy.focus", JOB.id);
+      location.href = "./delivery.html";
+
+    });
+  })();
+</script>
+
+<script>
+
+
+  // draw tick marks around bg dial
+  (function () {
+    const g = document.getElementById("bg-ticks");
+    for (let i = 0; i < 60; i++) {
+      const a = (i / 60) * Math.PI * 2;
+      const r1 = 660, r2 = i % 5 === 0 ? 640 : 650;
+      const x1 = 700 + Math.cos(a) * r1, y1 = 700 + Math.sin(a) * r1;
+      const x2 = 700 + Math.cos(a) * r2, y2 = 700 + Math.sin(a) * r2;
+      const el = document.createElementNS("http://www.w3.org/2000/svg", "line");
+      el.setAttribute("x1", x1); el.setAttribute("y1", y1);
+      el.setAttribute("x2", x2); el.setAttribute("y2", y2);
+      el.setAttribute("stroke", "currentColor");
+      el.setAttribute("stroke-width", "0.5");
+      el.style.color = "var(--ink)";
+      g.appendChild(el);
+    }
+  })();
+
+  // sources / reasoning accordion
+  (function () {
+    const ev = document.getElementById("ev");
+    const btn = document.getElementById("evToggle");
+    btn.addEventListener("click", () => {
+      const open = ev.classList.toggle("open");
+      btn.setAttribute("aria-expanded", open ? "true" : "false");
+      btn.querySelector("span").textContent = open
+        ? "收起 · Sources / Pipeline / Scores / Reasoning Trace"
+        : "展开 · Sources / Pipeline / Scores / Reasoning Trace";
+    });
+  })();
+
+  // per-conclusion evidence folds (delegated)
+  document.addEventListener("click", (e) => {
+    const t = e.target.closest("[data-fold]");
+    if (!t) return;
+    const fold = t.parentElement;
+    const open = fold.classList.toggle("open");
+    t.setAttribute("aria-expanded", open ? "true" : "false");
+    t.querySelector("span").textContent = open ? "收起依据" : "依据";
+  });
+
+
+  // scroll → highlight progress + rotate hand
+  (function () {
+    const hand = document.getElementById("hand");
+    const links = document.querySelectorAll(".progress a");
+    const targets = Array.from(links).map(a => document.querySelector(a.getAttribute("href")));
+    function onScroll() {
+      const y = window.scrollY + window.innerHeight / 2;
+      let active = 0;
+      targets.forEach((t, i) => { if (t && t.offsetTop <= y) active = i; });
+      links.forEach((l, i) => l.classList.toggle("on", i === active));
+      const rot = links[active].dataset.hand;
+      hand.style.transform = `rotate(${rot}deg)`;
+    }
+    window.addEventListener("scroll", onScroll, { passive: true });
+    onScroll();
+  })();
+</script>
+
+</body>
+</html>
