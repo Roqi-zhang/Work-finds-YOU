@@ -477,7 +477,9 @@
     if (pool) pool.addEventListener("click", () => {
       const list = read("wfy.pool");
       if (!list.some((j) => j.id === JOB.id)) { list.push(JOB); write("wfy.pool", list); }
+      localStorage.setItem("wfy.focus", JOB.id);
       location.href = "./compare.html";
+
     });
     if (apply) apply.addEventListener("click", () => {
       const list = read("wfy.deliveries");
