@@ -326,7 +326,16 @@
       localStorage.setItem("wfy.entryEdits", JSON.stringify(store));
     });
   });
+
+  // ---- 3. focus the entry just created / touched from the match page ----
+  const focus = localStorage.getItem("wfy.focus");
+  if (focus) {
+    const el = entriesEl.querySelector(`[data-id="${focus}"]`);
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+    localStorage.removeItem("wfy.focus");
+  }
 })();
+
 </script>
 </body>
 
