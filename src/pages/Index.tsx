@@ -1,4 +1,7 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
+
 
 const PAGES = [
   { key: "index", label: "总览", src: "/previews/index.html" },
@@ -12,6 +15,8 @@ const PAGES = [
 
 const Index = () => {
   const [active, setActive] = useState(PAGES[0]);
+  const { user, signOut } = useAuth();
+
 
   return (
     <div style={{ height: "100vh", display: "flex", flexDirection: "column", background: "#F1F1F1", fontFamily: "Inter, sans-serif" }}>
@@ -51,15 +56,42 @@ const Index = () => {
             </button>
           );
         })}
-        <a
-          href={active.src}
-          target="_blank"
-          rel="noreferrer"
-          style={{ marginLeft: "auto", color: "#404040", textDecoration: "underline", fontSize: 11 }}
-        >
-          新窗口打开 ↗
-        </a>
+        <span style={{ marginLeft: "auto", display: "inline-flex", alignItems: "center", gap: 14 }}>
+          {user ? (
+            <>
+              <span style={{ color: "#888", textTransform: "none", letterSpacing: 0 }}>{user.email}</span>
+              <button
+                onClick={signOut}
+                style={{
+                  background: "none",
+                  border: 0,
+                  padding: 0,
+                  color: "#404040",
+                  textDecoration: "underline",
+                  fontSize: 11,
+                  cursor: "pointer",
+                  fontFamily: "inherit",
+                }}
+              >
+                退出
+              </button>
+            </>
+          ) : (
+            <Link to="/auth" style={{ color: "#404040", textDecoration: "underline", fontSize: 11 }}>
+              登录 / 注册
+            </Link>
+          )}
+          <a
+            href={active.src}
+            target="_blank"
+            rel="noreferrer"
+            style={{ color: "#404040", textDecoration: "underline", fontSize: 11 }}
+          >
+            新窗口打开 ↗
+          </a>
+        </span>
       </div>
+
       <iframe
         key={active.key}
         src={active.src}
