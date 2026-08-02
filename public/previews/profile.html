@@ -8,6 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500&family=Zhi+Mang+Xing&family=Parisienne&display=swap" rel="stylesheet" />
+<script src="./_data.js"></script>
 <script src="./_shared.js"></script>
 
 <style>
@@ -443,9 +444,8 @@
     let state = "empty";
 
     // ---- state persistence (survives top-nav page switches) ----
-    const SKEY = "wfy.state.profile";
-    function loadStore() { try { return JSON.parse(localStorage.getItem(SKEY) || "null"); } catch (e) { return null; } }
-    function saveStore(v) { if (v) localStorage.setItem(SKEY, JSON.stringify(v)); else localStorage.removeItem(SKEY); }
+    function loadStore() { const v = WFY.getUI("profile"); return v && v.state ? v : null; }
+    function saveStore(v) { WFY.setUI("profile", v || {}); }
 
     // filler text lines inside the resume card
     rLines.innerHTML = Array.from({ length: 14 }, (_, i) =>
@@ -476,6 +476,7 @@
     function handle(file) {
       if (!file) return;
       if (!accept.test(file.name)) { hintLine.textContent = "UNSUPPORTED · PDF / WORD / IMAGE ONLY"; return; }
+      if (file.size > 10 * 1024 * 1024) { hintLine.textContent = "FILE TOO LARGE · MAX 10MB"; return; }
       const kb = file.size / 1024;
       rName.textContent = file.name;
       rMeta.textContent = (file.name.split(".").pop() || "FILE").toUpperCase() + " · " +

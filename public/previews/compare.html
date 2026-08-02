@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=1280" />
 <title>04 Compare · Orbit Pool · A</title>
 <link rel="stylesheet" href="./_shared.css" />
+<script src="./_data.js"></script>
 <script src="./_shared.js"></script>
 <style>
   .head-row { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 32px; }
@@ -180,32 +181,8 @@
 <a class="preview-crumb" href="./index.html">← Previews</a>
 
 <script>
-  // ---- data layer (swap these two fns for the real API later) ----
-  const readStore = (k, d) => { try { return JSON.parse(localStorage.getItem(k) || d); } catch (e) { return JSON.parse(d); } };
-  const writeStore = (k, v) => localStorage.setItem(k, JSON.stringify(v));
-  const slug = (j) => (j.co + "-" + j.title).toLowerCase().replace(/\s+/g, "-");
-
-  const SEED = [
-    { title: "Senior Frontend",  co: "Stripe",    loc: "Remote / SF",  m: 78, s: "$180K–220K", yes: "Craft · Product", no: "Team > 60" },
-    { title: "Design Engineer",  co: "Linear",    loc: "Remote",       m: 84, s: "$170K–210K", yes: "Craft · Speed",   no: "Small team OK" },
-    { title: "Web Platform",     co: "Vercel",    loc: "Hybrid NYC",   m: 72, s: "$160K–200K", yes: "Perf",            no: "Hybrid required" },
-    { title: "Staff FE",         co: "Notion",    loc: "Remote",       m: 68, s: "$210K–260K", yes: "Editor systems",  no: "Long tenure need" },
-    { title: "Frontend Lead",    co: "Figma",     loc: "SF",           m: 88, s: "$220K–270K", yes: "Design tools",    no: "Onsite" },
-    { title: "UI Systems",       co: "Retool",    loc: "Remote",       m: 66, s: "$150K–190K", yes: "Design system",   no: "B2B focus" },
-    { title: "Product Eng",      co: "Raycast",   loc: "Remote EU",    m: 81, s: "€120K–160K", yes: "Product craft",   no: "Time zone" },
-    { title: "FE / DX",          co: "Warp",      loc: "SF",           m: 63, s: "$170K–210K", yes: "DX focus",        no: "Onsite" },
-    { title: "Frontend Arch",    co: "Databricks",loc: "Remote",       m: 59, s: "$230K–290K", yes: "Data UI",         no: "Enterprise" },
-    { title: "Web Eng",          co: "OpenAI",    loc: "SF",           m: 91, s: "$220K–260K", yes: "Cutting edge",    no: "Onsite" },
-    { title: "UI Engineer",      co: "Anthropic", loc: "Remote",       m: 76, s: "$210K–250K", yes: "Research UI",     no: "Sec review" },
-    { title: "Senior Web",       co: "Cloudflare",loc: "Remote",       m: 64, s: "$180K–220K", yes: "Edge platform",   no: "Legacy code" },
-  ].map((j) => Object.assign({ id: slug(j) }, j));
-
-  function loadJobs() {
-    const removed = readStore("wfy.poolRemoved", "[]");
-    const added = readStore("wfy.pool", "[]").map((j) => Object.assign({ id: j.id || slug(j) }, j));
-    const all = SEED.concat(added.filter((a) => !SEED.some((j) => j.id === a.id)));
-    return all.filter((j) => removed.indexOf(j.id) < 0);
-  }
+  // ---- data comes from the shared layer (WFY) ----
+  function loadJobs() { return WFY.getPool(); }
 
   let jobs = loadJobs();
 
@@ -223,7 +200,7 @@
   };
   const applyBtn = document.getElementById("applyBtn");
   const removeBtn = document.getElementById("removeBtn");
-  let selectedId = localStorage.getItem("wfy.state.compare") || null;
+  let selectedId = WFY.getUI("compare").selectedId || null;
 
   // ---- ring by match score: >=85 inner, 70-85 middle, <70 outer ----
   const RINGS = [140, 220, 290];
@@ -275,7 +252,7 @@
     const i = jobs.findIndex((j) => j.id === id);
     if (i < 0) { emptyState(); return; }
     selectedId = id;
-    localStorage.setItem("wfy.state.compare", id);
+    WFY.setUI("compare", { selectedId: id });
     nodesEl.querySelectorAll(".node").forEach((n) => n.classList.toggle("active", n.dataset.id === id));
     const j = jobs[i];
     const { x, y } = pos(j);
@@ -296,7 +273,7 @@
 
   function emptyState() {
     selectedId = null;
-    localStorage.removeItem("wfy.state.compare");
+    WFY.setUI("compare", { selectedId: null });
     line.classList.remove("on");
     detail.k.textContent = "00 / 00 · Empty pool";
     detail.title.textContent = "对比池为空";
@@ -330,9 +307,7 @@
     if (!j) return;
     confirmDialog("Remove from pool?", `将 ${j.co} · ${j.title} 从对比池中移出，是否继续？`, "确认移出", () => {
       const idx = jobs.findIndex((x) => x.id === j.id);
-      const removed = readStore("wfy.poolRemoved", "[]");
-      if (removed.indexOf(j.id) < 0) { removed.push(j.id); writeStore("wfy.poolRemoved", removed); }
-      writeStore("wfy.pool", readStore("wfy.pool", "[]").filter((p) => (p.id || slug(p)) !== j.id));
+      WFY.removeFromPool(j.id);
       jobs = loadJobs();
       if (!jobs.length) { render(); emptyState(); return; }
       const next = jobs[Math.min(idx, jobs.length - 1)];
@@ -342,30 +317,18 @@
     });
   });
 
-  // ---- apply: write into the delivery list, then jump ----
+  // ---- apply: write into the application list, then jump ----
   if (applyBtn) applyBtn.addEventListener("click", () => {
     const j = jobs.find((x) => x.id === selectedId);
     if (!j) return;
-    const list = readStore("wfy.deliveries", "[]");
-    if (!list.some((d) => d.id === j.id)) {
-      const dt = new Date();
-      const M = ["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"];
-      list.unshift({
-        id: j.id, co: j.co, title: j.title, m: j.m, status: "待投递",
-        day: String(dt.getDate()).padStart(2, "0"), mon: M[dt.getMonth()], year: dt.getFullYear(),
-        body: "从对比池投递。匹配 " + j.m + "%，投前 3 步的建议尚未全部完成，先记录下来。",
-        quote: "",
-      });
-      writeStore("wfy.deliveries", list);
-    }
-    localStorage.setItem("wfy.focus", j.id);
-    location.href = "./delivery.html";
+    WFY.applyToJob(j);
+    WFY.goto("delivery", j.id);
   });
 
   // ---- boot ----
   render();
-  const focus = localStorage.getItem("wfy.focus");
-  if (focus && jobs.some((j) => j.id === focus)) { selectedId = focus; localStorage.removeItem("wfy.focus"); }
+  const focus = WFY.focusId();
+  if (focus && jobs.some((j) => j.id === focus)) selectedId = focus;
   if (!jobs.length) emptyState();
   else activate(jobs.some((j) => j.id === selectedId) ? selectedId : jobs[0].id);
 </script>

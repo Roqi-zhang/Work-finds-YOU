@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=1280" />
 <title>03 Match · Scroll Narrative · B</title>
 <link rel="stylesheet" href="./_shared.css" />
+<script src="./_data.js"></script>
 <script src="./_shared.js"></script>
 <style>
   body { overflow-x: hidden; }
@@ -466,40 +467,115 @@
 <a class="preview-crumb" href="./index.html">← Previews</a>
 
 <script>
-  // ---- current job (static prototype data) ----
+  // ---- resolve the job from ?job=<id>, then render the report ----
   (function () {
-    const JOB = { id: "stripe-senior-frontend", co: "Stripe", title: "Senior Frontend", loc: "Remote / SF", m: 78, s: "$180K–220K", yes: "Craft · Product", no: "Team > 60" };
-    const read = (k) => { try { return JSON.parse(localStorage.getItem(k) || "[]"); } catch (e) { return []; } };
-    const write = (k, v) => localStorage.setItem(k, JSON.stringify(v));
+    const esc = (s) => String(s == null ? "" : s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+    const q = (s) => document.querySelector(s);
+    const pool = WFY.getPool();
+    const jobId = WFY.jobParam() || WFY.getUI("match").jobId || WFY.getUI("compare").selectedId || (pool[0] && pool[0].id) || null;
+    const report = jobId ? WFY.getMatchReport(jobId) : null;
 
-    const pool = document.getElementById("addPoolBtn");
-    const apply = document.getElementById("applyBtn");
-    if (pool) pool.addEventListener("click", () => {
-      const list = read("wfy.pool");
-      if (!list.some((j) => j.id === JOB.id)) { list.push(JOB); write("wfy.pool", list); }
-      localStorage.setItem("wfy.focus", JOB.id);
-      location.href = "./compare.html";
+    const poolBtn = document.getElementById("addPoolBtn");
+    const applyBtn = document.getElementById("applyBtn");
 
+    if (!report) {
+      // ---- empty state: no job selected ----
+      const h2 = q("#s1 h2"); if (h2) h2.innerHTML = "未选择<br/>岗位。";
+      const p = q("#s1 p"); if (p) p.textContent = "还没有指定要分析的岗位。先在对比池里选一个岗位，或在岗位画像页解析一份 JD，再回到这里查看匹配报告。";
+      const moon = q("#s1 .moon-score .m");
+      if (moon) { moon.style.background = "var(--paper)"; moon.querySelector(".lbl").textContent = "No report"; }
+      ["#s2", "#s3", "#s4", "#s5"].forEach((s) => { const el = q(s); if (el) el.style.display = "none"; });
+      const prog = q(".progress"); if (prog) prog.style.display = "none";
+      if (poolBtn) { poolBtn.textContent = "去对比池 →"; poolBtn.onclick = () => WFY.goto("compare"); }
+      if (applyBtn) { applyBtn.textContent = "去岗位画像 →"; applyBtn.onclick = () => WFY.goto("jobprofile"); }
+      window.MATCH_REPORT = null;
+      return;
+    }
+
+    WFY.setUI("match", { jobId: report.jobId });
+    window.MATCH_REPORT = report;
+    const job = report.job;
+    const R = report;
+
+    /* header + overview */
+    const cap = q(".topbar .right .caption"); if (cap) cap.textContent = job.title + " · " + job.co;
+    const t = q("title"); if (t) t.textContent = "03 Match · " + job.co + " · " + job.title;
+    const h1 = q("#s1 h2"); if (h1) h1.innerHTML = R.score + "%<br/>match.";
+    const ov = q("#s1 p"); if (ov) ov.textContent = "一句话：" + R.overview;
+    const setMoon = (sel, v, label) => {
+      const m = q(sel + " .moon-score .m");
+      if (!m) return;
+      m.style.background = `linear-gradient(90deg, var(--ink-strong) 0 ${v}%, var(--paper) ${v}% 100%)`;
+      const l = m.querySelector(".lbl"); if (l) l.textContent = label;
+    };
+    setMoon("#s1", R.score, "Overall · " + R.score);
+    setMoon("#s2", R.score, "Decision · " + R.decision.flag);
+    setMoon("#s3", R.riskScore, "Risk · " + R.riskScore);
+    setMoon("#s4", 66, "Actions · " + R.steps.length);
+
+    /* evidence folds: fill by data-src-id */
+    function fillFold(srcId, obj) {
+      const fold = q(`.fold[data-src-id="${srcId}"]`);
+      if (!fold || !obj) return;
+      const inner = fold.querySelector(".fb-in");
+      if (!inner) return;
+      inner.innerHTML = Object.keys(obj).map((k) =>
+        `<div class="fr"><span class="fk">${esc(k)}</span><span class="fv">${esc(obj[k])}</span></div>`).join("");
+    }
+
+    /* 01 decision */
+    Object.keys(R.decision.evidence).forEach((k) => fillFold(k, R.decision.evidence[k]));
+    const fvs = document.querySelectorAll("#s2 .fields .f");
+    const setField = (i, html) => { if (fvs[i]) fvs[i].querySelector(".fv").innerHTML = html; };
+    setField(0, esc(R.decision.flag));
+    setField(1, R.decision.score + "<small>/ 100</small>");
+    setField(2, esc(R.decision.win));
+    setField(3, esc(R.decision.rank));
+
+    /* 02 judgements */
+    const jrows = document.querySelectorAll("#s3 .risklist .row");
+    R.judgements.forEach((j, i) => {
+      const row = jrows[i]; if (!row) return;
+      row.querySelector(".k").className = "k mark" + (j.mark ? " " + j.mark : "");
+      row.querySelector(".k").textContent = j.kind;
+      row.querySelector(".t").textContent = j.title;
+      row.querySelector(".d").textContent = j.desc;
+      row.querySelector(".tags").innerHTML = j.tags.map((x) => `<span>${esc(x)}</span>`).join("");
+      const fold = row.querySelector(".fold");
+      if (fold) { fold.dataset.srcId = j.srcId; fillFold(j.srcId, j.evidence); }
     });
-    if (apply) apply.addEventListener("click", () => {
-      const list = read("wfy.deliveries");
-      if (!list.some((j) => j.id === JOB.id)) {
-        const d = new Date();
-        const M = ["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"];
-        list.unshift({
-          id: JOB.id, co: JOB.co, title: JOB.title, m: JOB.m, status: "待投递",
-          day: String(d.getDate()).padStart(2, "0"), mon: M[d.getMonth()], year: d.getFullYear(),
-          body: "从匹配页直接投递。匹配 " + JOB.m + "%，投前 3 步的建议尚未全部完成，先记录下来。",
-          quote: "",
-        });
-        write("wfy.deliveries", list);
-      }
-      localStorage.setItem("wfy.focus", JOB.id);
-      location.href = "./delivery.html";
 
+    /* 03 steps */
+    const srows = document.querySelectorAll("#s4 .risklist .row");
+    R.steps.forEach((s, i) => {
+      const row = srows[i]; if (!row) return;
+      row.querySelector(".t").textContent = s.title;
+      row.querySelector(".d").textContent = s.desc;
+      const fold = row.querySelector(".fold");
+      if (fold) { fold.dataset.srcId = s.srcId; fillFold(s.srcId, s.evidence); }
     });
+
+    /* 04 sources / pipeline / scores / trace */
+    const srcs = q("#s5 .srcs");
+    if (srcs) srcs.innerHTML = R.sources.map((s) =>
+      `<a href="#"><span>${esc(s.label)}</span><span class="k">${esc(s.at)}</span></a>`).join("");
+    const steps = q("#s5 .steps");
+    if (steps) steps.innerHTML = R.pipeline.map((p, i) =>
+      `<div class="r"><span class="n">${String(i + 1).padStart(2, "0")}</span><span class="s">${esc(p.step)}</span><span>${esc(p.detail)}</span></div>`).join("");
+    const bars = q("#s5 .bars");
+    if (bars) bars.innerHTML = R.dimensions.map((d) =>
+      `<div class="bar"><span class="n">${esc(d.name)}</span><span class="t" style="--v:${d.score}%"></span><span class="v">${d.score}</span></div>`).join("");
+    const trace = document.getElementById("trace");
+    if (trace) trace.innerHTML = R.trace.map((r) =>
+      `<div class="r"><span class="k">${esc(r.t)}</span><span class="s">${esc(r.s)}</span><span>${esc(r.d)}</span></div>`).join("") +
+      `<div class="empty" style="margin-top:16px;">接入模型后此处直接渲染真实 reasoning trace</div>`;
+
+    /* CTAs */
+    if (poolBtn) poolBtn.addEventListener("click", () => { WFY.addToPool(job); WFY.goto("compare", job.id); });
+    if (applyBtn) applyBtn.addEventListener("click", () => { WFY.applyToJob(job); WFY.goto("delivery", job.id); });
   })();
 </script>
+
 
 <script>
 
@@ -523,15 +599,15 @@
   })();
 
   // ---- ui state persistence (survives top-nav page switches) ----
-  const MKEY = "wfy.state.match";
-  const mState = (function () { try { return JSON.parse(localStorage.getItem(MKEY) || "{}"); } catch (e) { return {}; } })();
+  const mState = WFY.getUI("match");
   if (!Array.isArray(mState.folds)) mState.folds = [];
-  const saveMState = () => localStorage.setItem(MKEY, JSON.stringify(mState));
+  const saveMState = () => WFY.setUI("match", mState);
 
   // sources / reasoning accordion
   (function () {
     const ev = document.getElementById("ev");
     const btn = document.getElementById("evToggle");
+    if (!ev || !btn) return;
     function apply(open) {
       ev.classList.toggle("open", open);
       btn.setAttribute("aria-expanded", open ? "true" : "false");
@@ -547,27 +623,30 @@
     if (mState.ev) apply(true);
   })();
 
-  // per-conclusion evidence folds (delegated)
+  // per-conclusion evidence folds (delegated, keyed by data-src-id)
   (function () {
-    const triggers = Array.from(document.querySelectorAll("[data-fold]"));
+    const keyOf = (t) => (t.parentElement.dataset.srcId || "");
     function apply(t, open) {
       t.parentElement.classList.toggle("open", open);
       t.setAttribute("aria-expanded", open ? "true" : "false");
       const label = t.querySelector("span");
       if (label.textContent.indexOf("整体推理链") < 0) label.textContent = open ? "收起依据" : "依据";
     }
-    triggers.forEach((t, i) => { if (mState.folds.indexOf(i) >= 0) apply(t, true); });
+    document.querySelectorAll("[data-fold]").forEach((t) => {
+      if (mState.folds.indexOf(keyOf(t)) >= 0) apply(t, true);
+    });
     document.addEventListener("click", (e) => {
       const t = e.target.closest("[data-fold]");
       if (!t) return;
-      const i = triggers.indexOf(t);
+      const k = keyOf(t);
       const open = !t.parentElement.classList.contains("open");
       apply(t, open);
-      mState.folds = mState.folds.filter((n) => n !== i);
-      if (open) mState.folds.push(i);
+      mState.folds = mState.folds.filter((n) => n !== k);
+      if (open) mState.folds.push(k);
       saveMState();
     });
   })();
+
 
 
 
