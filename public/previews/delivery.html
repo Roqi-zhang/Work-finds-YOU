@@ -253,9 +253,153 @@
   }
   function writeStatusMap(m) { localStorage.setItem("wfy.entryStatus", JSON.stringify(m)); }
 
+  // extra (non-entry) timeline items are captured before the rail is re-rendered
+  const extras = Array.from(rail.querySelectorAll(".dot:not([data-id])")).map((d) => {
+    const t = (d.querySelector(".t") || {}).textContent || "01·01";
+    const [mm, dd] = t.split("·").map((n) => parseInt(n, 10));
+    return { label: (d.querySelector(".m") || {}).textContent || "", ts: new Date(2026, (mm || 1) - 1, dd || 1).getTime(), on: d.classList.contains("on"), t };
+  });
+
   // ---- 1. prepend entries added from the match page ----
   read("wfy.deliveries").slice().reverse().forEach((d) => {
     if (entriesEl.querySelector(`[data-id="${d.id}"]`)) return;
+    const a = document.createElement("article");
+    a.className = "entry";
+    a.dataset.id = d.id; a.dataset.co = d.co; a.dataset.status = d.status || "待投递";
+    a.innerHTML =
+      `<div class="date"><span class="d">${d.day}</span>${d.mon} · ${d.year}</div>` +
+      `<div class="body">` +
+        `<h2>${d.co} · ${d.title}</h2>` +
+        `<div class="sub">匹配 ${d.m}%</div>` +
+        `<p>${d.body || ""}</p>` +
+        (d.quote ? `<div class="quote">${d.quote}</div>` : "") +
+      `</div>`;
+    entriesEl.prepend(a);
+  });
+
+  // ---- 2. rail rendering driven by entry status + status-change date ----
+  function entryBaseTs(entry) {
+    const dateEl = entry.querySelector(".date");
+    const day = parseInt((dateEl.querySelector(".d") || {}).textContent || "1", 10);
+    const rest = dateEl.textContent.replace(/^\s*\d+/, "").trim(); // "JUL · 2026"
+    const parts = rest.split("·").map((s) => s.trim());
+    const mon = MONS[(parts[0] || "JAN").toUpperCase()] || 0;
+    const year = parseInt(parts[1] || "2026", 10);
+    return new Date(year, mon, day).getTime();
+  }
+
+  function renderRail() {
+    const map = readStatusMap();
+    const items = extras.slice();
+    entriesEl.querySelectorAll(".entry").forEach((entry) => {
+      const id = entry.dataset.id;
+      const rec = map[id] || {};
+      const status = entry.dataset.status || "待投递";
+      const ts = rec.updatedAt ? new Date(rec.updatedAt).getTime() : entryBaseTs(entry);
+      const dt = new Date(ts);
+      items.push({
+        id,
+        label: (entry.dataset.co || "") + " · " + status,
+        ts,
+        on: ACTIVE_ON.indexOf(status) > -1,
+        t: pad(dt.getMonth() + 1) + "·" + pad(dt.getDate()),
+      });
+    });
+    items.sort((a, b) => b.ts - a.ts);
+
+    rail.querySelectorAll(".dot").forEach((d) => d.remove());
+    const stats = rail.querySelector(".stats");
+    items.forEach((it) => {
+      const d = document.createElement("div");
+      d.className = "dot" + (it.on ? " on" : "");
+      if (it.id) d.dataset.id = it.id;
+      d.innerHTML = `<span class="m">${it.label}</span><span class="t">${it.t}</span>`;
+      rail.insertBefore(d, stats);
+    });
+
+    // stats
+    let active = 0, interview = 0;
+    entriesEl.querySelectorAll(".entry").forEach((e) => {
+      const s = e.dataset.status || "待投递";
+      if (s !== "结束") active++;
+      if (s === "面试中") interview++;
+    });
+    const rows = stats.querySelectorAll(".r");
+    if (rows[0]) rows[0].lastElementChild.textContent = active;
+    if (rows[1]) rows[1].lastElementChild.textContent = interview;
+  }
+
+  // ---- 3. per-entry enhancements: status select + unified actions + edit mode ----
+  const edits = JSON.parse(localStorage.getItem("wfy.entryEdits") || "{}");
+  const statusMap = readStatusMap();
+
+  entriesEl.querySelectorAll(".entry").forEach((entry) => {
+    const id = entry.dataset.id;
+    const body = entry.querySelector(".body");
+    const h2 = entry.querySelector("h2");
+    const sub = entry.querySelector(".sub");
+    const saved = edits[id];
+    if (saved) {
+      if (saved.title) h2.textContent = saved.title;
+      if (saved.sub) sub.innerHTML = saved.sub;
+      if (saved.text) { const p = entry.querySelector("p"); if (p) p.textContent = saved.text; }
+      if (saved.quote) { const q = entry.querySelector(".quote"); if (q) q.textContent = saved.quote; }
+    }
+    const status = (statusMap[id] || {}).status || entry.dataset.status || "待投递";
+    entry.dataset.status = status;
+
+    const row = document.createElement("div");
+    row.className = "status-row";
+    row.innerHTML = `<span class="lb">投递状态</span><span class="status-sel"><select>` +
+      STATUSES.map((s) => `<option${s === status ? " selected" : ""}>${s}</option>`).join("") +
+      `</select></span>`;
+    h2.after(row);
+
+    row.querySelector("select").addEventListener("change", (e) => {
+      const v = e.target.value;
+      entry.dataset.status = v;
+      const m = readStatusMap();
+      m[id] = { status: v, updatedAt: new Date().toISOString() };
+      writeStatusMap(m);
+      renderRail();
+    });
+
+    // unified action row: 查看匹配 / 编辑
+    entry.querySelectorAll(".foot").forEach((f) => f.remove());
+    const foot = document.createElement("div");
+    foot.className = "foot";
+    foot.innerHTML = `<a href="./match.html?job=${encodeURIComponent(id)}">查看匹配</a><button type="button">编辑</button>`;
+    body.appendChild(foot);
+
+    const editBtn = foot.querySelector("button");
+    editBtn.addEventListener("click", () => {
+      const on = entry.classList.toggle("editing");
+      const targets = [h2, sub, entry.querySelector("p"), entry.querySelector(".quote")].filter(Boolean);
+      targets.forEach((t) => { if (on) t.setAttribute("contenteditable", "true"); else t.removeAttribute("contenteditable"); });
+      editBtn.textContent = on ? "完成" : "编辑";
+      if (on) { h2.focus(); return; }
+      const store = JSON.parse(localStorage.getItem("wfy.entryEdits") || "{}");
+      store[id] = {
+        title: h2.textContent,
+        sub: sub.innerHTML,
+        text: (entry.querySelector("p") || {}).textContent || "",
+        quote: (entry.querySelector(".quote") || {}).textContent || "",
+      };
+      localStorage.setItem("wfy.entryEdits", JSON.stringify(store));
+    });
+  });
+
+  renderRail();
+
+  // ---- 4. focus the entry just created / touched from the match page ----
+  const focus = localStorage.getItem("wfy.focus");
+  if (focus) {
+    const el = entriesEl.querySelector(`[data-id="${focus}"]`);
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+    localStorage.removeItem("wfy.focus");
+  }
+})();
+
 
 
 </script>
