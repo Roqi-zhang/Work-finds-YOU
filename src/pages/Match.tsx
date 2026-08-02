@@ -7,7 +7,6 @@ import {
   focusId,
   getUI,
   setUI,
-  getPool,
   addToPool,
   applyToJob,
   type MatchReport,
