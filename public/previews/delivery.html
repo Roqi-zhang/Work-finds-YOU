@@ -286,13 +286,15 @@
     h2.after(row);
 
     const dot = rail.querySelector(`[data-id="${id}"] .m`);
+    const mark = sub.querySelector(".mark");
+    const tail = (sub.textContent.split("·").slice(1).join("·") || "").trim();
     row.querySelector("select").addEventListener("change", (e) => {
       const v = e.target.value;
       entry.dataset.status = v;
-      const mark = sub.querySelector(".mark");
-      sub.textContent = v + sub.textContent.replace(/^[^·]*/, "");
+      sub.textContent = tail ? v + " · " + tail : v;
       if (mark) sub.appendChild(mark);
       if (dot) dot.textContent = entry.dataset.co + " · " + v;
+
       const map = JSON.parse(localStorage.getItem("wfy.entryStatus") || "{}");
       map[id] = v; localStorage.setItem("wfy.entryStatus", JSON.stringify(map));
     });
