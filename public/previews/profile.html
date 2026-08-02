@@ -384,6 +384,10 @@
         const len = r.p.getTotalLength();
         r.p.style.setProperty("--len", len);
         r.p.style.animationDelay = r.delay + "s";
+      } else {
+        // clear any leftover draw-animation state so the placeholder flower is complete
+        r.p.style.removeProperty("--len");
+        r.p.style.removeProperty("animation-delay");
       }
     });
     if (animate) {
@@ -391,7 +395,13 @@
         p.style.setProperty("--len", p.getTotalLength());
         p.style.animationDelay = (0.9 + i * 0.2) + "s";
       });
+    } else {
+      stemRoot.querySelectorAll("path").forEach((p) => {
+        p.style.removeProperty("--len");
+        p.style.removeProperty("animation-delay");
+      });
     }
+
     notesRoot.innerHTML = "";
   }
   paint(DIMS.map((_, i) => ({ score: 2.5, seed: i })), false);
