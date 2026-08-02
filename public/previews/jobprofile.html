@@ -501,6 +501,7 @@
     function handle(file) {
       if (!file) return;
       if (!accept.test(file.name)) { hintLine.textContent = "UNSUPPORTED · PDF / WORD / IMAGE ONLY"; return; }
+      if (file.size > 10 * 1024 * 1024) { hintLine.textContent = "FILE TOO LARGE · MAX 10MB"; return; }
       const kb = file.size / 1024;
       rName.textContent = file.name;
       rMeta.textContent = (file.name.split(".").pop() || "FILE").toUpperCase() + " · " +
