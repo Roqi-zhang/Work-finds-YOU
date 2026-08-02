@@ -230,7 +230,7 @@ export default function Match() {
     <>
       {bgDial}
       <main className="page content">
-        <TopBar date={job.title + " · " + job.co} />
+        <TopBar />
 
         <nav className="progress">
           <a href="#s1" className="on" data-hand="-140">01 Overview</a>
