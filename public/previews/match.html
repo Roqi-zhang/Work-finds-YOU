@@ -522,28 +522,53 @@
     }
   })();
 
+  // ---- ui state persistence (survives top-nav page switches) ----
+  const MKEY = "wfy.state.match";
+  const mState = (function () { try { return JSON.parse(localStorage.getItem(MKEY) || "{}"); } catch (e) { return {}; } })();
+  if (!Array.isArray(mState.folds)) mState.folds = [];
+  const saveMState = () => localStorage.setItem(MKEY, JSON.stringify(mState));
+
   // sources / reasoning accordion
   (function () {
     const ev = document.getElementById("ev");
     const btn = document.getElementById("evToggle");
-    btn.addEventListener("click", () => {
-      const open = ev.classList.toggle("open");
+    function apply(open) {
+      ev.classList.toggle("open", open);
       btn.setAttribute("aria-expanded", open ? "true" : "false");
       btn.querySelector("span").textContent = open
         ? "收起 · Sources / Pipeline / Scores / Reasoning Trace"
         : "展开 · Sources / Pipeline / Scores / Reasoning Trace";
+    }
+    btn.addEventListener("click", () => {
+      const open = !ev.classList.contains("open");
+      apply(open);
+      mState.ev = open; saveMState();
     });
+    if (mState.ev) apply(true);
   })();
 
   // per-conclusion evidence folds (delegated)
-  document.addEventListener("click", (e) => {
-    const t = e.target.closest("[data-fold]");
-    if (!t) return;
-    const fold = t.parentElement;
-    const open = fold.classList.toggle("open");
-    t.setAttribute("aria-expanded", open ? "true" : "false");
-    t.querySelector("span").textContent = open ? "收起依据" : "依据";
-  });
+  (function () {
+    const triggers = Array.from(document.querySelectorAll("[data-fold]"));
+    function apply(t, open) {
+      t.parentElement.classList.toggle("open", open);
+      t.setAttribute("aria-expanded", open ? "true" : "false");
+      const label = t.querySelector("span");
+      if (label.textContent.indexOf("整体推理链") < 0) label.textContent = open ? "收起依据" : "依据";
+    }
+    triggers.forEach((t, i) => { if (mState.folds.indexOf(i) >= 0) apply(t, true); });
+    document.addEventListener("click", (e) => {
+      const t = e.target.closest("[data-fold]");
+      if (!t) return;
+      const i = triggers.indexOf(t);
+      const open = !t.parentElement.classList.contains("open");
+      apply(t, open);
+      mState.folds = mState.folds.filter((n) => n !== i);
+      if (open) mState.folds.push(i);
+      saveMState();
+    });
+  })();
+
 
 
   // scroll → highlight progress + rotate hand
