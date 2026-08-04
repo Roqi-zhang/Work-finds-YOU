@@ -224,7 +224,9 @@ export default function JobProfile() {
       if (!file) return;
       if (!accept.test(file.name)) { hintLine.textContent = "UNSUPPORTED · PDF / WORD / IMAGE ONLY"; return; }
       if (file.size > 10 * 1024 * 1024) { hintLine.textContent = "FILE TOO LARGE · MAX 10MB"; return; }
+      if (/\.doc$/i.test(file.name)) { hintLine.textContent = "暂不支持 .DOC · 请另存为 .DOCX 或 PDF"; return; }
       const kb = file.size / 1024;
+      pickedFile = file;
       rName.textContent = file.name;
       rMeta.textContent = (file.name.split(".").pop() || "FILE").toUpperCase() + " · " +
         (kb > 1024 ? (kb / 1024).toFixed(1) + " MB" : Math.round(kb) + " KB");
@@ -232,6 +234,7 @@ export default function JobProfile() {
       setState("ready");
       saveStore({ state: "ready", name: rName.textContent, meta: rMeta.textContent });
     }
+
 
     const onInputChange = (e: Event) => handle((e.target as HTMLInputElement).files?.[0]);
     input.addEventListener("change", onInputChange);
