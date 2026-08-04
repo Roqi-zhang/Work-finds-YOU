@@ -431,6 +431,88 @@ export function reportTemplate(job: Job) {
 
 export type MatchReport = ReturnType<typeof reportTemplate>;
 
+/* ---------- backend match_reports row → the shape the Match page renders ---------- */
+type BackendReport = {
+  score: number;
+  decision: { flag?: string; win?: string; rank?: string; overview?: string; missingCore?: string[] };
+  judgements?: {
+    kind: string;
+    title: string;
+    desc: string;
+    tags?: string[];
+    evidence?: { mine?: string; required?: string; reasoning?: string; impact?: string };
+  }[];
+  steps?: { title: string; desc: string; why?: string; effect?: string; sample?: string }[];
+  dimension_scores?: { key: string; label: string; score: number | null; level: string; core?: boolean; why?: string }[];
+  sources?: { label: string; at: string }[];
+  reasoning_trace?: string | null;
+};
+
+const MARKS: Record<string, string> = { 最大优势: "", 最大缺口: "w", 最大风险: "i" };
+const SRC_IDS = ["j.strength", "j.gap", "j.risk"];
+const STEP_IDS = ["s.resume", "s.portfolio", "s.interview"];
+
+export function reportFromBackend(job: Job, r: BackendReport): MatchReport {
+  const base = reportTemplate({ ...job, m: r.score });
+  const d = r.decision || {};
+
+  let trace: { t: string; s: string; d: string }[] = base.trace;
+  try {
+    const parsed = JSON.parse(r.reasoning_trace || "[]") as { step: string; detail: string }[];
+    if (Array.isArray(parsed) && parsed.length) {
+      trace = parsed.map((p, i) => ({ t: String(i + 1).padStart(2, "0"), s: p.step, d: p.detail }));
+    }
+  } catch {
+    /* keep template trace */
+  }
+
+  return {
+    ...base,
+    jobId: job.id,
+    job: { ...job, m: r.score },
+    score: r.score,
+    overview: d.overview || base.overview,
+    decision: {
+      ...base.decision,
+      flag: d.flag || base.decision.flag,
+      score: r.score,
+      win: d.win || base.decision.win,
+      rank: d.rank || base.decision.rank,
+    },
+    judgements: (r.judgements || []).map((j, i) => ({
+      kind: j.kind,
+      mark: MARKS[j.kind] ?? "",
+      title: j.title,
+      desc: j.desc,
+      tags: j.tags || [],
+      srcId: SRC_IDS[i] || "j." + i,
+      evidence: {
+        我方证据: j.evidence?.mine || "—",
+        岗位要求: j.evidence?.required || "—",
+        推理: j.evidence?.reasoning || "—",
+        影响: j.evidence?.impact || "—",
+      },
+    })),
+    steps: (r.steps || []).map((s, i) => ({
+      title: s.title,
+      desc: s.desc,
+      srcId: STEP_IDS[i] || "s." + i,
+      evidence: {
+        为什么: s.why || "—",
+        预期效果: s.effect || "—",
+        参考写法: s.sample || "—",
+      },
+    })),
+    dimensions: (r.dimension_scores || []).map((x) => ({
+      name: x.label,
+      score: x.score == null ? 0 : Math.round((x.score / 5) * 100),
+    })),
+    sources: r.sources?.length ? r.sources : base.sources,
+    trace,
+  };
+}
+
+
 export function getMatchReport(jobId: string): MatchReport | null {
   const job = getJob(jobId);
   if (!job) return null;
