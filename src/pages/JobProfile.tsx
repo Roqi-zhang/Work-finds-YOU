@@ -429,7 +429,6 @@ export default function JobProfile() {
       backBtn.removeEventListener("click", onBack);
       redoBtn.removeEventListener("click", onRedo);
       mainBtn.removeEventListener("click", onMain);
-      if (analyseTimer) clearTimeout(analyseTimer);
       mergeTimers.forEach((t) => clearTimeout(t));
     };
   }, [navigate]);
