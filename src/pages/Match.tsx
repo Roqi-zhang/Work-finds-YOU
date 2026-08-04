@@ -3,6 +3,9 @@ import { useLocation, useNavigate } from "react-router-dom";
 import TopBar from "@/components/swiss/TopBar";
 import {
   getMatchReport,
+  putMatchReport,
+  reportFromBackend,
+  getJob,
   jobParam,
   focusId,
   getUI,
@@ -11,7 +14,9 @@ import {
   applyToJob,
   type MatchReport,
 } from "@/lib/wfy";
+import { runMatch, aiMessage } from "@/lib/ai";
 import "@/styles/pages/match.css";
+
 
 type UIState = { jobId?: string; ev?: boolean; folds?: string[] };
 
@@ -64,7 +69,42 @@ export default function Match() {
     );
   }, [search]);
 
-  const report: MatchReport | null = useMemo(() => (jobId ? getMatchReport(jobId) : null), [jobId]);
+  const localReport: MatchReport | null = useMemo(() => (jobId ? getMatchReport(jobId) : null), [jobId]);
+  const [report, setReport] = useState<MatchReport | null>(localReport);
+  const [loading, setLoading] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setReport(localReport);
+  }, [localReport]);
+
+  // pull the real AI report; keep the local snapshot as fallback (e.g. signed out)
+  useEffect(() => {
+    if (!jobId) return;
+    let alive = true;
+    setLoading(true);
+    setLoadError(null);
+    runMatch(jobId)
+      .then(({ report: r }) => {
+        if (!alive) return;
+        const job = getJob(jobId) || localReport?.job;
+        if (job) {
+          const mapped = reportFromBackend(job, r as never);
+          putMatchReport(mapped);
+          setReport(mapped);
+        }
+      })
+      .catch((e) => {
+        if (alive) setLoadError(aiMessage(e));
+      })
+      .finally(() => {
+        if (alive) setLoading(false);
+      });
+    return () => {
+      alive = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [jobId]);
 
   const initialUI = getUI<UIState>("match");
   const [evOpen, setEvOpen] = useState<boolean>(!!initialUI.ev);
@@ -73,6 +113,7 @@ export default function Match() {
   useEffect(() => {
     if (report) setUI("match", { jobId: report.jobId });
   }, [report]);
+
 
   const toggleFold = (id: string) => {
     setFolds((prev) => {
@@ -169,11 +210,25 @@ export default function Match() {
             <div>
               <div className="k">01 · Overview</div>
               <h2>
-                还没有
-                <br />
-                岗位。
+                {loading ? (
+                  <>
+                    正在
+                    <br />
+                    分析。
+                  </>
+                ) : (
+                  <>
+                    还没有
+                    <br />
+                    岗位。
+                  </>
+                )}
               </h2>
-              <p>上传一份 JD 建立岗位画像，或从对比池里选择一个岗位，即可查看匹配分析报告。</p>
+              <p>
+                {loading
+                  ? "正在对齐你的画像与该岗位要求，通常需要 10–30 秒。"
+                  : loadError || "上传一份 JD 建立岗位画像，或从对比池里选择一个岗位，即可查看匹配分析报告。"}
+              </p>
               <div className="cta-row" style={{ marginTop: 32 }}>
                 <button className="btn" type="button" onClick={() => navigate("/jobprofile")}>
                   上传 JD 建立岗位画像 →
@@ -185,8 +240,9 @@ export default function Match() {
             </div>
             <div className="moon-score">
               <div className="m empty">
-                <div className="lbl">AWAITING JD</div>
+                <div className="lbl">{loading ? "ANALYSING…" : "AWAITING JD"}</div>
               </div>
+
             </div>
           </section>
         </main>

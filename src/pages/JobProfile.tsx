@@ -1,7 +1,8 @@
 import { useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import TopBar from "@/components/swiss/TopBar";
-import { getUI, setUI, putJob, slugId } from "@/lib/wfy";
+import { getUI, setUI, putJob } from "@/lib/wfy";
+import { parseJdFile, aiMessage } from "@/lib/ai";
 import "@/styles/pages/jobprofile.css";
 
 export default function JobProfile() {
@@ -190,6 +191,8 @@ export default function JobProfile() {
     const rLines = root.querySelector("#rLines") as HTMLElement;
     const accept = /\.(pdf|docx?|png|jpe?g|webp|gif|bmp|heic|tiff?)$/i;
     let state = "empty";
+    let pickedFile: File | null = null;
+    let parsedJob: { id: string; title: string; company: string; location: string } | null = null;
 
     function loadStore(): any { const v = getUI<any>("jobprofile"); return v && v.state ? v : null; }
     function saveStore(v: any) { setUI("jobprofile", v || {}); }
@@ -224,7 +227,9 @@ export default function JobProfile() {
       if (!file) return;
       if (!accept.test(file.name)) { hintLine.textContent = "UNSUPPORTED · PDF / WORD / IMAGE ONLY"; return; }
       if (file.size > 10 * 1024 * 1024) { hintLine.textContent = "FILE TOO LARGE · MAX 10MB"; return; }
+      if (/\.doc$/i.test(file.name)) { hintLine.textContent = "暂不支持 .DOC · 请另存为 .DOCX 或 PDF"; return; }
       const kb = file.size / 1024;
+      pickedFile = file;
       rName.textContent = file.name;
       rMeta.textContent = (file.name.split(".").pop() || "FILE").toUpperCase() + " · " +
         (kb > 1024 ? (kb / 1024).toFixed(1) + " MB" : Math.round(kb) + " KB");
@@ -232,6 +237,7 @@ export default function JobProfile() {
       setState("ready");
       saveStore({ state: "ready", name: rName.textContent, meta: rMeta.textContent });
     }
+
 
     const onInputChange = (e: Event) => handle((e.target as HTMLInputElement).files?.[0]);
     input.addEventListener("change", onInputChange);
@@ -322,18 +328,25 @@ export default function JobProfile() {
       });
     }
 
-    let analyseTimer: ReturnType<typeof setTimeout> | null = null;
     let mergeTimers: ReturnType<typeof setTimeout>[] = [];
 
-    const onMain = () => {
+    const onMain = async () => {
       if (state === "empty") { input.click(); return; }
       if (state === "bloomed") {
-        const fileName = rName.textContent || "jd.pdf";
-        const base = fileName.replace(/\.[^.]+$/, "").replace(/[-_]/g, " ");
-        const title = base || "Uploaded Role";
-        const co = "Custom JD";
-        const jobId = slugId(co, title);
-        putJob({ id: jobId, title, co, loc: "Remote", m: 75, s: "待确认", yes: "JD 匹配", no: "待确认" });
+        const stored = loadStore();
+        const job = parsedJob || stored?.job;
+        if (!job) { hintLine.textContent = "岗位信息缺失，请重新建立岗位画像"; return; }
+        const jobId = job.id;
+        putJob({
+          id: jobId,
+          title: job.title,
+          co: job.company,
+          loc: job.location || "待确认",
+          m: 0,
+          s: "待确认",
+          yes: "JD 匹配",
+          no: "待确认",
+        });
         setUI("match", { jobId });
 
         const svg = root!.querySelector("#flowerSvg") as SVGSVGElement;
@@ -347,27 +360,41 @@ export default function JobProfile() {
         return;
       }
       if (state !== "ready") return;
+      if (!pickedFile) { hintLine.textContent = "请重新选择 JD 文件"; setState("empty"); return; }
 
       setState("analysing");
-      analyseTimer = setTimeout(() => {
-        const result = [
-          { score: 4, strength: "strong", evidence: "简历中 3 段 SQL / Figma 主导项目", why: "工具链与交付物均可验证", action: "补一段量化结果", note: "项目证据强" },
-          { score: 3, strength: "medium", evidence: "描述过 GMV / 留存指标", why: "有指标意识但缺业务推演", action: "补充业务判断过程" },
-          { score: 4, strength: "strong", evidence: "两次 A/B 实验设计与结论", why: "能用数据支撑判断", action: "写清取舍逻辑" },
-          { score: 5, strength: "strong", evidence: "连续 4 个季度按时交付", why: "长期交付记录完整", action: "作为主线故事", note: "可作主线故事" },
-          { score: 3, strength: "medium", evidence: "有对上汇报与文档记录", why: "书面强、口头证据少", action: "准备 STAR 口述" },
-          { score: 2, strength: "weak", evidence: "跨团队协作描述较少", why: "缺少推动他人的具体案例", action: "补一段跨团队案例", note: "需补跨团队" },
-          { score: 4, strength: "strong", evidence: "半年内切换两个新领域", why: "上手速度有实证", action: "保持并写清方法", note: "上手快" },
-          { score: null, strength: "missing", evidence: "未填写偏好与求职动机", why: "无证据，不计分", action: "填写偏好备注", note: "证据不足" },
-        ];
+      try {
+        const out = await parseJdFile(pickedFile);
+        const by = new Map(out.dimensions.map((d) => [d.key, d]));
+        const result = DIMS.map((meta: { key: string }) => {
+          const d = by.get(meta.key);
+          return {
+            score: d?.score ?? null,
+            strength: d?.level ?? "missing",
+            evidence: d?.evidence,
+            why: d?.why,
+            action: d?.action,
+            note: d?.note,
+          };
+        });
+        parsedJob = {
+          id: out.job.id,
+          title: out.job.title,
+          company: out.job.company,
+          location: out.job.location,
+        };
         paint(result, true);
         stageEl.classList.add("blooming");
         setState("bloomed");
         stageEl.classList.add("bloomed");
         renderPetalAnalysis(result);
-        saveStore({ state: "bloomed", name: rName.textContent, meta: rMeta.textContent, result: result });
-      }, 2600);
+        saveStore({ state: "bloomed", name: rName.textContent, meta: rMeta.textContent, result, job: parsedJob });
+      } catch (e) {
+        setState("ready");
+        hintLine.textContent = aiMessage(e);
+      }
     };
+
     mainBtn.addEventListener("click", onMain);
 
     // ---- restore ----
@@ -402,7 +429,6 @@ export default function JobProfile() {
       backBtn.removeEventListener("click", onBack);
       redoBtn.removeEventListener("click", onRedo);
       mainBtn.removeEventListener("click", onMain);
-      if (analyseTimer) clearTimeout(analyseTimer);
       mergeTimers.forEach((t) => clearTimeout(t));
     };
   }, [navigate]);
