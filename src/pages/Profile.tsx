@@ -382,7 +382,7 @@ export default function Profile() {
     });
   }
 
-  function onMainBtn() {
+  async function onMainBtn() {
     if (state === "empty") {
       inputRef.current?.click();
       return;
@@ -393,17 +393,30 @@ export default function Profile() {
     }
     if (state !== "ready") return;
 
+    const file = fileRef.current;
+    if (!file) {
+      setHintOverride("请重新选择简历文件");
+      setStateVal("empty");
+      return;
+    }
+
     setStateVal("analysing");
-    setTimeout(() => {
-      const res = RESULT_TEMPLATE;
+    setHintOverride(null);
+    try {
+      const out = await parseResume(file);
+      const res = toDimResults(out.dimensions);
       paint(res, true);
       setBlooming(true);
       setStateVal("bloomed");
       setBloomedClass(true);
       setResult(res);
       saveStore({ state: "bloomed", name: rName, meta: rMeta, result: res });
-    }, 2600);
+    } catch (e) {
+      setStateVal("ready");
+      setHintOverride(aiMessage(e));
+    }
   }
+
 
   const map = STATE_MAP[state];
   const hintLine = hintOverride ?? map.hint;
