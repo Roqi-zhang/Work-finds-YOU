@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import TopBar from "@/components/swiss/TopBar";
 import { getUI, setUI } from "@/lib/wfy";
+import { parseResume, aiMessage, type DimScored } from "@/lib/ai";
 import "@/styles/pages/profile.css";
 
 // ============ 8 competency dimensions (PRD 7.4) ============
