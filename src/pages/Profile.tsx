@@ -181,6 +181,7 @@ export default function Profile() {
   const visualRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const petalRefs = useRef<PetalRef[]>([]);
+  const fileRef = useRef<File | null>(null);
   const currentRef = useRef<DimResult[]>(DIMS.map(() => ({ score: null })));
   const stateRef = useRef(state);
   stateRef.current = state;
