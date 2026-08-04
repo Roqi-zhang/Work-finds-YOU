@@ -72,16 +72,22 @@ const STATE_MAP: Record<string, { tag: string; line: string; btn: string; hint: 
   bloomed: { tag: "STATE / SUCCESS · 1 LOW-CONFIDENCE", line: "YOUR FLOWER HAS BLOOMED", btn: "下一步 →", hint: "hover 花瓣查看证据与得分理由" },
 };
 
-const RESULT_TEMPLATE: DimResult[] = [
-  { score: 4, strength: "strong", evidence: "简历中 3 段 SQL / Figma 主导项目", why: "工具链与交付物均可验证", action: "补一段量化结果", note: "项目证据强" },
-  { score: 3, strength: "medium", evidence: "描述过 GMV / 留存指标", why: "有指标意识但缺业务推演", action: "补充业务判断过程" },
-  { score: 4, strength: "strong", evidence: "两次 A/B 实验设计与结论", why: "能用数据支撑判断", action: "写清取舍逻辑" },
-  { score: 5, strength: "strong", evidence: "连续 4 个季度按时交付", why: "长期交付记录完整", action: "作为主线故事", note: "可作主线故事" },
-  { score: 3, strength: "medium", evidence: "有对上汇报与文档记录", why: "书面强、口头证据少", action: "准备 STAR 口述" },
-  { score: 2, strength: "weak", evidence: "跨团队协作描述较少", why: "缺少推动他人的具体案例", action: "补一段跨团队案例", note: "需补跨团队" },
-  { score: 4, strength: "strong", evidence: "半年内切换两个新领域", why: "上手速度有实证", action: "保持并写清方法", note: "上手快" },
-  { score: null, strength: "missing", evidence: "未填写偏好与求职动机", why: "无证据，不计分", action: "填写偏好备注", note: "证据不足" },
-];
+/** Backend evidence (level + score) → petal render model, always in DIMS order. */
+function toDimResults(dims: DimScored[]): DimResult[] {
+  const by = new Map(dims.map((d) => [d.key, d]));
+  return DIMS.map((meta) => {
+    const d = by.get(meta.key);
+    return {
+      score: d?.score ?? null,
+      strength: d?.level ?? "missing",
+      evidence: d?.evidence,
+      why: d?.why,
+      action: d?.action,
+      note: d?.note,
+    } as DimResult;
+  });
+}
+
 
 const GROUPS = [
   { title: "01 · Can do · 能不能做", idx: [0, 1, 2] },
