@@ -326,12 +326,17 @@ export default function Profile() {
       setHintOverride("FILE TOO LARGE · MAX 10MB");
       return;
     }
+    if (/\.doc$/i.test(file.name)) {
+      setHintOverride("暂不支持 .DOC · 请另存为 .DOCX 或 PDF");
+      return;
+    }
     const kb = file.size / 1024;
     const name = file.name;
     const meta =
       (file.name.split(".").pop() || "FILE").toUpperCase() +
       " · " +
       (kb > 1024 ? (kb / 1024).toFixed(1) + " MB" : Math.round(kb) + " KB");
+    fileRef.current = file;
     setRName(name);
     setRMeta(meta);
     setResult(null);
@@ -339,6 +344,8 @@ export default function Profile() {
     setStateVal("ready");
     saveStore({ state: "ready", name, meta });
   }
+
+
 
   function reset() {
     setBlooming(false);
