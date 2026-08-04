@@ -210,11 +210,25 @@ export default function Match() {
             <div>
               <div className="k">01 · Overview</div>
               <h2>
-                还没有
-                <br />
-                岗位。
+                {loading ? (
+                  <>
+                    正在
+                    <br />
+                    分析。
+                  </>
+                ) : (
+                  <>
+                    还没有
+                    <br />
+                    岗位。
+                  </>
+                )}
               </h2>
-              <p>上传一份 JD 建立岗位画像，或从对比池里选择一个岗位，即可查看匹配分析报告。</p>
+              <p>
+                {loading
+                  ? "正在对齐你的画像与该岗位要求，通常需要 10–30 秒。"
+                  : loadError || "上传一份 JD 建立岗位画像，或从对比池里选择一个岗位，即可查看匹配分析报告。"}
+              </p>
               <div className="cta-row" style={{ marginTop: 32 }}>
                 <button className="btn" type="button" onClick={() => navigate("/jobprofile")}>
                   上传 JD 建立岗位画像 →
@@ -226,8 +240,9 @@ export default function Match() {
             </div>
             <div className="moon-score">
               <div className="m empty">
-                <div className="lbl">AWAITING JD</div>
+                <div className="lbl">{loading ? "ANALYSING…" : "AWAITING JD"}</div>
               </div>
+
             </div>
           </section>
         </main>
