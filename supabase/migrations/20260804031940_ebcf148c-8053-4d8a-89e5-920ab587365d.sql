@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX IF NOT EXISTS match_reports_profile_job_uidx ON public.match_reports (user_profile_id, job_profile_id);
