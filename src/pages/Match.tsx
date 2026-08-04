@@ -64,7 +64,42 @@ export default function Match() {
     );
   }, [search]);
 
-  const report: MatchReport | null = useMemo(() => (jobId ? getMatchReport(jobId) : null), [jobId]);
+  const localReport: MatchReport | null = useMemo(() => (jobId ? getMatchReport(jobId) : null), [jobId]);
+  const [report, setReport] = useState<MatchReport | null>(localReport);
+  const [loading, setLoading] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setReport(localReport);
+  }, [localReport]);
+
+  // pull the real AI report; keep the local snapshot as fallback (e.g. signed out)
+  useEffect(() => {
+    if (!jobId) return;
+    let alive = true;
+    setLoading(true);
+    setLoadError(null);
+    runMatch(jobId)
+      .then(({ report: r }) => {
+        if (!alive) return;
+        const job = getJob(jobId) || localReport?.job;
+        if (job) {
+          const mapped = reportFromBackend(job, r as never);
+          putMatchReport(mapped);
+          setReport(mapped);
+        }
+      })
+      .catch((e) => {
+        if (alive) setLoadError(aiMessage(e));
+      })
+      .finally(() => {
+        if (alive) setLoading(false);
+      });
+    return () => {
+      alive = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [jobId]);
 
   const initialUI = getUI<UIState>("match");
   const [evOpen, setEvOpen] = useState<boolean>(!!initialUI.ev);
@@ -73,6 +108,7 @@ export default function Match() {
   useEffect(() => {
     if (report) setUI("match", { jobId: report.jobId });
   }, [report]);
+
 
   const toggleFold = (id: string) => {
     setFolds((prev) => {
