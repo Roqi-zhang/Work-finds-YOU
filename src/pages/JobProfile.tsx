@@ -1,7 +1,8 @@
 import { useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import TopBar from "@/components/swiss/TopBar";
-import { getUI, setUI, putJob, slugId } from "@/lib/wfy";
+import { getUI, setUI, putJob } from "@/lib/wfy";
+import { parseJdFile, aiMessage } from "@/lib/ai";
 import "@/styles/pages/jobprofile.css";
 
 export default function JobProfile() {
