@@ -190,6 +190,8 @@ export default function JobProfile() {
     const rLines = root.querySelector("#rLines") as HTMLElement;
     const accept = /\.(pdf|docx?|png|jpe?g|webp|gif|bmp|heic|tiff?)$/i;
     let state = "empty";
+    let pickedFile: File | null = null;
+    let parsedJob: { id: string; title: string; company: string; location: string } | null = null;
 
     function loadStore(): any { const v = getUI<any>("jobprofile"); return v && v.state ? v : null; }
     function saveStore(v: any) { setUI("jobprofile", v || {}); }
