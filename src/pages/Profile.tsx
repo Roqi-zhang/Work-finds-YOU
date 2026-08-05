@@ -592,7 +592,16 @@ export default function Profile() {
                 </div>
                 <span className="hintline" id="hintLine">
                   {hintLine}
+                  {!user && (
+                    <>
+                      {hintLine ? " · " : ""}
+                      <Link to="/auth" style={{ textDecoration: "underline" }}>
+                        去登录 →
+                      </Link>
+                    </>
+                  )}
                 </span>
+
                 <input
                   ref={inputRef}
                   id="cvFile"
