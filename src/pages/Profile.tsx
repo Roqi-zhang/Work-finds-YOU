@@ -172,6 +172,8 @@ const EMPTY_TIP: TipState = { on: false, x: 0, y: 0, name: "", score: "", evi: "
 
 export default function Profile() {
   const navigate = useNavigate();
+  const { user } = useAuth();
+
 
   const [state, setStateVal] = useState<"empty" | "ready" | "analysing" | "bloomed">("empty");
   const [rName, setRName] = useState("resume.pdf");
