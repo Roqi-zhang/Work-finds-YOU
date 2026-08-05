@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
+
 import TopBar from "@/components/swiss/TopBar";
 import { getUI, setUI } from "@/lib/wfy";
 import { parseResume, aiMessage, type DimScored } from "@/lib/ai";
@@ -170,6 +172,8 @@ const EMPTY_TIP: TipState = { on: false, x: 0, y: 0, name: "", score: "", evi: "
 
 export default function Profile() {
   const navigate = useNavigate();
+  const { user } = useAuth();
+
 
   const [state, setStateVal] = useState<"empty" | "ready" | "analysing" | "bloomed">("empty");
   const [rName, setRName] = useState("resume.pdf");
@@ -592,7 +596,16 @@ export default function Profile() {
                 </div>
                 <span className="hintline" id="hintLine">
                   {hintLine}
+                  {!user && (
+                    <>
+                      {hintLine ? " · " : ""}
+                      <Link to="/auth" style={{ textDecoration: "underline" }}>
+                        去登录 →
+                      </Link>
+                    </>
+                  )}
                 </span>
+
                 <input
                   ref={inputRef}
                   id="cvFile"
