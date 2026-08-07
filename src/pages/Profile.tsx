@@ -405,7 +405,8 @@ export default function Profile() {
       return;
     }
     if (state === "bloomed") {
-      navigate("/jobprofile");
+      // JD-first flow continues into the match; without a target JD, go pick one.
+      navigate(targetJobId ? "/match?job=" + encodeURIComponent(targetJobId) : "/jobprofile");
       return;
     }
     if (state !== "ready") return;
