@@ -199,7 +199,7 @@ Deno.serve(async (req) => {
 
     const { data: job, error } = await admin
       .from("job_profiles")
-      .insert({
+      .upsert({
         user_id: user.id,
         slug,
         title: a.data.title || "待确认",
