@@ -2,7 +2,9 @@ import { useEffect, useRef } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import TopBar from "@/components/swiss/TopBar";
 import { getUI, setUI, putJob } from "@/lib/wfy";
-import { parseJdFile, aiMessage } from "@/lib/ai";
+import { parseJdFile, aiMessage, type JdResult } from "@/lib/ai";
+import { clearTask, getTask, startTask, subscribeTask } from "@/lib/tasks";
+import { loadFile, saveFile } from "@/lib/filestore";
 import { useAuth } from "@/hooks/useAuth";
 import "@/styles/pages/jobprofile.css";
 
@@ -209,7 +211,7 @@ export default function JobProfile() {
         empty: ["STATE / EMPTY", "Let your flower bloom", "上传 JD", "click or drag · PDF / Word / Image"],
         ready: ["STATE / READY", "JD READY · WAITING TO BLOOM", "建立岗位画像", ""],
         analysing: ["STATE / LOADING", "ANALYSING…", "分析中", "PARSING · EXTRACTING · SCORING"],
-        bloomed: ["STATE / SUCCESS · 1 LOW-CONFIDENCE", "THE ROLE FLOWER HAS BLOOMED", "进入匹配 →", "hover 花瓣查看岗位要求与权重理由"],
+        bloomed: ["STATE / SUCCESS · 1 LOW-CONFIDENCE", "THE ROLE FLOWER HAS BLOOMED", "下一步 →", "hover 花瓣查看岗位要求与权重理由"],
       };
       const m = map[next];
       stateTag.textContent = m[0];
@@ -232,6 +234,7 @@ export default function JobProfile() {
       if (/\.doc$/i.test(file.name)) { hintLine.textContent = "暂不支持 .DOC · 请另存为 .DOCX 或 PDF"; return; }
       const kb = file.size / 1024;
       pickedFile = file;
+      void saveFile("jd", file);
       rName.textContent = file.name;
       rMeta.textContent = (file.name.split(".").pop() || "FILE").toUpperCase() + " · " +
         (kb > 1024 ? (kb / 1024).toFixed(1) + " MB" : Math.round(kb) + " KB");
@@ -332,6 +335,33 @@ export default function JobProfile() {
 
     let mergeTimers: ReturnType<typeof setTimeout>[] = [];
 
+    function applyResult(out: JdResult, animate: boolean) {
+      const by = new Map(out.dimensions.map((d) => [d.key, d]));
+      const result = DIMS.map((meta: { key: string }) => {
+        const d = by.get(meta.key);
+        return {
+          score: d?.score ?? null,
+          strength: d?.level ?? "missing",
+          evidence: d?.evidence,
+          why: d?.why,
+          action: d?.action,
+          note: d?.note,
+        };
+      });
+      parsedJob = {
+        id: out.job.id,
+        title: out.job.title,
+        company: out.job.company,
+        location: out.job.location,
+      };
+      paint(result, animate);
+      if (animate) stageEl.classList.add("blooming");
+      setState("bloomed");
+      stageEl.classList.add("bloomed");
+      renderPetalAnalysis(result);
+      saveStore({ state: "bloomed", name: rName.textContent, meta: rMeta.textContent, result, job: parsedJob });
+    }
+
     const onMain = async () => {
       if (state === "empty") { input.click(); return; }
       if (state === "bloomed") {
@@ -350,51 +380,19 @@ export default function JobProfile() {
           no: "待确认",
         });
         setUI("match", { jobId });
-
-        const svg = root!.querySelector("#flowerSvg") as SVGSVGElement;
-        const m = root!.querySelector("#merge") as HTMLElement;
-        (root!.querySelector("#mergeMine") as HTMLElement).innerHTML = svg.outerHTML;
-        (root!.querySelector("#mergeRole") as HTMLElement).innerHTML = svg.outerHTML;
-        m.classList.add("on");
-        requestAnimationFrame(() => setTimeout(() => m.classList.add("go"), 60));
-        mergeTimers.push(setTimeout(() => { (root!.querySelector("#mergeCap") as HTMLElement).textContent = "Match computed · entering"; }, 1250));
-        mergeTimers.push(setTimeout(() => { navigate("/profile?job=" + encodeURIComponent(jobId)); }, 1900));
+        navigate("/profile?job=" + encodeURIComponent(jobId));
         return;
       }
       if (state !== "ready") return;
-      if (!pickedFile) { hintLine.textContent = "请重新选择 JD 文件"; setState("empty"); return; }
+
+      const file = pickedFile || (await loadFile("jd"));
+      if (!file) { hintLine.textContent = "请重新选择 JD 文件"; setState("empty"); return; }
+      pickedFile = file;
 
       setState("analysing");
-      try {
-        const out = await parseJdFile(pickedFile);
-        const by = new Map(out.dimensions.map((d) => [d.key, d]));
-        const result = DIMS.map((meta: { key: string }) => {
-          const d = by.get(meta.key);
-          return {
-            score: d?.score ?? null,
-            strength: d?.level ?? "missing",
-            evidence: d?.evidence,
-            why: d?.why,
-            action: d?.action,
-            note: d?.note,
-          };
-        });
-        parsedJob = {
-          id: out.job.id,
-          title: out.job.title,
-          company: out.job.company,
-          location: out.job.location,
-        };
-        paint(result, true);
-        stageEl.classList.add("blooming");
-        setState("bloomed");
-        stageEl.classList.add("bloomed");
-        renderPetalAnalysis(result);
-        saveStore({ state: "bloomed", name: rName.textContent, meta: rMeta.textContent, result, job: parsedJob });
-      } catch (e) {
-        setState("ready");
-        hintLine.textContent = aiMessage(e);
-      }
+      hintLine.textContent = "PARSING · EXTRACTING · SCORING";
+      // Runs in the module-level registry — leaving the page no longer kills it.
+      startTask<JdResult>("jd", () => parseJdFile(file));
     };
 
     mainBtn.addEventListener("click", onMain);
@@ -408,13 +406,32 @@ export default function JobProfile() {
         paint(saved.result, false);
         stageEl.classList.add("bloomed");
         setState("bloomed");
+        parsedJob = saved.job || null;
         renderPetalAnalysis(saved.result);
       } else if (saved.state === "ready") {
         setState("ready");
+        // The picked file lives in IndexedDB, so a login round-trip keeps it.
+        loadFile("jd").then((f) => { if (f) pickedFile = f; });
       } else {
         setState("empty");
       }
     })();
+
+    // ---- subscribe to the background analysis ----
+    const applyTask = (s: { status: string; result?: unknown }) => {
+      if (s.status === "running") {
+        if (state !== "analysing") setState("analysing");
+      } else if (s.status === "done" && s.result) {
+        if (state !== "bloomed") applyResult(s.result as JdResult, true);
+        clearTask("jd");
+      } else if (s.status === "error") {
+        setState("ready");
+        hintLine.textContent = aiMessage(s.result);
+        clearTask("jd");
+      }
+    };
+    const unsubTask = subscribeTask("jd", applyTask);
+    applyTask(getTask("jd"));
 
     return () => {
       input.removeEventListener("change", onInputChange);
@@ -431,6 +448,7 @@ export default function JobProfile() {
       backBtn.removeEventListener("click", onBack);
       redoBtn.removeEventListener("click", onRedo);
       mainBtn.removeEventListener("click", onMain);
+      unsubTask();
       mergeTimers.forEach((t) => clearTimeout(t));
     };
   }, [navigate]);
@@ -450,7 +468,7 @@ export default function JobProfile() {
               <div className="steps">
                 <div className="step on" id="s1"><span className="n">01</span> 上传 JD</div>
                 <div className="step" id="s2"><span className="n">02</span> 建立岗位画像</div>
-                <div className="step" id="s3"><span className="n">03</span> 进入匹配</div>
+                <div className="step" id="s3"><span className="n">03</span> 下一步</div>
               </div>
 
               <div className="actions">

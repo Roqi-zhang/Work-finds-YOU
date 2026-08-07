@@ -4,7 +4,9 @@ import { useAuth } from "@/hooks/useAuth";
 
 import TopBar from "@/components/swiss/TopBar";
 import { getUI, setUI } from "@/lib/wfy";
-import { parseResume, aiMessage, type DimScored } from "@/lib/ai";
+import { parseResume, aiMessage, type DimScored, type EvidenceDetail, type ResumeResult } from "@/lib/ai";
+import { clearTask, getTask, startTask, subscribeTask } from "@/lib/tasks";
+import { loadFile, saveFile } from "@/lib/filestore";
 import "@/styles/pages/profile.css";
 
 // ============ 8 competency dimensions (PRD 7.4) ============
@@ -27,6 +29,7 @@ type DimResult = {
   action?: string;
   note?: string;
   seed?: number;
+  evidenceDetail?: EvidenceDetail[];
 };
 
 type Point = [number, number];
@@ -71,7 +74,7 @@ const STATE_MAP: Record<string, { tag: string; line: string; btn: string; hint: 
   empty: { tag: "STATE / EMPTY", line: "Let your flower bloom", btn: "上传简历", hint: "click or drag · PDF / Word / Image" },
   ready: { tag: "STATE / READY", line: "RESUME READY · WAITING TO BLOOM", btn: "建立画像", hint: "" },
   analysing: { tag: "STATE / LOADING", line: "ANALYSING…", btn: "分析中", hint: "PARSING · EXTRACTING · SCORING" },
-  bloomed: { tag: "STATE / SUCCESS · 1 LOW-CONFIDENCE", line: "YOUR FLOWER HAS BLOOMED", btn: "下一步 →", hint: "hover 花瓣查看证据与得分理由" },
+  bloomed: { tag: "STATE / SUCCESS · 1 LOW-CONFIDENCE", line: "YOUR FLOWER HAS BLOOMED", btn: "进入匹配 →", hint: "hover 花瓣查看证据与得分理由" },
 };
 
 /** Backend evidence (level + score) → petal render model, always in DIMS order. */
@@ -86,6 +89,7 @@ function toDimResults(dims: DimScored[]): DimResult[] {
       why: d?.why,
       action: d?.action,
       note: d?.note,
+      evidenceDetail: d?.evidenceDetail,
     } as DimResult;
   });
 }
@@ -190,6 +194,8 @@ export default function Profile() {
   const [bloomedClass, setBloomedClass] = useState(false);
   const [result, setResult] = useState<DimResult[] | null>(null);
   const [tip, setTip] = useState<TipState>(EMPTY_TIP);
+  const [matching, setMatching] = useState(false);
+  const [openEvi, setOpenEvi] = useState<Record<number, boolean>>({});
   const [dialog, setDialog] = useState<{ title: string; body: string; okText: string; onConfirm: (() => void) | null } | null>(null);
 
   const frontRootRef = useRef<SVGGElement | null>(null);
@@ -199,6 +205,7 @@ export default function Profile() {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const petalRefs = useRef<PetalRef[]>([]);
   const fileRef = useRef<File | null>(null);
+  const metaRef = useRef({ name: "", meta: "" });
   const currentRef = useRef<DimResult[]>(DIMS.map(() => ({ score: null })));
   const stateRef = useRef(state);
   stateRef.current = state;
@@ -289,6 +296,7 @@ export default function Profile() {
     if (saved && (saved as StoredProfile).state) {
       const s = saved as StoredProfile;
       if (s.name) {
+        metaRef.current = { name: s.name, meta: s.meta || "" };
         setRName(s.name);
         setRMeta(s.meta || "");
       }
@@ -299,6 +307,8 @@ export default function Profile() {
         setResult(s.result);
       } else if (s.state === "ready") {
         setStateVal("ready");
+        // The picked file lives in IndexedDB, so a login round-trip keeps it.
+        loadFile("resume").then((f) => { if (f) fileRef.current = f; });
       } else {
         setStateVal("empty");
       }
@@ -307,6 +317,34 @@ export default function Profile() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // ---- background analysis: survives page switches ----
+  useEffect(() => {
+    const apply = (t: { status: string; result?: unknown }) => {
+      if (t.status === "running") {
+        setStateVal((prev) => (prev === "bloomed" ? prev : "analysing"));
+      } else if (t.status === "done" && t.result) {
+        const out = t.result as ResumeResult;
+        const res = toDimResults(out.dimensions);
+        paint(res, true);
+        setBlooming(true);
+        setBloomedClass(true);
+        setResult(res);
+        setStateVal("bloomed");
+        saveStore({ state: "bloomed", name: metaRef.current.name, meta: metaRef.current.meta, result: res });
+        clearTask("resume");
+      } else if (t.status === "error") {
+        setStateVal("ready");
+        setHintOverride(aiMessage(t.result));
+        clearTask("resume");
+      }
+    };
+    const unsub = subscribeTask("resume", apply);
+    apply(getTask("resume"));
+    return () => { unsub(); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
 
   // ---- global dnd + escape ----
   useEffect(() => {
@@ -355,6 +393,8 @@ export default function Profile() {
       " · " +
       (kb > 1024 ? (kb / 1024).toFixed(1) + " MB" : Math.round(kb) + " KB");
     fileRef.current = file;
+    void saveFile("resume", file);
+    metaRef.current = { name, meta };
     setRName(name);
     setRMeta(meta);
     setResult(null);
@@ -406,35 +446,26 @@ export default function Profile() {
     }
     if (state === "bloomed") {
       // JD-first flow continues into the match; without a target JD, go pick one.
-      navigate(targetJobId ? "/match?job=" + encodeURIComponent(targetJobId) : "/jobprofile");
+      if (!targetJobId) { navigate("/jobprofile"); return; }
+      setMatching(true);
+      window.setTimeout(() => navigate("/match?job=" + encodeURIComponent(targetJobId)), 1700);
       return;
     }
     if (state !== "ready") return;
 
-    const file = fileRef.current;
+    const file = fileRef.current || (await loadFile("resume"));
     if (!file) {
       setHintOverride("请重新选择简历文件");
       setStateVal("empty");
       return;
     }
+    fileRef.current = file;
 
     setStateVal("analysing");
     setHintOverride(null);
-    try {
-      const out = await parseResume(file, targetJobId ?? undefined);
-      const res = toDimResults(out.dimensions);
-      paint(res, true);
-      setBlooming(true);
-      setStateVal("bloomed");
-      setBloomedClass(true);
-      setResult(res);
-      saveStore({ state: "bloomed", name: rName, meta: rMeta, result: res });
-    } catch (e) {
-      setStateVal("ready");
-      setHintOverride(aiMessage(e));
-    }
+    // Runs in the module-level registry so navigating away cannot abort it.
+    startTask<ResumeResult>("resume", () => parseResume(file, targetJobId ?? undefined));
   }
-
 
   const map = STATE_MAP[state];
   const hintLine = hintOverride ?? map.hint;
@@ -650,6 +681,33 @@ export default function Profile() {
                                 <span className="k">Evidence</span>
                                 <span className="v">{d.evidence || "—"}</span>
                               </div>
+                              {d.evidenceDetail && d.evidenceDetail.length > 0 && (
+                                <div className={"evi" + (openEvi[k] ? " open" : "")}>
+                                  <button
+                                    type="button"
+                                    className="evi-t"
+                                    onClick={() => setOpenEvi((o) => ({ ...o, [k]: !o[k] }))}
+                                  >
+                                    依据明细 · {d.evidenceDetail.length}
+                                    <span className="evi-a">↓</span>
+                                  </button>
+                                  <div className="evi-b">
+                                    {d.evidenceDetail.map((ev, n) => (
+                                      <div className="evi-i" key={ev.label + n}>
+                                        <div className="evi-m">
+                                          {[ev.label, ev.role].filter(Boolean).join(" · ") || "简历原文"}
+                                        </div>
+                                        {ev.claim && <div className="evi-r">{ev.claim}</div>}
+                                        {(ev.quotes || []).map((q, qi) => (
+                                          <div className="evi-q" key={qi}>「{q}」</div>
+                                        ))}
+                                      </div>
+                                    ))}
+                                  </div>
+
+                                </div>
+                              )}
+
                               <div className="r">
                                 <span className="k">Why</span>
                                 <span className="v">{d.why || "—"}</span>
@@ -669,6 +727,19 @@ export default function Profile() {
             </div>
           </section>
         </section>
+
+        {matching && (
+          <div className="matching">
+            <div className="mt-ring">
+              <span className="mt-a" />
+              <span className="mt-b" />
+            </div>
+            <div className="mt-t">MATCHING</div>
+            <div className="mt-s">岗位画像 × 个人画像 · 正在计算匹配度</div>
+          </div>
+        )}
+
+
 
         <div className={"mask" + (dialog ? " on" : "")} id="mask" onClick={(e) => { if (e.target === e.currentTarget) closeDialog(); }}>
           <div className="dlg">

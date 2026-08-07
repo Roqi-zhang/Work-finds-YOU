@@ -28,6 +28,7 @@ export type DimInput = {
   why?: string;
   action?: string;
   note?: string;
+  evidenceDetail?: { label: string; claim: string; quotes: string[]; role: string }[];
 };
 
 export type DimScored = DimInput & { label: string; score: number | null; core: boolean };
