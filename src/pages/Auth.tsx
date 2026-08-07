@@ -1,5 +1,5 @@
 import { useEffect, useState, CSSProperties } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
 import { useAuth } from "@/hooks/useAuth";
@@ -50,8 +50,12 @@ const ghostButton: CSSProperties = {
   borderColor: LINE,
 };
 
+const safeNext = (raw: string | null) =>
+  raw && raw.startsWith("/") && !raw.startsWith("//") ? raw : "/";
+
 const Auth = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { session, loading: authLoading } = useAuth();
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
@@ -60,9 +64,11 @@ const Auth = () => {
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  const next = safeNext(new URLSearchParams(location.search).get("next"));
+
   useEffect(() => {
-    if (!authLoading && session) navigate("/", { replace: true });
-  }, [authLoading, session, navigate]);
+    if (!authLoading && session) navigate(next, { replace: true });
+  }, [authLoading, session, navigate, next]);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -74,7 +80,7 @@ const Auth = () => {
       const { data, error: err } = await supabase.auth.signUp({
         email,
         password,
-        options: { emailRedirectTo: window.location.origin },
+        options: { emailRedirectTo: window.location.origin + next },
       });
       if (err) setError(err.message);
       else if (!data.session) setMessage("注册成功，请查收邮件并点击确认链接后登录。");
@@ -88,7 +94,7 @@ const Auth = () => {
   const google = async () => {
     setError(null);
     const result = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: window.location.origin,
+      redirect_uri: window.location.origin + next,
     });
     if (result.error) {
       setError("Google 登录失败，请重试。");

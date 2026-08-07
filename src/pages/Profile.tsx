@@ -606,7 +606,7 @@ export default function Profile() {
                   {!user && (
                     <>
                       {hintLine ? " · " : ""}
-                      <Link to="/auth" style={{ textDecoration: "underline" }}>
+                      <Link to={`/auth?next=${encodeURIComponent("/profile" + (targetJobId ? `?job=${targetJobId}` : ""))}`} style={{ textDecoration: "underline" }}>
                         去登录 →
                       </Link>
                     </>

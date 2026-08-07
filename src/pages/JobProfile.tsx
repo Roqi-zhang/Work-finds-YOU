@@ -1,12 +1,14 @@
 import { useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import TopBar from "@/components/swiss/TopBar";
 import { getUI, setUI, putJob } from "@/lib/wfy";
 import { parseJdFile, aiMessage } from "@/lib/ai";
+import { useAuth } from "@/hooks/useAuth";
 import "@/styles/pages/jobprofile.css";
 
 export default function JobProfile() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const rootRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -501,7 +503,17 @@ export default function JobProfile() {
                     <button className="btn ghost" id="redoBtn" hidden>重新建立岗位画像</button>
                     <button className="btn" id="mainBtn">上传简历</button>
                   </div>
-                  <span className="hintline" id="hintLine">click or drag · PDF / Word / Image</span>
+                  <span className="hintline">
+                    <span id="hintLine">click or drag · PDF / Word / Image</span>
+                    {!user && (
+                      <>
+                        {" · "}
+                        <Link to="/auth?next=%2Fjobprofile" style={{ textDecoration: "underline", color: "inherit" }}>
+                          去登录 →
+                        </Link>
+                      </>
+                    )}
+                  </span>
                   <input id="cvFile" type="file" accept=".pdf,.doc,.docx,image/*" hidden />
                 </div>
 
