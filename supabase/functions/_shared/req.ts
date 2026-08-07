@@ -27,7 +27,11 @@ export function adminClient(): SupabaseClient {
 export async function fileToBlock(admin: SupabaseClient, bucket: string, path: string, fileName: string) {
   const { data, error } = await admin.storage.from(bucket).download(path);
   if (error || !data) throw new Error(`Download failed: ${error?.message || "no data"}`);
-  const buf = new Uint8Array(await data.arrayBuffer());
+  return await bufferToBlock(new Uint8Array(await data.arrayBuffer()), fileName);
+}
+
+/** Same conversion for bytes that never hit storage (guest inline uploads). */
+export async function bufferToBlock(buf: Uint8Array, fileName: string) {
   const ext = (fileName.split(".").pop() || "").toLowerCase();
 
   if (ext === "docx") {
@@ -51,6 +55,13 @@ export async function fileToBlock(admin: SupabaseClient, bucket: string, path: s
     type: "file",
     file: { filename: fileName, file_data: `data:application/pdf;base64,${b64}` },
   } as const;
+}
+
+export function decodeBase64(b64: string): Uint8Array {
+  const bin = atob(b64);
+  const out = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+  return out;
 }
 
 function base64(bytes: Uint8Array) {

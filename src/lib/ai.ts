@@ -1,6 +1,14 @@
 import { supabase } from "@/integrations/supabase/client";
+import { getGuestKey } from "@/lib/guest";
 
 export type Level = "strong" | "medium" | "weak" | "missing";
+
+export type EvidenceDetail = {
+  label: string;
+  claim: string;
+  quotes: string[];
+  role: string;
+};
 
 export type DimScored = {
   key: string;
@@ -12,6 +20,7 @@ export type DimScored = {
   why?: string;
   action?: string;
   note?: string;
+  evidenceDetail?: EvidenceDetail[];
 };
 
 export class AiError extends Error {
@@ -32,7 +41,9 @@ export function aiMessage(e: unknown) {
 }
 
 async function invoke<T>(name: string, body: Record<string, unknown>): Promise<T> {
-  const { data, error } = await supabase.functions.invoke<T>(name, { body });
+  const { data, error } = await supabase.functions.invoke<T>(name, {
+    body: { guestKey: getGuestKey(), ...body },
+  });
   if (error) {
     let detail = error.message;
     let status = 500;
@@ -65,6 +76,25 @@ export async function uploadFile(file: File, kind: "resume" | "jd") {
   return { path, fileName: file.name };
 }
 
+/** Guests have no storage access — the file travels inline instead. */
+function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => resolve(String(r.result).split(",")[1] || "");
+    r.onerror = () => reject(new AiError(400, "文件读取失败"));
+    r.readAsDataURL(file);
+  });
+}
+
+/** Hand the current account's guest-owned records over after sign-in. */
+export async function claimGuestRecords() {
+  try {
+    await supabase.functions.invoke("claim-guest", { body: { guestKey: getGuestKey() } });
+  } catch {
+    /* claiming is best-effort — never block the login flow */
+  }
+}
+
 export type ResumeResult = {
   profileId: string;
   version: number;
@@ -91,6 +121,12 @@ export async function parseJdText(text: string) {
 }
 
 export async function parseJdFile(file: File) {
+  const { data: auth } = await supabase.auth.getUser();
+  if (!auth.user) {
+    // Guest trial: no storage access, so the document travels inline.
+    const fileData = await fileToBase64(file);
+    return invoke<JdResult>("parse-jd", { fileData, fileName: file.name });
+  }
   const { path, fileName } = await uploadFile(file, "jd");
   return invoke<JdResult>("parse-jd", { filePath: path, fileName });
 }

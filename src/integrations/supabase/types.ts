@@ -218,6 +218,30 @@ export type Database = {
           },
         ]
       }
+      guest_trials: {
+        Row: {
+          created_at: string
+          guest_key: string
+          id: string
+          jd_parses: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          guest_key: string
+          id?: string
+          jd_parses?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          guest_key?: string
+          id?: string
+          jd_parses?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       job_profiles: {
         Row: {
           company: string | null
@@ -229,6 +253,7 @@ export type Database = {
           evidence_items: Json | null
           file_name: string | null
           file_path: string | null
+          guest_key: string | null
           id: string
           ideal_profile: Json | null
           location: string | null
@@ -244,7 +269,7 @@ export type Database = {
           status: Database["public"]["Enums"]["analysis_status"]
           title: string
           updated_at: string
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           company?: string | null
@@ -256,6 +281,7 @@ export type Database = {
           evidence_items?: Json | null
           file_name?: string | null
           file_path?: string | null
+          guest_key?: string | null
           id?: string
           ideal_profile?: Json | null
           location?: string | null
@@ -271,7 +297,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["analysis_status"]
           title: string
           updated_at?: string
-          user_id: string
+          user_id?: string | null
         }
         Update: {
           company?: string | null
@@ -283,6 +309,7 @@ export type Database = {
           evidence_items?: Json | null
           file_name?: string | null
           file_path?: string | null
+          guest_key?: string | null
           id?: string
           ideal_profile?: Json | null
           location?: string | null
@@ -298,7 +325,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["analysis_status"]
           title?: string
           updated_at?: string
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: []
       }

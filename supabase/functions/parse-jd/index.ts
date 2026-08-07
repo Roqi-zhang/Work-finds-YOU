@@ -1,5 +1,5 @@
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
-import { adminClient, fileToBlock, getUser, logCall } from "../_shared/req.ts";
+import { adminClient, bufferToBlock, decodeBase64, fileToBlock, getUser, logCall } from "../_shared/req.ts";
 import { callAIJson, MODEL, type ContentBlock } from "../_shared/ai.ts";
 import { DIMS, computeScore } from "../_shared/scoring.ts";
 import {
@@ -26,7 +26,8 @@ const EXTRACT_SYSTEM = `你是资深招聘官，负责忠实读取一份岗位 J
 2. requirement_records 把 JD 中的每一条要求还原为完整上下文，text 保留完整语义，不要拆成零碎关键词，id 用 r1、r2… 递增，evidenceIds 指回 evidence_items。
 3. type：responsibility=岗位职责；qualification=任职资格；must_have=明确硬性要求；nice_to_have=加分项；other=其他。
 4. 严禁：打分、判定强弱、推断能力、归类到能力维度。
-5. title/company/location/salary 从 JD 中提取，缺失一律填「待确认」。`;
+5. title/company/location/salary 从 JD 中提取，缺失一律填「待确认」。
+6. 精简输出：evidence_items 不超过 14 条，每条 rawQuote 不超过 60 字；requirement_records 不超过 16 条。不要重复同义内容。`;
 
 /* ---------------- Layer 3 + 4 : rubric → signals → ideal profile -------------- */
 
@@ -43,7 +44,8 @@ const PROFILE_SYSTEM = `你是资深招聘官，基于已经抽取好的 JD 要�
    - hard = 是否硬性门槛。
    requirementIds 指回要求条目 id；explicitness 区分 JD 明写还是隐含；confidence 为 0–1。
 3. ideal_dimensions 固定输出 8 条，聚合同维度的信号：evidence 引 JD 原文、why 说明判定理由、action 写候选人应准备什么、note 为 6 字以内短标签；JD 完全没提的维度 requiredLevel 填 missing。
-4. 严禁输出任何数值分数，分数由后端计算。`;
+4. 严禁输出任何数值分数，分数由后端计算。
+5. 精简输出：每个 anchor 不超过 40 字，definition 不超过 50 字，evidence/why/action 各不超过 60 字。`;
 
 function slugId(co: string, title: string) {
   return `${co}-${title}`.toLowerCase().trim().replace(/[^a-z0-9\u4e00-\u9fa5]+/g, "-").replace(/^-+|-+$/g, "") || `jd-${Date.now()}`;
@@ -81,21 +83,40 @@ Deno.serve(async (req) => {
 
   try {
     const user = await getUser(req);
-    if (!user) return json({ error: "未登录" }, 401);
 
     const body = await req.json().catch(() => ({}));
+    const guestKey: string = typeof body.guestKey === "string" ? body.guestKey.slice(0, 64) : "";
     const text: string | undefined = typeof body.text === "string" ? body.text.slice(0, 60000) : undefined;
     const filePath: string | undefined = typeof body.filePath === "string" ? body.filePath : undefined;
+    const fileData: string | undefined = typeof body.fileData === "string" ? body.fileData : undefined;
     const fileName: string = typeof body.fileName === "string" ? body.fileName : "jd.txt";
-    if (!text && !filePath) return json({ error: "请提供 JD 文本或文件" }, 400);
-    if (filePath && !filePath.startsWith(`${user.id}/`)) return json({ error: "无权访问该文件" }, 403);
+    if (!text && !filePath && !fileData) return json({ error: "请提供 JD 文本或文件" }, 400);
+    if (user && filePath && !filePath.startsWith(`${user.id}/`)) return json({ error: "无权访问该文件" }, 403);
 
     const admin = adminClient();
 
+    /* ---------- Guest trial gate : 1 free JD parse per device ---------- */
+    const GUEST_LIMIT = 1;
+    let guestRow: { id: string; jd_parses: number } | null = null;
+    if (!user) {
+      if (!guestKey) return json({ error: "请先登录后再使用 AI 分析" }, 401);
+      const { data } = await admin
+        .from("guest_trials")
+        .select("id, jd_parses")
+        .eq("guest_key", guestKey)
+        .maybeSingle();
+      guestRow = data as typeof guestRow;
+      if (guestRow && guestRow.jd_parses >= GUEST_LIMIT) {
+        return json({ error: "免费试用已用完 · 登录后再赠送 3 次完整匹配" }, 401);
+      }
+    }
+
     let block: ContentBlock;
-    if (filePath) {
+    if (filePath || fileData) {
       try {
-        block = (await fileToBlock(admin, "resumes", filePath, fileName)) as ContentBlock;
+        block = (filePath
+          ? await fileToBlock(admin, "resumes", filePath, fileName)
+          : await bufferToBlock(decodeBase64(fileData!), fileName)) as ContentBlock;
       } catch (e) {
         const msg = String((e as Error).message);
         if (msg === "UNSUPPORTED_DOC") {
@@ -111,9 +132,30 @@ Deno.serve(async (req) => {
       block.type === "text" ? block.text : JSON.stringify(block).slice(0, 200000),
     );
 
+    /* ---------- Cache short-circuit : same document → zero model calls ---------- */
+    {
+      const q = admin
+        .from("job_profiles")
+        .select("id, slug, title, company, location, dimensions, requirements")
+        .eq("content_hash", contentHash)
+        .eq("status", "succeeded")
+        .limit(1);
+      const { data: hit } = await (user ? q.eq("user_id", user.id) : q.eq("guest_key", guestKey)).maybeSingle();
+      if (hit) {
+        return json({
+          job: { id: hit.id, slug: hit.slug, title: hit.title, company: hit.company, location: hit.location },
+          salary: "待确认",
+          dimensions: hit.dimensions,
+          requirements: hit.requirements,
+          cached: true,
+        });
+      }
+    }
+
     let promptTokens = 0;
     let completionTokens = 0;
     let latency = 0;
+
 
     /* ---------- Call A : Layer 1 + Layer 2 ---------- */
     const a = await callAIJson<ExtractOut>({
@@ -197,43 +239,58 @@ Deno.serve(async (req) => {
 
     const slug = slugId(a.data.company || "unknown", a.data.title || "role");
 
-    const { data: job, error } = await admin
-      .from("job_profiles")
-      .upsert({
-        user_id: user.id,
-        slug,
-        title: a.data.title || "待确认",
-        company: a.data.company || "待确认",
-        location: a.data.location || "待确认",
-        source_text: text ?? null,
-        file_path: filePath ?? null,
-        file_name: filePath ? fileName : null,
-        status: "succeeded",
-        dimensions,
-        requirements,
-        evidence_items: evidenceItems,
-        requirement_records: requirementRecords,
-        requirement_signals: b.data.requirement_signals ?? [],
-        evaluation_rubric: rubric,
-        rubric_hash: rubricHash,
-        rubric_version: RUBRIC_VERSION,
-        ideal_profile: idealProfile,
-        content_hash: contentHash,
-        prompt_version: `${PROMPT_VERSIONS.jdExtraction}+${PROMPT_VERSIONS.jdProfiling}`,
-        schema_version: SCHEMA_VERSION,
-      }, { onConflict: "user_id,slug" })
-      .select("id, slug, title, company, location")
-      .single();
+    const row = {
+      user_id: user?.id ?? null,
+      guest_key: user ? null : guestKey,
+      slug,
+      title: a.data.title || "待确认",
+      company: a.data.company || "待确认",
+      location: a.data.location || "待确认",
+      source_text: text ?? null,
+      file_path: filePath ?? null,
+      file_name: filePath ? fileName : null,
+      status: "succeeded",
+      dimensions,
+      requirements,
+      evidence_items: evidenceItems,
+      requirement_records: requirementRecords,
+      requirement_signals: b.data.requirement_signals ?? [],
+      evaluation_rubric: rubric,
+      rubric_hash: rubricHash,
+      rubric_version: RUBRIC_VERSION,
+      ideal_profile: idealProfile,
+      content_hash: contentHash,
+      prompt_version: `${PROMPT_VERSIONS.jdExtraction}+${PROMPT_VERSIONS.jdProfiling}`,
+      schema_version: SCHEMA_VERSION,
+    };
+
+    // Partial unique indexes rule out `upsert`, so resolve the existing row by hand.
+    const owner = admin.from("job_profiles").select("id").eq("slug", slug);
+    const { data: existing } = await (user ? owner.eq("user_id", user.id) : owner.eq("guest_key", guestKey))
+      .maybeSingle();
+
+    const writer = existing
+      ? admin.from("job_profiles").update(row).eq("id", existing.id)
+      : admin.from("job_profiles").insert(row);
+    const { data: job, error } = await writer.select("id, slug, title, company, location").single();
     if (error) throw error;
 
-    await logCall(admin, {
-      user_id: user.id,
-      task: "parse-jd",
-      model: MODEL,
-      prompt_tokens: promptTokens,
-      completion_tokens: completionTokens,
-      latency_ms: latency,
-    });
+    if (!user) {
+      if (guestRow) {
+        await admin.from("guest_trials").update({ jd_parses: guestRow.jd_parses + 1 }).eq("id", guestRow.id);
+      } else {
+        await admin.from("guest_trials").insert({ guest_key: guestKey, jd_parses: 1 });
+      }
+    } else {
+      await logCall(admin, {
+        user_id: user.id,
+        task: "parse-jd",
+        model: MODEL,
+        prompt_tokens: promptTokens,
+        completion_tokens: completionTokens,
+        latency_ms: latency,
+      });
+    }
 
     return json({ job, salary: a.data.salary || "待确认", dimensions, requirements });
   } catch (e) {

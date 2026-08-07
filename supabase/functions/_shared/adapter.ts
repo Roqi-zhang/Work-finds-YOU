@@ -47,6 +47,16 @@ function summariseGroups(d: CandidateDimension, resolve: (ids?: string[]) => str
   return `${head}（${labels.slice(0, 3).join(" + ")} 等 ${groups.length} 段经历）`;
 }
 
+/** Full, expandable evidence — every experience behind a dimension judgement. */
+function detailGroups(d: CandidateDimension, resolve: (ids?: string[]) => string[]) {
+  return (d.evidenceGroups ?? []).map((g) => ({
+    label: g.experienceLabel || "相关经历",
+    claim: g.claim || "",
+    quotes: resolve(g.evidenceIds).slice(0, 4),
+    role: g.evidenceRole || "supporting",
+  }));
+}
+
 export function candidateProfileToDims(
   profile: Pick<CandidateProfile, "dimensions">,
   evidence: EvidenceItem[] = [],
@@ -61,6 +71,7 @@ export function candidateProfileToDims(
       // `evidenceAction` is intentionally mapped onto the legacy `action` field.
       action: d.evidenceAction,
       note: d.note,
+      evidenceDetail: detailGroups(d, resolve),
     })),
   );
 }

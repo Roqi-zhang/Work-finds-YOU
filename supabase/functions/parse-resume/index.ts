@@ -26,7 +26,8 @@ const EXTRACT_SYSTEM = `你是资深招聘官，负责忠实读取一份简历�
 2. experience_records 把每一段工作 / 实习 / 项目还原为**完整上下文**，一段经历只建立一条记录，id 用 x1、x2… 递增，evidenceIds 指回 evidence_items。
 3. 字段含义：context=背景，objective=目标，responsibilities=职责，actions=具体做法，outcomes=结果，metrics=量化指标（原文有才填），tools=工具/技术，collaboration=协作对象与方式。
 4. 严禁：打分、判定强弱、归类到能力维度、推断简历上没写的内容、为了凑字数编造数字。
-5. 简历里没有的信息一律留空数组或空字符串，不要猜。`;
+5. 简历里没有的信息一律留空数组或空字符串，不要猜。
+6. 精简输出：evidence_items 不超过 20 条，每条 rawQuote 不超过 60 字；每段经历的 actions / outcomes 各不超过 4 条，每条不超过 40 字。`;
 
 /* -------- Layer 3 + 4 : judged against the JD-derived rubric ------------------ */
 
@@ -162,6 +163,35 @@ Deno.serve(async (req) => {
       schemaVersion: SCHEMA_VERSION,
       model: MODEL,
     });
+
+    /* ---------- Cache short-circuit : same resume + same rubric ---------- */
+    {
+      let q = admin
+        .from("user_profiles")
+        .select("id, version, dimensions, sections")
+        .eq("user_id", user.id)
+        .eq("profiling_fingerprint", profileFp)
+        .eq("status", "succeeded")
+        .order("created_at", { ascending: false })
+        .limit(1);
+      q = targetJobProfileId
+        ? q.eq("target_job_profile_id", targetJobProfileId)
+        : q.is("target_job_profile_id", null);
+      const { data: hit } = await q.maybeSingle();
+      if (hit) {
+        if (resume) await admin.from("resumes").update({ status: "succeeded" }).eq("id", resume.id);
+        await admin.from("user_profiles").update({ is_current: true }).eq("id", hit.id);
+        const cachedScore = computeScore((hit.dimensions ?? []) as never).score;
+        return json({
+          profileId: hit.id,
+          version: hit.version,
+          score: cachedScore,
+          dimensions: hit.dimensions,
+          sections: hit.sections,
+          cached: true,
+        });
+      }
+    }
 
     /* ---------- Call B : Layer 3 + Layer 4 (rubric-aware) ---------- */
     const rubricText = rubric
