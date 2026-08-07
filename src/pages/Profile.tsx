@@ -421,7 +421,7 @@ export default function Profile() {
     setStateVal("analysing");
     setHintOverride(null);
     try {
-      const out = await parseResume(file);
+      const out = await parseResume(file, targetJobId ?? undefined);
       const res = toDimResults(out.dimensions);
       paint(res, true);
       setBlooming(true);
