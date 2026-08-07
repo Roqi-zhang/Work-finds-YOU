@@ -728,6 +728,19 @@ export default function Profile() {
           </section>
         </section>
 
+        {matching && (
+          <div className="matching">
+            <div className="mt-ring">
+              <span className="mt-a" />
+              <span className="mt-b" />
+            </div>
+            <div className="mt-t">MATCHING</div>
+            <div className="mt-s">岗位画像 × 个人画像 · 正在计算匹配度</div>
+          </div>
+        )}
+
+
+
         <div className={"mask" + (dialog ? " on" : "")} id="mask" onClick={(e) => { if (e.target === e.currentTarget) closeDialog(); }}>
           <div className="dlg">
             <h5 id="dlgTitle">{dialog?.title}</h5>
