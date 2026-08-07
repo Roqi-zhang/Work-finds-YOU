@@ -106,9 +106,6 @@ Deno.serve(async (req) => {
         .eq("guest_key", guestKey)
         .maybeSingle();
       guestRow = data as typeof guestRow;
-      if (guestRow && guestRow.jd_parses >= GUEST_LIMIT) {
-        return json({ error: "免费试用已用完 · 登录后再赠送 3 次完整匹配" }, 401);
-      }
     }
 
     let block: ContentBlock;
