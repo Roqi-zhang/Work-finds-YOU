@@ -199,7 +199,7 @@ Deno.serve(async (req) => {
 
     const { data: job, error } = await admin
       .from("job_profiles")
-      .insert({
+      .upsert({
         user_id: user.id,
         slug,
         title: a.data.title || "待确认",
@@ -221,7 +221,7 @@ Deno.serve(async (req) => {
         content_hash: contentHash,
         prompt_version: `${PROMPT_VERSIONS.jdExtraction}+${PROMPT_VERSIONS.jdProfiling}`,
         schema_version: SCHEMA_VERSION,
-      })
+      }, { onConflict: "user_id,slug" })
       .select("id, slug, title, company, location")
       .single();
     if (error) throw error;
