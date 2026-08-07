@@ -7,7 +7,9 @@ const LOVABLE_MODEL = "openai/gpt-5.6-sol";
 
 function customBase() {
   const base = Deno.env.get("CUSTOM_AI_BASE_URL");
-  return base ? base.replace(/\/+$/, "") : "";
+  if (!base) return "";
+  // Aliyun MaaS exposes the OpenAI-compatible route under /compatible-mode/v1.
+  return base.replace(/\/+$/, "").replace(/\/api\/v1$/, "/compatible-mode/v1");
 }
 
 export const MODEL = Deno.env.get("CUSTOM_AI_MODEL") || LOVABLE_MODEL;
