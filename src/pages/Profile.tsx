@@ -179,8 +179,16 @@ export default function Profile() {
   const { search } = useLocation();
   const { user } = useAuth();
 
-  // JD-first: the target job is carried in `?job=` from the job profile step.
-  const targetJobId = useMemo(() => new URLSearchParams(search).get("job") || null, [search]);
+  // JD-first: the target job comes from `?job=`, falling back to the last saved job profile
+  // so leaving and returning to this page keeps the match target.
+  const targetJobId = useMemo(() => {
+    const fromUrl = new URLSearchParams(search).get("job");
+    if (fromUrl) return fromUrl;
+    const m = getUI<{ jobId?: string }>("match");
+    if (m?.jobId) return m.jobId;
+    const jp = getUI<{ job?: { id?: string } }>("jobprofile");
+    return jp?.job?.id || null;
+  }, [search]);
 
 
 
