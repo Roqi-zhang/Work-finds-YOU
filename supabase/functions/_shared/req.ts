@@ -23,7 +23,8 @@ export function adminClient(): SupabaseClient {
 }
 
 /** Download a file from the private `resumes` bucket and turn it into a
- *  gateway content block. PDFs/images go multimodal, .docx is text-extracted. */
+ *  model content block. Images go multimodal; PDF/DOCX are text-extracted
+ *  because the configured model does not accept documents inline. */
 export async function fileToBlock(admin: SupabaseClient, bucket: string, path: string, fileName: string) {
   const { data, error } = await admin.storage.from(bucket).download(path);
   if (error || !data) throw new Error(`Download failed: ${error?.message || "no data"}`);
@@ -46,15 +47,24 @@ export async function bufferToBlock(buf: Uint8Array, fileName: string) {
     return { type: "text", text: new TextDecoder().decode(buf).slice(0, 60000) } as const;
   }
 
-  const b64 = base64(buf);
   if (["png", "jpg", "jpeg", "webp", "gif", "bmp", "tif", "tiff", "heic"].includes(ext)) {
     const mime = ext === "jpg" ? "jpeg" : ext;
-    return { type: "image_url", image_url: { url: `data:image/${mime};base64,${b64}` } } as const;
+    return { type: "image_url", image_url: { url: `data:image/${mime};base64,${base64(buf)}` } } as const;
   }
-  return {
-    type: "file",
-    file: { filename: fileName, file_data: `data:application/pdf;base64,${b64}` },
-  } as const;
+
+  // Default / PDF: extract the text layer.
+  const { extractText, getDocumentProxy } = await import("npm:unpdf@0.12.1");
+  let text = "";
+  try {
+    const pdf = await getDocumentProxy(buf);
+    const out = await extractText(pdf, { mergePages: true });
+    text = (Array.isArray(out.text) ? out.text.join("\n") : out.text) || "";
+  } catch (e) {
+    console.error("pdf extract failed", e);
+    throw new Error("UNREADABLE_PDF");
+  }
+  if (text.replace(/\s/g, "").length < 30) throw new Error("UNREADABLE_PDF");
+  return { type: "text", text: text.slice(0, 60000) } as const;
 }
 
 export function decodeBase64(b64: string): Uint8Array {
