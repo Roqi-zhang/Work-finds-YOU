@@ -38,10 +38,7 @@ function fill(dims: LegacyDim[]): LegacyDim[] {
 
 function summariseGroups(d: CandidateDimension, resolve: (ids?: string[]) => string[]): string {
   const groups = d.evidenceGroups ?? [];
-  if (groups.length === 0) {
-    const quotes = resolve(d.signalIds ? [] : []);
-    return quotes[0] ?? "";
-  }
+  if (groups.length === 0) return "";
   const primary = groups.filter((g) => g.evidenceRole === "primary");
   const lead = (primary[0] ?? groups[0]);
   const labels = groups.map((g) => g.experienceLabel).filter(Boolean);
