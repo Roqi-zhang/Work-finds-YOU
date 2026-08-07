@@ -105,7 +105,7 @@ export default function Home() {
                 <text className="tick-title" x="500" y="324" textAnchor="middle" style={{ fontSize: 12 }}>DELIVERY</text>
               </svg>
 
-              <Link className="cta" to="/profile">
+              <Link className="cta" to="/jobprofile">
                 <span className="k">CTA</span>
                 <span className="t">开始分析</span>
                 <span className="k">Start →</span>
