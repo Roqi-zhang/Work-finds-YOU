@@ -1,12 +1,14 @@
 import { useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import TopBar from "@/components/swiss/TopBar";
 import { getUI, setUI, putJob } from "@/lib/wfy";
 import { parseJdFile, aiMessage } from "@/lib/ai";
+import { useAuth } from "@/hooks/useAuth";
 import "@/styles/pages/jobprofile.css";
 
 export default function JobProfile() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const rootRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
