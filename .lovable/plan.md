@@ -1,17 +1,23 @@
 # 模型效果 + 产品功能 · 七项改造计划
 
-## 一、岗位画像去掉 action，改为 evidence + analysis
+## 一、岗位画像只保留 evidence + analysis
 
-现状（已确认）：JD 侧 `ideal_dimensions` 每个维度输出 `evidence / why / action / note`，`action` 只在岗位画像页展示（花瓣 tooltip 的 `Action` 行、维度列表 `Action` 行）。匹配分析 `run-match` 读取的是 JD 的 `requirement_signals` 与 `ideal_profile` 的等级/重要度字段，**不读 `action`**。
+先回答字段现状（已核对代码）：
 
-结论：这是纯展示字段，改动范围小，不影响对比分析逻辑。
+| 字段 | 现在承载什么 | 在哪展示 | 处置 |
+| --- | --- | --- | --- |
+| `evidence` | JD 原文里体现这项要求的依据 | 花瓣 tooltip `Evidence` 行、维度列表 `Evidence` 行 | 保留 |
+| `why` | 模型「为什么把这维判成这个等级」的判定理由 | tooltip `Why` 行、列表 `Why` 行 | 并入 `analysis` |
+| `action` | 「候选人应准备什么」 | tooltip `Action` 行、列表 `Action` 行 | 删除（此阶段不该给行动建议） |
+| `note` | 6 字短标签 | **岗位画像页完全没有渲染**，只是被透传 | 删除 |
 
 改法（最小改动）：
-- Schema：`ideal_dimensions` 里 `action` → `analysis`（保留 `evidence`、`why`、`note`）。语义：`evidence` = JD 里体现该能力要求的原文依据；`analysis` = 对这项要求的专业解读（这个岗位为什么要它、达到什么程度算合格）。
-- Prompt：对应说明改写，明确禁止写成「候选人应该怎么做」。
-- 岗位画像页：`Action` 行改为 `Analysis`，字段取 `analysis`。
-- 兼容：读取时 `analysis ?? action`，老数据不报错；不做数据迁移。
-- 候选人画像与匹配报告的 `action / developmentAction` 保持不变（那里确实是行动建议）。
+- Schema `ideal_dimensions`：字段收敛为 `key / requiredLevel / importance / hard / evidence / analysis / signalIds`，去掉 `why`、`action`、`note`。
+- Prompt：`analysis` 定义为对这项要求的专业解读 —— 这个岗位为什么需要它、达到什么程度算合格、JD 里的强度信号说明什么；明确禁止写成「候选人应该怎么做」。
+- 岗位画像页：tooltip 与维度列表从三行 `Evidence / Why / Action` 改为两行 `Evidence / Analysis`。
+- 兼容：读取时 `analysis ?? why`，老数据不空白；不做数据迁移。
+- 候选人画像与匹配报告的 `why / note / action / developmentAction` 全部不动（那里确实在用）。
+
 
 ## 二、简历 / JD 全量入库 + 去重复用
 
