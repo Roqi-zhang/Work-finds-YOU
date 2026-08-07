@@ -56,8 +56,10 @@ export async function uploadFile(file: File, kind: "resume" | "jd") {
   const { data: auth } = await supabase.auth.getUser();
   const uid = auth.user?.id;
   if (!uid) throw new AiError(401, "请先登录");
-  const safe = file.name.replace(/[^\w.\-\u4e00-\u9fa5]+/g, "_");
-  const path = `${uid}/${kind}/${Date.now()}-${safe}`;
+  // Storage object keys must be ASCII-safe — keep the original name only for display.
+  const ext = (file.name.split(".").pop() || "bin").replace(/[^a-zA-Z0-9]/g, "").toLowerCase() || "bin";
+  const rand = (crypto.randomUUID?.() || Math.random().toString(36).slice(2)).replace(/-/g, "");
+  const path = `${uid}/${kind}/${Date.now()}-${rand}.${ext}`;
   const { error } = await supabase.storage.from("resumes").upload(path, file, { upsert: false });
   if (error) throw new AiError(500, "上传失败：" + error.message);
   return { path, fileName: file.name };
