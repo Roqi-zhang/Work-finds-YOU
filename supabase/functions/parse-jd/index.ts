@@ -152,6 +152,11 @@ Deno.serve(async (req) => {
       }
     }
 
+    /* ---------- Trial gate applies only to a genuinely new document ---------- */
+    if (!user && guestRow && guestRow.jd_parses >= GUEST_LIMIT) {
+      return json({ error: "免费试用已用完 · 登录后再赠送 3 次完整匹配" }, 401);
+    }
+
     let promptTokens = 0;
     let completionTokens = 0;
     let latency = 0;
