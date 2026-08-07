@@ -73,9 +73,10 @@ export type ResumeResult = {
   sections: Record<string, string>;
 };
 
-export async function parseResume(file: File) {
+/** `targetJobProfileId` binds the resulting candidate profile to a specific JD (JD-first flow). */
+export async function parseResume(file: File, targetJobProfileId?: string) {
   const { path, fileName } = await uploadFile(file, "resume");
-  return invoke<ResumeResult>("parse-resume", { filePath: path, fileName });
+  return invoke<ResumeResult>("parse-resume", { filePath: path, fileName, targetJobProfileId });
 }
 
 export type JdResult = {
