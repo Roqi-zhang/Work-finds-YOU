@@ -113,9 +113,10 @@ export type MatchReport = {
   stale: boolean;
 };
 
-export async function runMatch(jobProfileId: string, force = false) {
+export async function runMatch(jobProfileId: string, force = false, candidateProfileId?: string) {
   return invoke<{ report: MatchReport; cached: boolean; job: Record<string, unknown> }>("run-match", {
     jobProfileId,
+    candidateProfileId,
     force,
   });
 }
