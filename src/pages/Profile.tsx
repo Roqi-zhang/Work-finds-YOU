@@ -195,6 +195,10 @@ export default function Profile() {
   const [result, setResult] = useState<DimResult[] | null>(null);
   const [tip, setTip] = useState<TipState>(EMPTY_TIP);
   const [matching, setMatching] = useState(false);
+  const [mergeGo, setMergeGo] = useState(false);
+  const [mergeSvg, setMergeSvg] = useState("");
+  const [mergeCap, setMergeCap] = useState("Overlaying two flowers · computing fit");
+
   const [openEvi, setOpenEvi] = useState<Record<number, boolean>>({});
   const [dialog, setDialog] = useState<{ title: string; body: string; okText: string; onConfirm: (() => void) | null } | null>(null);
 
@@ -447,8 +451,14 @@ export default function Profile() {
     if (state === "bloomed") {
       // JD-first flow continues into the match; without a target JD, go pick one.
       if (!targetJobId) { navigate("/jobprofile"); return; }
+      const svgEl = document.getElementById("flowerSvg");
+      setMergeSvg(svgEl ? svgEl.outerHTML : "");
+      setMergeCap("Overlaying two flowers · computing fit");
+      setMergeGo(false);
       setMatching(true);
-      window.setTimeout(() => navigate("/match?job=" + encodeURIComponent(targetJobId)), 1700);
+      window.setTimeout(() => setMergeGo(true), 80);
+      window.setTimeout(() => setMergeCap("Match computed · entering"), 1250);
+      window.setTimeout(() => navigate("/match?job=" + encodeURIComponent(targetJobId)), 1900);
       return;
     }
     if (state !== "ready") return;
@@ -728,16 +738,15 @@ export default function Profile() {
           </section>
         </section>
 
-        {matching && (
-          <div className="matching">
-            <div className="mt-ring">
-              <span className="mt-a" />
-              <span className="mt-b" />
-            </div>
-            <div className="mt-t">MATCHING</div>
-            <div className="mt-s">岗位画像 × 个人画像 · 正在计算匹配度</div>
+        <div className={"merge" + (matching ? " on" : "") + (mergeGo ? " go" : "")} id="merge">
+          <div className="arena">
+            <div className="mine" id="mergeMine" dangerouslySetInnerHTML={{ __html: mergeSvg }} />
+            <div className="role" id="mergeRole" dangerouslySetInnerHTML={{ __html: mergeSvg }} />
           </div>
-        )}
+          <div className="caps"><span className="cap">Your flower</span><span className="cap">Role flower</span></div>
+          <div className="cap" id="mergeCap">{mergeCap}</div>
+        </div>
+
 
 
 
