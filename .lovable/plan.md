@@ -1,66 +1,78 @@
-# 四个问题的定位与修改计划
+# 模型效果 + 产品功能 · 七项改造计划
 
-## 问题定位（已核对代码）
+## 一、岗位画像去掉 action，改为 evidence + analysis
 
-1. **未登录不能分析 / 登录后记录丢失 / 切页中断**
-   - `supabase/functions/parse-jd/index.ts` 第 83–84 行：无 token 直接返回 401，所以访客一次也跑不了（与已定稿的「访客 1 次 JD 解析」规则不一致）。
-   - `src/pages/JobProfile.tsx` 的 `saveStore` 只存了文件名和体积，没存文件本身，也没存已上传的 storage 路径；登录跳转回来后 `pickedFile` 是 null，于是提示「请重新选择 JD 文件」。
-   - 分析是写在页面 `useEffect` 内部的 `async` 闭包里，组件卸载（切到别的页面）后 `await` 的结果无处可写，回来时状态被 `loadStore()` 重置成 `ready`，看起来像「进程停了」。
+现状（已确认）：JD 侧 `ideal_dimensions` 每个维度输出 `evidence / why / action / note`，`action` 只在岗位画像页展示（花瓣 tooltip 的 `Action` 行、维度列表 `Action` 行）。匹配分析 `run-match` 读取的是 JD 的 `requirement_signals` 与 `ideal_profile` 的等级/重要度字段，**不读 `action`**。
 
-2. **速度慢**
-   - 模型是 `openai/gpt-5.6-sol`（`supabase/functions/_shared/ai.ts`），已设 `reasoning_effort: "none"`。
-   - 真正的耗时来源：岗位页 2 次串行调用、简历页 2 次串行调用、匹配 1 次，一条完整链路 5 次大模型往返，且每次都要求输出很长的严格 JSON（证据原文逐字引用 + 8 维完整锚点）。
-   - 另外 `content_hash` / 指纹字段已经写库，但没有在入口处做「命中即返回」的短路，重复上传同一份 JD 仍会重跑全流程。
+结论：这是纯展示字段，改动范围小，不影响对比分析逻辑。
 
-3. **按钮语义错**：岗位页成熟态按钮文案是「进入匹配 →」但实际跳 `/profile`；个人画像页成熟态是「下一步 →」但用户预期是「进入匹配」。
+改法（最小改动）：
+- Schema：`ideal_dimensions` 里 `action` → `analysis`（保留 `evidence`、`why`、`note`）。语义：`evidence` = JD 里体现该能力要求的原文依据；`analysis` = 对这项要求的专业解读（这个岗位为什么要它、达到什么程度算合格）。
+- Prompt：对应说明改写，明确禁止写成「候选人应该怎么做」。
+- 岗位画像页：`Action` 行改为 `Analysis`，字段取 `analysis`。
+- 兼容：读取时 `analysis ?? action`，老数据不报错；不做数据迁移。
+- 候选人画像与匹配报告的 `action / developmentAction` 保持不变（那里确实是行动建议）。
 
-4. **证据只有摘要**：`supabase/functions/_shared/adapter.ts` 的 `summariseGroups` 把多段经历压成一句「…等 3 段经历」，完整的 `evidenceGroups`（每段的 claim / 经历名 / 原文引用）没有传给前端。
+## 二、简历 / JD 全量入库 + 去重复用
 
----
+现状：已有内容哈希缓存，但**作用域是单用户**（JD 按 `content_hash + user_id`，简历按 `extraction_fingerprint + user_id`），且缓存挂在业务表上，重传同一文件才命中。
 
-## 修改计划
+新增两张表，把「文档」和「分析结果」从业务表里解耦：
 
-### A. 分析任务后台化 + 记录不丢
+```text
+documents            content_hash(唯一) · kind(resume|jd) · text_len · storage_path · first_seen_at · seen_count
+document_analyses    content_hash + kind + stage(extract|profile) + prompt_version + schema_version + model  (唯一)
+                     → payload jsonb（evidence_items / records / signals 等原始分析产物）
+```
 
-- 新增一个全局分析任务上下文（`src/hooks/useAnalysisTasks.tsx`，挂在 `App` 顶层）：
-  - 任务在 Provider 里跑，不随页面卸载而中断；切页再回来能读到「进行中 / 已完成 / 失败」。
-  - 任务状态同时写入 localStorage（沿用 `wfy.ts` 的 `setUI`），刷新页面也能恢复结果。
-- 上传时先把文件传进 storage，把 `filePath / fileName / jobId` 一起存进本地记录；登录回跳后直接用已存的 `filePath` 继续，不再要求重新选文件。
-- 岗位页 / 画像页改为「订阅任务状态」渲染，不再用局部 `pickedFile` 判断能否继续。
+复用规则（重要，按隐私分级）：
+- **JD**：公开文本，`document_analyses` 跨用户复用。第二个用户上传同一份 JD → 0 次模型调用。
+- **简历**：属于个人隐私，**只在同一 user_id 内复用**（表里加 owner_id 限定），不跨账号。
+- `run-match` 的报告缓存维持现状（按 profile × job）。
 
-### B. 访客试用 1 次
+收益评估：
+- 省钱：命中即省整段调用。JD 侧跨用户命中率最高（同一家公司的热门 JD 会被反复上传），预计整体模型消耗下降 30–50%；同一用户反复调整流程时接近 0 成本。
+- 体验：命中时从 10–30 秒降到 1 秒内返回。
+- 代价：多两张表 + 一次哈希查询，可忽略。
 
-- `parse-jd` 允许无 token 调用，但按访客配额限制：新增 `guest_trials` 表（设备指纹 + IP 哈希，服务端计数，1 次上限），超出返回明确的「请登录继续」。
-- 访客文件由 Edge Function 用服务角色写入 `guest/<fingerprint>/` 前缀；生成的 `job_profiles` 记录 `user_id` 为空、带 `guest_key`。
-- 登录后自动认领：`Auth` 页登录成功时调用一次 `claim-guest`，把该指纹下的岗位画像归到新账号，回跳原页面时记录仍在。
-- 简历上传与匹配仍需登录（与既定计费规则一致）。
+## 三、一键下载分析结果（PDF / 图片 / Word）
 
-### C. 提速
+- 位置：岗位画像页、候选人画像页、匹配页右上角，即现在显示 `STATE / SUCCESS · 1 LOW-CONFIDENCE` 的位置。**删除该行文字**，替换为一个 `下载 ↓` 文本按钮（Swiss 风格：全大写小字 + 0.5px 边框），点击展开三项：PDF / 图片 PNG / Word。
+- 实现：`html2canvas` 截取分析区域 → PNG；PNG 置入 `jsPDF` → PDF；`docx` 库按结构化字段（不是截图）生成 Word，保证可编辑可复制。
+- 抽成一个共用组件 `ExportMenu`，三页复用，导出前临时切浅色主题，避免暗色底出图发黑。
 
-模型保持 `openai/gpt-5.6-sol`，从请求设计上提速：
+## 四、投递页可查看两份画像
 
-- **并行化**：岗位侧第二次调用只依赖抽取结果，无法并行；但简历侧的「岗位无关抽取」可以在 JD 解析进行时就先跑（用户一上传简历就开跑），把 5 次串行压成 3 段。
-- **缓存短路**：`parse-jd` / `parse-resume` 入口先按 `content_hash`（+ `rubric_hash`）查库，命中直接返回，重传同一份文件 0 次模型调用。
-- **瘦身输出**：证据原文限制条数与单条长度、锚点描述在 prompt 里限定字数、去掉重复回传的字段，减少生成 token（生成量是主要延迟来源）。
-- **预取匹配**：简历分析完成后在后台自动预跑 `run-match`，用户点「进入匹配」时通常已经算好，动画结束即出结果。
-- **进度可见**：分析中显示分段进度（读取 → 抽取 → 建标准 → 评分），不再只是一个「分析中」。
+投递卡片的操作区在「查看匹配」旁增加「岗位画像」「我的画像」两个入口，跳转 `/jobprofile?job=<id>&view=1` 与 `/profile?job=<id>&view=1`：只读模式，直接渲染该投递关联的历史画像（不触发重新分析、不显示上传区）。
 
-### D. 按钮与跳转
+## 五、返回不再弹「清空」确认
 
-- 岗位页成熟态：按钮文案改 **「下一步 →」**，跳 `/profile?job=<id>`（现有跳转已正确，只改文案）。
-- 个人画像页成熟态：按钮文案改 **「进入匹配 →」**，点击后播放现有的双花合并动画，动画结束跳 `/match?job=<id>`，直接展示匹配结果（配合 C 的预取，多数情况无二次等待）。
-- 步骤条序号文案同步：岗位页 `03 进入匹配` 改为 `03 下一步`，画像页保持 `03 进入匹配`。
+- 岗位画像页返回按钮：去掉 `Discard job profile?` 弹窗，直接返回，JD 与岗位能力花保留。
+- 候选人画像页返回同理。
+- 「重新建立画像」按钮的确认弹窗保留（那里确实会清空）。
 
-### E. 证据可展开
+## 六、进入匹配时不显示旧报告
 
-- `adapter.ts` 在保留现有 `evidence` 摘要的同时，新增 `evidenceDetail` 数组（每项：经历名、结论、原文引用、primary/supporting 角色），随维度一起返回；旧字段不动，不影响现有渲染。
-- 前端在每个维度的 Evidence 行下加一个「展开证据 ↓」触发（沿用 Match 页已有的 0.5px 分隔线 + 箭头旋转折叠样式），展开后逐条列出全部经历与原文，不再只显示「等 3 段经历」。
+现状：Profile 页点「进入匹配」后固定播 1.9 秒动效就跳转；Match 页先渲染 localStorage 里的旧报告，再异步换成新报告 —— 所以会看到旧画像。
 
----
+改法：
+- Profile：点击后启动双花合并动效并**循环播放**，同时直接调用 `runMatch(jobId, force)`；请求返回后才跳转 `/match`，动效时长由请求决定，不再用定时器。
+- Match：若本地报告对应的 profile 版本与当前不一致，或带 `?fresh=1`，则不渲染本地快照，直接进入 `正在分析` 态。
+- 请求失败：动效停止并在原页提示错误，不跳转。
 
-## 技术细节
+## 七、匹配页「资料来源与分析思路」接真实数据
 
-- 新增文件：`src/hooks/useAnalysisTasks.tsx`、`supabase/functions/claim-guest/index.ts`。
-- 迁移：`guest_trials` 表（含 GRANT + RLS，仅 service_role 可写）；`job_profiles` 增加可空 `guest_key` 列。
-- 改动文件：`parse-jd`、`parse-resume`、`run-match`（缓存短路 + 访客分支）、`_shared/adapter.ts`（evidenceDetail）、`src/lib/ai.ts`、`src/pages/JobProfile.tsx`、`src/pages/Profile.tsx`、`src/pages/Match.tsx`、`src/pages/Auth.tsx`。
-- 视觉与布局不改，新增的折叠区沿用现有 Swiss Style 组件样式。
+现状（已确认）：`reportFromBackend` 里 `sources` 有真实值才用，`pipeline` 和 `trace` 落回模板 mock，底部还写死了一句「接入模型后此处直接渲染真实 reasoning trace」。
+
+改法：
+- 后端 `run-match` 返回时补上真实 `pipeline`：JD 解析 / 简历抽取 / 维度判定 / 加权算分 / 生成策略，每步带命中缓存与否、条目数、耗时。
+- `trace` 改为渲染真实 `decision_factors` + `rationale_summary`（已入库），映射为 factor → 依据 → 影响三列。
+- 分项评分条已经是真实 `dimension_scores`，保留。
+- 删除 mock 兜底与那句占位文案；没有数据时显示「本次分析未记录该环节」。
+
+## 技术说明
+
+- 改动文件：`_shared/schemas.ts`、`parse-jd`、`parse-resume`、`run-match`、`src/lib/wfy.ts`、`src/pages/{JobProfile,Profile,Match,Delivery}.tsx`、新增 `src/components/swiss/ExportMenu.tsx`。
+- 新增依赖：`html2canvas`、`jspdf`、`docx`。
+- 数据库：新增 `documents`、`document_analyses` 两表（含 GRANT 与 RLS，简历分析仅本人可读）。
+- 页面布局、动效、配色一律不动，只做上述功能改动。
