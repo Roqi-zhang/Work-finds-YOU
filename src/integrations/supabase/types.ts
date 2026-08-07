@@ -221,14 +221,24 @@ export type Database = {
       job_profiles: {
         Row: {
           company: string | null
+          content_hash: string | null
           created_at: string
           dimensions: Json
           error: string | null
+          evaluation_rubric: Json | null
+          evidence_items: Json | null
           file_name: string | null
           file_path: string | null
           id: string
+          ideal_profile: Json | null
           location: string | null
+          prompt_version: string | null
+          requirement_records: Json | null
+          requirement_signals: Json | null
           requirements: Json
+          rubric_hash: string | null
+          rubric_version: string | null
+          schema_version: string
           slug: string
           source_text: string | null
           status: Database["public"]["Enums"]["analysis_status"]
@@ -238,14 +248,24 @@ export type Database = {
         }
         Insert: {
           company?: string | null
+          content_hash?: string | null
           created_at?: string
           dimensions?: Json
           error?: string | null
+          evaluation_rubric?: Json | null
+          evidence_items?: Json | null
           file_name?: string | null
           file_path?: string | null
           id?: string
+          ideal_profile?: Json | null
           location?: string | null
+          prompt_version?: string | null
+          requirement_records?: Json | null
+          requirement_signals?: Json | null
           requirements?: Json
+          rubric_hash?: string | null
+          rubric_version?: string | null
+          schema_version?: string
           slug: string
           source_text?: string | null
           status?: Database["public"]["Enums"]["analysis_status"]
@@ -255,14 +275,24 @@ export type Database = {
         }
         Update: {
           company?: string | null
+          content_hash?: string | null
           created_at?: string
           dimensions?: Json
           error?: string | null
+          evaluation_rubric?: Json | null
+          evidence_items?: Json | null
           file_name?: string | null
           file_path?: string | null
           id?: string
+          ideal_profile?: Json | null
           location?: string | null
+          prompt_version?: string | null
+          requirement_records?: Json | null
+          requirement_signals?: Json | null
           requirements?: Json
+          rubric_hash?: string | null
+          rubric_version?: string | null
+          schema_version?: string
           slug?: string
           source_text?: string | null
           status?: Database["public"]["Enums"]["analysis_status"]
@@ -276,12 +306,17 @@ export type Database = {
         Row: {
           created_at: string
           decision: Json
+          decision_factors: Json | null
+          dimension_matches: Json | null
           dimension_scores: Json
           error: string | null
+          evidence_links: Json | null
           id: string
           job_profile_id: string
           judgements: Json
+          rationale_summary: string | null
           reasoning_trace: string | null
+          schema_version: string
           score: number | null
           scoring_version: string | null
           sources: Json
@@ -295,12 +330,17 @@ export type Database = {
         Insert: {
           created_at?: string
           decision?: Json
+          decision_factors?: Json | null
+          dimension_matches?: Json | null
           dimension_scores?: Json
           error?: string | null
+          evidence_links?: Json | null
           id?: string
           job_profile_id: string
           judgements?: Json
+          rationale_summary?: string | null
           reasoning_trace?: string | null
+          schema_version?: string
           score?: number | null
           scoring_version?: string | null
           sources?: Json
@@ -314,12 +354,17 @@ export type Database = {
         Update: {
           created_at?: string
           decision?: Json
+          decision_factors?: Json | null
+          dimension_matches?: Json | null
           dimension_scores?: Json
           error?: string | null
+          evidence_links?: Json | null
           id?: string
           job_profile_id?: string
           judgements?: Json
+          rationale_summary?: string | null
           reasoning_trace?: string | null
+          schema_version?: string
           score?: number | null
           scoring_version?: string | null
           sources?: Json
@@ -448,46 +493,76 @@ export type Database = {
       }
       user_profiles: {
         Row: {
+          capability_signals: Json | null
           created_at: string
           dimensions: Json
           error: string | null
           evidence: Json
+          evidence_items: Json | null
+          experience_records: Json | null
+          extraction_fingerprint: string | null
           id: string
           is_current: boolean
+          profiling_fingerprint: string | null
+          prompt_version: string | null
           resume_id: string | null
+          rubric_hash: string | null
+          rubric_version: string | null
+          schema_version: string
           scoring_version: string | null
           sections: Json
           status: Database["public"]["Enums"]["analysis_status"]
+          target_job_profile_id: string | null
           updated_at: string
           user_id: string
           version: number
         }
         Insert: {
+          capability_signals?: Json | null
           created_at?: string
           dimensions?: Json
           error?: string | null
           evidence?: Json
+          evidence_items?: Json | null
+          experience_records?: Json | null
+          extraction_fingerprint?: string | null
           id?: string
           is_current?: boolean
+          profiling_fingerprint?: string | null
+          prompt_version?: string | null
           resume_id?: string | null
+          rubric_hash?: string | null
+          rubric_version?: string | null
+          schema_version?: string
           scoring_version?: string | null
           sections?: Json
           status?: Database["public"]["Enums"]["analysis_status"]
+          target_job_profile_id?: string | null
           updated_at?: string
           user_id: string
           version?: number
         }
         Update: {
+          capability_signals?: Json | null
           created_at?: string
           dimensions?: Json
           error?: string | null
           evidence?: Json
+          evidence_items?: Json | null
+          experience_records?: Json | null
+          extraction_fingerprint?: string | null
           id?: string
           is_current?: boolean
+          profiling_fingerprint?: string | null
+          prompt_version?: string | null
           resume_id?: string | null
+          rubric_hash?: string | null
+          rubric_version?: string | null
+          schema_version?: string
           scoring_version?: string | null
           sections?: Json
           status?: Database["public"]["Enums"]["analysis_status"]
+          target_job_profile_id?: string | null
           updated_at?: string
           user_id?: string
           version?: number
@@ -498,6 +573,13 @@ export type Database = {
             columns: ["resume_id"]
             isOneToOne: false
             referencedRelation: "resumes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_profiles_target_job_profile_id_fkey"
+            columns: ["target_job_profile_id"]
+            isOneToOne: false
+            referencedRelation: "job_profiles"
             referencedColumns: ["id"]
           },
         ]

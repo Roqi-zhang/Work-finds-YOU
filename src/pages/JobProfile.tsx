@@ -356,7 +356,7 @@ export default function JobProfile() {
         m.classList.add("on");
         requestAnimationFrame(() => setTimeout(() => m.classList.add("go"), 60));
         mergeTimers.push(setTimeout(() => { (root!.querySelector("#mergeCap") as HTMLElement).textContent = "Match computed · entering"; }, 1250));
-        mergeTimers.push(setTimeout(() => { navigate("/match?job=" + encodeURIComponent(jobId)); }, 1900));
+        mergeTimers.push(setTimeout(() => { navigate("/profile?job=" + encodeURIComponent(jobId)); }, 1900));
         return;
       }
       if (state !== "ready") return;

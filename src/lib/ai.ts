@@ -73,9 +73,10 @@ export type ResumeResult = {
   sections: Record<string, string>;
 };
 
-export async function parseResume(file: File) {
+/** `targetJobProfileId` binds the resulting candidate profile to a specific JD (JD-first flow). */
+export async function parseResume(file: File, targetJobProfileId?: string) {
   const { path, fileName } = await uploadFile(file, "resume");
-  return invoke<ResumeResult>("parse-resume", { filePath: path, fileName });
+  return invoke<ResumeResult>("parse-resume", { filePath: path, fileName, targetJobProfileId });
 }
 
 export type JdResult = {
@@ -112,9 +113,10 @@ export type MatchReport = {
   stale: boolean;
 };
 
-export async function runMatch(jobProfileId: string, force = false) {
+export async function runMatch(jobProfileId: string, force = false, candidateProfileId?: string) {
   return invoke<{ report: MatchReport; cached: boolean; job: Record<string, unknown> }>("run-match", {
     jobProfileId,
+    candidateProfileId,
     force,
   });
 }

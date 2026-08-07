@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 
 import TopBar from "@/components/swiss/TopBar";
@@ -172,7 +172,13 @@ const EMPTY_TIP: TipState = { on: false, x: 0, y: 0, name: "", score: "", evi: "
 
 export default function Profile() {
   const navigate = useNavigate();
+  const { search } = useLocation();
   const { user } = useAuth();
+
+  // JD-first: the target job is carried in `?job=` from the job profile step.
+  const targetJobId = useMemo(() => new URLSearchParams(search).get("job") || null, [search]);
+
+
 
 
   const [state, setStateVal] = useState<"empty" | "ready" | "analysing" | "bloomed">("empty");
@@ -399,7 +405,8 @@ export default function Profile() {
       return;
     }
     if (state === "bloomed") {
-      navigate("/jobprofile");
+      // JD-first flow continues into the match; without a target JD, go pick one.
+      navigate(targetJobId ? "/match?job=" + encodeURIComponent(targetJobId) : "/jobprofile");
       return;
     }
     if (state !== "ready") return;
@@ -414,7 +421,7 @@ export default function Profile() {
     setStateVal("analysing");
     setHintOverride(null);
     try {
-      const out = await parseResume(file);
+      const out = await parseResume(file, targetJobId ?? undefined);
       const res = toDimResults(out.dimensions);
       paint(res, true);
       setBlooming(true);
