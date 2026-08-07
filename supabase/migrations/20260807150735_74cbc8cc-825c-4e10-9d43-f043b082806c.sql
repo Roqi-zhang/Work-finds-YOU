@@ -1,0 +1,2 @@
+DROP INDEX IF EXISTS public.idx_user_profiles_current;
+CREATE UNIQUE INDEX idx_user_profiles_current ON public.user_profiles (user_id, COALESCE(target_job_profile_id, '00000000-0000-0000-0000-000000000000'::uuid)) WHERE is_current;

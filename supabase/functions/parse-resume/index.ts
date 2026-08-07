@@ -183,6 +183,16 @@ Deno.serve(async (req) => {
       const { data: hit } = await q.maybeSingle();
       if (hit) {
         if (resume) await admin.from("resumes").update({ status: "succeeded" }).eq("id", resume.id);
+        let clear = admin
+          .from("user_profiles")
+          .update({ is_current: false })
+          .eq("user_id", user.id)
+          .eq("is_current", true)
+          .neq("id", hit.id);
+        clear = targetJobProfileId
+          ? clear.eq("target_job_profile_id", targetJobProfileId)
+          : clear.is("target_job_profile_id", null);
+        await clear;
         await admin.from("user_profiles").update({ is_current: true }).eq("id", hit.id);
         const cachedScore = computeScore((hit.dimensions ?? []) as never).score;
         return json({
