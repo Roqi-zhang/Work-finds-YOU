@@ -1,63 +1,78 @@
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import { adminClient, fileToBlock, getUser, logCall } from "../_shared/req.ts";
-import { callAIJson, type ContentBlock } from "../_shared/ai.ts";
-import { DIMS, computeScore, type DimInput } from "../_shared/scoring.ts";
+import { callAIJson, MODEL, type ContentBlock } from "../_shared/ai.ts";
+import { DIMS, computeScore } from "../_shared/scoring.ts";
+import {
+  PROMPT_VERSIONS,
+  RUBRIC_VERSION,
+  SCHEMA_VERSION,
+  jdExtractionSchema,
+  jdProfilingSchema,
+  type EvaluationRubric,
+  type EvidenceItem,
+  type IdealCandidateProfile,
+  type IdealDimension,
+  type RequirementRecord,
+  type RequirementSignal,
+} from "../_shared/schemas.ts";
+import { idealProfileToDims } from "../_shared/adapter.ts";
+import { canonicalHash, sha256Hex } from "../_shared/hash.ts";
 
-const schema = {
-  type: "object",
-  additionalProperties: false,
-  required: ["title", "company", "location", "salary", "dimensions", "requirements"],
-  properties: {
-    title: { type: "string" },
-    company: { type: "string" },
-    location: { type: "string" },
-    salary: { type: "string" },
-    dimensions: {
-      type: "array",
-      minItems: 8,
-      maxItems: 8,
-      items: {
-        type: "object",
-        additionalProperties: false,
-        required: ["key", "level", "evidence", "why", "action", "note"],
-        properties: {
-          key: { type: "string", enum: DIMS.map((d) => d.key) },
-          level: { type: "string", enum: ["strong", "medium", "weak", "missing"] },
-          evidence: { type: "string" },
-          why: { type: "string" },
-          action: { type: "string" },
-          note: { type: "string" },
-        },
-      },
-    },
-    requirements: {
-      type: "array",
-      maxItems: 14,
-      items: {
-        type: "object",
-        additionalProperties: false,
-        required: ["text", "hard", "dim"],
-        properties: {
-          text: { type: "string" },
-          hard: { type: "boolean" },
-          dim: { type: "string", enum: DIMS.map((d) => d.key) },
-        },
-      },
-    },
-  },
-} as const;
+/* ---------------- Layer 1 + 2 : document evidence → requirement records ------- */
 
-const SYSTEM = `你是资深招聘官，把一份 JD 拆成结构化岗位画像。
+const EXTRACT_SYSTEM = `你是资深招聘官，负责忠实读取一份岗位 JD，不做任何评价。
 规则：
-1. 只依据 JD 原文，缺失字段填「待确认」。
-2. dimensions 表示该岗位对这 8 个维度的「要求强度」：strong=硬性且反复强调；medium=明确提及；weak=一笔带过；missing=完全没提。
-3. evidence 引用 JD 原文的对应句子；why 说明判定理由；action 写候选人应准备什么；note 为 6 字以内短标签。
-4. requirements 逐条列出要求，hard=是否硬性，dim=归属维度。
-维度：${DIMS.map((d) => `${d.key}=${d.label}`).join("、")}`;
+1. evidence_items 必须是 JD 的**原文摘录**（rawQuote 逐字引用，不得改写、不得总结），id 用 e1、e2… 递增，section 填该句所在的小标题。
+2. requirement_records 把 JD 中的每一条要求还原为完整上下文，text 保留完整语义，不要拆成零碎关键词，id 用 r1、r2… 递增，evidenceIds 指回 evidence_items。
+3. type：responsibility=岗位职责；qualification=任职资格；must_have=明确硬性要求；nice_to_have=加分项；other=其他。
+4. 严禁：打分、判定强弱、推断能力、归类到能力维度。
+5. title/company/location/salary 从 JD 中提取，缺失一律填「待确认」。`;
+
+/* ---------------- Layer 3 + 4 : rubric → signals → ideal profile -------------- */
+
+const PROFILE_SYSTEM = `你是资深招聘官，基于已经抽取好的 JD 要求条目，产出这个岗位的评价标准与理想候选人画像。
+规则：
+1. rubric_dimensions 是**为这个具体岗位量身定义**的评价尺子，覆盖固定 8 个维度：${DIMS.map((d) => `${d.key}=${d.label}`).join("、")}。
+   - definition：在这个岗位语境下这一维意味着什么；
+   - subdimensions：从 JD 内容归纳出的子能力（2–5 个），不要套用通用模板；
+   - strong/medium/weak_anchor：可观察的行为锚点，用于后续判断简历；
+   - valid_evidence：什么样的证据才算数；invalid_inferences：不能凭什么就下结论。
+2. requirement_signals 把要求条目映射到维度，必须分开表达三件事：
+   - requiredLevel = 这个岗位对该维度的能力要求有多高；
+   - importance = 这条要求对录用决策有多重要；
+   - hard = 是否硬性门槛。
+   requirementIds 指回要求条目 id；explicitness 区分 JD 明写还是隐含；confidence 为 0–1。
+3. ideal_dimensions 固定输出 8 条，聚合同维度的信号：evidence 引 JD 原文、why 说明判定理由、action 写候选人应准备什么、note 为 6 字以内短标签；JD 完全没提的维度 requiredLevel 填 missing。
+4. 严禁输出任何数值分数，分数由后端计算。`;
 
 function slugId(co: string, title: string) {
   return `${co}-${title}`.toLowerCase().trim().replace(/[^a-z0-9\u4e00-\u9fa5]+/g, "-").replace(/^-+|-+$/g, "") || `jd-${Date.now()}`;
 }
+
+type ExtractOut = {
+  title: string;
+  company: string;
+  location: string;
+  salary: string;
+  evidence_items: EvidenceItem[];
+  requirement_records: RequirementRecord[];
+};
+
+type ProfileOut = {
+  role_summary: string;
+  rubric_dimensions: {
+    key: string;
+    definition: string;
+    subdimensions: string[];
+    strong_anchor: string;
+    medium_anchor: string;
+    weak_anchor: string;
+    valid_evidence: string[];
+    invalid_inferences: string[];
+  }[];
+  requirement_signals: RequirementSignal[];
+  ideal_dimensions: (IdealDimension & { evidence: string })[];
+};
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -92,39 +107,120 @@ Deno.serve(async (req) => {
       block = { type: "text", text: text! };
     }
 
-    const { data, usage, model, latencyMs } = await callAIJson<{
-      title: string;
-      company: string;
-      location: string;
-      salary: string;
-      dimensions: DimInput[];
-      requirements: { text: string; hard: boolean; dim: string }[];
-    }>({
-      messages: [
-        { role: "system", content: SYSTEM },
-        { role: "user", content: [{ type: "text", text: "请解析这份岗位 JD。" }, block] },
-      ],
-      schema: schema as unknown as Record<string, unknown>,
-      schemaName: "job_profile",
-    });
+    const contentHash = await sha256Hex(
+      block.type === "text" ? block.text : JSON.stringify(block).slice(0, 200000),
+    );
 
-    const { dimensions } = computeScore(data.dimensions);
-    const slug = slugId(data.company || "unknown", data.title || "role");
+    let promptTokens = 0;
+    let completionTokens = 0;
+    let latency = 0;
+
+    /* ---------- Call A : Layer 1 + Layer 2 ---------- */
+    const a = await callAIJson<ExtractOut>({
+      messages: [
+        { role: "system", content: EXTRACT_SYSTEM },
+        { role: "user", content: [{ type: "text", text: "请忠实读取这份岗位 JD。" }, block] },
+      ],
+      schema: jdExtractionSchema as unknown as Record<string, unknown>,
+      schemaName: "jd_extraction",
+    });
+    promptTokens += a.usage.prompt_tokens;
+    completionTokens += a.usage.completion_tokens;
+    latency += a.latencyMs;
+
+    const evidenceItems = a.data.evidence_items ?? [];
+    const requirementRecords = a.data.requirement_records ?? [];
+
+    /* ---------- Call B : Layer 3 + Layer 4 ---------- */
+    const b = await callAIJson<ProfileOut>({
+      messages: [
+        { role: "system", content: PROFILE_SYSTEM },
+        {
+          role: "user",
+          content: [
+            {
+              type: "text",
+              text:
+                `【岗位】${a.data.company || "待确认"} · ${a.data.title || "待确认"} · ${a.data.location || "待确认"}\n\n` +
+                `【要求条目】\n${JSON.stringify(requirementRecords)}\n\n` +
+                `【原文证据】\n${JSON.stringify(evidenceItems)}`,
+            },
+          ],
+        },
+      ],
+      schema: jdProfilingSchema as unknown as Record<string, unknown>,
+      schemaName: "jd_profiling",
+    });
+    promptTokens += b.usage.prompt_tokens;
+    completionTokens += b.usage.completion_tokens;
+    latency += b.latencyMs;
+
+    /* ---------- Evaluation rubric (JD-derived) ---------- */
+    const rubric: EvaluationRubric = {
+      version: RUBRIC_VERSION,
+      source: "jd_derived",
+      benchmark_ref: null,
+      roleSummary: b.data.role_summary || "",
+      dimensions: Object.fromEntries(
+        (b.data.rubric_dimensions ?? []).map((d) => [
+          d.key,
+          {
+            definition: d.definition,
+            subdimensions: d.subdimensions ?? [],
+            anchors: { strong: d.strong_anchor, medium: d.medium_anchor, weak: d.weak_anchor },
+            validEvidence: d.valid_evidence ?? [],
+            invalidInferences: d.invalid_inferences ?? [],
+          },
+        ]),
+      ),
+    };
+    const rubricHash = await canonicalHash(rubric);
+
+    const idealProfile: IdealCandidateProfile = {
+      schemaVersion: SCHEMA_VERSION,
+      rubricVersion: RUBRIC_VERSION,
+      rubricHash,
+      roleSummary: rubric.roleSummary,
+      dimensions: b.data.ideal_dimensions ?? [],
+    };
+
+    /* ---------- Legacy UI contract via the adapter ---------- */
+    const legacyDims = idealProfileToDims(idealProfile);
+    const { dimensions } = computeScore(legacyDims);
+    const requirements = requirementRecords.map((r) => ({
+      text: r.text,
+      hard: r.type === "must_have",
+      dim:
+        (b.data.requirement_signals ?? []).find((s) => (s.requirementIds ?? []).includes(r.id))
+          ?.dimensionKey || "skill",
+    })).slice(0, 14);
+
+    const slug = slugId(a.data.company || "unknown", a.data.title || "role");
 
     const { data: job, error } = await admin
       .from("job_profiles")
       .insert({
         user_id: user.id,
         slug,
-        title: data.title || "待确认",
-        company: data.company || "待确认",
-        location: data.location || "待确认",
+        title: a.data.title || "待确认",
+        company: a.data.company || "待确认",
+        location: a.data.location || "待确认",
         source_text: text ?? null,
         file_path: filePath ?? null,
         file_name: filePath ? fileName : null,
         status: "succeeded",
         dimensions,
-        requirements: data.requirements,
+        requirements,
+        evidence_items: evidenceItems,
+        requirement_records: requirementRecords,
+        requirement_signals: b.data.requirement_signals ?? [],
+        evaluation_rubric: rubric,
+        rubric_hash: rubricHash,
+        rubric_version: RUBRIC_VERSION,
+        ideal_profile: idealProfile,
+        content_hash: contentHash,
+        prompt_version: `${PROMPT_VERSIONS.jdExtraction}+${PROMPT_VERSIONS.jdProfiling}`,
+        schema_version: SCHEMA_VERSION,
       })
       .select("id, slug, title, company, location")
       .single();
@@ -133,13 +229,13 @@ Deno.serve(async (req) => {
     await logCall(admin, {
       user_id: user.id,
       task: "parse-jd",
-      model,
-      prompt_tokens: usage.prompt_tokens,
-      completion_tokens: usage.completion_tokens,
-      latency_ms: latencyMs,
+      model: MODEL,
+      prompt_tokens: promptTokens,
+      completion_tokens: completionTokens,
+      latency_ms: latency,
     });
 
-    return json({ job, salary: data.salary, dimensions, requirements: data.requirements });
+    return json({ job, salary: a.data.salary || "待确认", dimensions, requirements });
   } catch (e) {
     const err = e as { status?: number; message?: string };
     console.error("parse-jd failed", err);
