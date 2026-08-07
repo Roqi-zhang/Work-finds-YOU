@@ -172,7 +172,13 @@ const EMPTY_TIP: TipState = { on: false, x: 0, y: 0, name: "", score: "", evi: "
 
 export default function Profile() {
   const navigate = useNavigate();
+  const { search } = useLocation();
   const { user } = useAuth();
+
+  // JD-first: the target job is carried in `?job=` from the job profile step.
+  const targetJobId = useMemo(() => new URLSearchParams(search).get("job") || null, [search]);
+
+
 
 
   const [state, setStateVal] = useState<"empty" | "ready" | "analysing" | "bloomed">("empty");
