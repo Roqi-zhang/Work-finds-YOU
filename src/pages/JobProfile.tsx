@@ -503,7 +503,17 @@ export default function JobProfile() {
                     <button className="btn ghost" id="redoBtn" hidden>重新建立岗位画像</button>
                     <button className="btn" id="mainBtn">上传简历</button>
                   </div>
-                  <span className="hintline" id="hintLine">click or drag · PDF / Word / Image</span>
+                  <span className="hintline">
+                    <span id="hintLine">click or drag · PDF / Word / Image</span>
+                    {!user && (
+                      <>
+                        {" · "}
+                        <Link to="/auth?next=%2Fjobprofile" style={{ textDecoration: "underline", color: "inherit" }}>
+                          去登录 →
+                        </Link>
+                      </>
+                    )}
+                  </span>
                   <input id="cvFile" type="file" accept=".pdf,.doc,.docx,image/*" hidden />
                 </div>
 
