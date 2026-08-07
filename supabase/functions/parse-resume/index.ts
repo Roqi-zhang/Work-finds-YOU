@@ -106,6 +106,9 @@ Deno.serve(async (req) => {
       if (msg === "UNSUPPORTED_DOC") {
         return json({ error: "暂不支持 .doc，请在 Word 中另存为 .docx 或导出 PDF 后重新上传" }, 400);
       }
+      if (msg === "UNREADABLE_PDF") {
+        return json({ error: "该 PDF 无法提取文字（可能是扫描件），请上传可复制文字的 PDF/DOCX，或改传截图" }, 400);
+      }
       return json({ error: "文件读取失败：" + msg }, 400);
     }
 
