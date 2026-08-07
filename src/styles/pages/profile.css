@@ -137,22 +137,21 @@
 .p-profile .evi-q { font-size: 12px; line-height: 1.6; color: #555; }
 
 /* ---- match transition ---- */
-.p-profile .matching {
-  position: fixed; inset: 0; z-index: 90;
-  background: rgba(241,241,241,.86); backdrop-filter: blur(8px);
-  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px;
-  animation: mtIn .4s ease both;
-}
+.p-profile .merge { position: fixed; inset: 0; background: var(--paper); z-index: 90; display: none;
+        align-items: center; justify-content: center; flex-direction: column; gap: 26px; }
+.p-profile .merge.on { display: flex; animation: mtIn .35s var(--ease); }
 @keyframes mtIn { from { opacity: 0 } to { opacity: 1 } }
-.p-profile .mt-ring { position: relative; width: 128px; height: 128px; }
-.p-profile .mt-ring span {
-  position: absolute; top: 50%; width: 84px; height: 84px; margin-top: -42px;
-  border: .5px solid #0A0A0A; border-radius: 50%;
-}
-.p-profile .mt-a { left: 0; animation: mtMerge 1.7s cubic-bezier(.4,0,.2,1) forwards; }
-.p-profile .mt-b { right: 0; animation: mtMerge 1.7s cubic-bezier(.4,0,.2,1) forwards; }
-@keyframes mtMerge { to { transform: translateX(var(--d, 0)); } }
-.p-profile .mt-a { --d: 22px; }
-.p-profile .mt-b { --d: -22px; }
+.p-profile .merge .arena { position: relative; width: 660px; height: 380px; }
+.p-profile .merge .arena > div { position: absolute; top: 0; width: 340px; height: 380px;
+        transition: transform 1.15s cubic-bezier(.7,0,.2,1), opacity 1.15s var(--ease); }
+.p-profile .merge .arena > div svg { width: 100%; height: 100%; opacity: 1 !important; transform: none !important; animation: none !important; }
+.p-profile .merge .arena .petal { animation: none !important; stroke-dasharray: none; }
+.p-profile .merge .mine { left: 0; transform: translateX(0) scale(.92); }
+.p-profile .merge .role { right: 0; transform: translateX(0) scale(.92); }
+.p-profile .merge.go .mine { transform: translateX(160px) scale(1.02); opacity: .75; }
+.p-profile .merge.go .role { transform: translateX(-160px) scale(1.02); opacity: .75; }
+.p-profile .merge .cap { font-size: 11px; letter-spacing: .26em; text-transform: uppercase; opacity: .55; }
+.p-profile .merge .caps { display: flex; gap: 60px; }
+
 .p-profile .mt-t { font-size: 11px; letter-spacing: .32em; text-transform: uppercase; }
 .p-profile .mt-s { font-size: 11px; letter-spacing: .06em; color: #888; }
