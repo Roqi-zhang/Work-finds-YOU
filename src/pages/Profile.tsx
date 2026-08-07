@@ -728,16 +728,15 @@ export default function Profile() {
           </section>
         </section>
 
-        {matching && (
-          <div className="matching">
-            <div className="mt-ring">
-              <span className="mt-a" />
-              <span className="mt-b" />
-            </div>
-            <div className="mt-t">MATCHING</div>
-            <div className="mt-s">岗位画像 × 个人画像 · 正在计算匹配度</div>
+        <div className={"merge" + (matching ? " on" : "") + (mergeGo ? " go" : "")} id="merge">
+          <div className="arena">
+            <div className="mine" id="mergeMine" dangerouslySetInnerHTML={{ __html: mergeSvg }} />
+            <div className="role" id="mergeRole" dangerouslySetInnerHTML={{ __html: mergeSvg }} />
           </div>
-        )}
+          <div className="caps"><span className="cap">Your flower</span><span className="cap">Role flower</span></div>
+          <div className="cap" id="mergeCap">{mergeCap}</div>
+        </div>
+
 
 
 
