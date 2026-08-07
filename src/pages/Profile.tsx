@@ -451,8 +451,14 @@ export default function Profile() {
     if (state === "bloomed") {
       // JD-first flow continues into the match; without a target JD, go pick one.
       if (!targetJobId) { navigate("/jobprofile"); return; }
+      const svgEl = document.getElementById("flowerSvg");
+      setMergeSvg(svgEl ? svgEl.outerHTML : "");
+      setMergeCap("Overlaying two flowers · computing fit");
+      setMergeGo(false);
       setMatching(true);
-      window.setTimeout(() => navigate("/match?job=" + encodeURIComponent(targetJobId)), 1700);
+      window.setTimeout(() => setMergeGo(true), 80);
+      window.setTimeout(() => setMergeCap("Match computed · entering"), 1250);
+      window.setTimeout(() => navigate("/match?job=" + encodeURIComponent(targetJobId)), 1900);
       return;
     }
     if (state !== "ready") return;
