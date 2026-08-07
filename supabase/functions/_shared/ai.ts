@@ -1,6 +1,16 @@
-// Lovable AI Gateway helper (server only)
-const GATEWAY = "https://ai.gateway.lovable.dev/v1/chat/completions";
-export const MODEL = "openai/gpt-5.6-sol";
+// AI helper (server only).
+// Default: the user's own OpenAI-compatible endpoint (Qwen / 阿里云百炼 MaaS).
+// Fallback: Lovable AI Gateway when no custom key is configured.
+
+const LOVABLE_GATEWAY = "https://ai.gateway.lovable.dev/v1/chat/completions";
+const LOVABLE_MODEL = "openai/gpt-5.6-sol";
+
+function customBase() {
+  const base = Deno.env.get("CUSTOM_AI_BASE_URL");
+  return base ? base.replace(/\/+$/, "") : "";
+}
+
+export const MODEL = Deno.env.get("CUSTOM_AI_MODEL") || LOVABLE_MODEL;
 
 export type ContentBlock =
   | { type: "text"; text: string }
@@ -17,35 +27,81 @@ export class AIError extends Error {
   }
 }
 
-/** Call the gateway with a strict JSON schema and return the parsed object. */
+function endpoint() {
+  const key = Deno.env.get("CUSTOM_AI_API_KEY");
+  if (key && customBase()) {
+    return {
+      url: `${customBase()}/chat/completions`,
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
+      model: Deno.env.get("CUSTOM_AI_MODEL") || "qwen3.7-plus",
+      custom: true,
+    };
+  }
+  const lk = Deno.env.get("LOVABLE_API_KEY");
+  if (!lk) throw new AIError(500, "Missing AI credentials");
+  return {
+    url: LOVABLE_GATEWAY,
+    headers: { "Content-Type": "application/json", "Lovable-API-Key": lk },
+    model: LOVABLE_MODEL,
+    custom: false,
+  };
+}
+
+/** Some OpenAI-compatible providers wrap JSON in ```json fences. */
+function stripFence(s: string) {
+  const m = s.match(/```(?:json)?\s*([\s\S]*?)```/);
+  return (m ? m[1] : s).trim();
+}
+
+/** Call the model with a strict JSON schema and return the parsed object. */
 export async function callAIJson<T>(opts: {
   messages: ChatMessage[];
   schema: Record<string, unknown>;
   schemaName: string;
   model?: string;
 }): Promise<{ data: T; usage: Record<string, number>; model: string; latencyMs: number }> {
-  const key = Deno.env.get("LOVABLE_API_KEY");
-  if (!key) throw new AIError(500, "Missing LOVABLE_API_KEY");
-  const model = opts.model || MODEL;
+  const ep = endpoint();
+  const model = opts.model || ep.model;
   const started = Date.now();
 
-  const res = await fetch(GATEWAY, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "Lovable-API-Key": key },
-    body: JSON.stringify({
+  const post = async (mode: "json_schema" | "json_object") => {
+    const messages =
+      mode === "json_object"
+        ? [
+            {
+              role: "system" as const,
+              content:
+                `只输出一个合法 JSON 对象，不要任何解释或 Markdown 代码块。必须严格符合以下 JSON Schema：\n` +
+                JSON.stringify(opts.schema),
+            },
+            ...opts.messages,
+          ]
+        : opts.messages;
+
+    const body: Record<string, unknown> = {
       model,
-      reasoning_effort: "none",
-      messages: opts.messages,
-      response_format: {
-        type: "json_schema",
-        json_schema: { name: opts.schemaName, strict: true, schema: opts.schema },
-      },
-    }),
-  });
+      messages,
+      response_format:
+        mode === "json_schema"
+          ? { type: "json_schema", json_schema: { name: opts.schemaName, strict: true, schema: opts.schema } }
+          : { type: "json_object" },
+    };
+    if (!ep.custom) body.reasoning_effort = "none";
+    else body.enable_thinking = false;
+
+    return await fetch(ep.url, { method: "POST", headers: ep.headers, body: JSON.stringify(body) });
+  };
+
+  let res = await post("json_schema");
+  if (!res.ok && res.status === 400) {
+    // Providers that don't implement json_schema — retry with json_object + inline schema.
+    console.warn("json_schema rejected, retrying with json_object");
+    res = await post("json_object");
+  }
 
   if (!res.ok) {
     const body = await res.text();
-    console.error(`AI gateway failed [${res.status}]: ${body}`);
+    console.error(`AI call failed [${res.status}]: ${body}`);
     throw new AIError(res.status, body);
   }
 
@@ -53,7 +109,7 @@ export async function callAIJson<T>(opts: {
   const text: string = json?.choices?.[0]?.message?.content ?? "";
   let data: T;
   try {
-    data = JSON.parse(text) as T;
+    data = JSON.parse(stripFence(text)) as T;
   } catch {
     throw new AIError(502, "Model returned non-JSON output");
   }
