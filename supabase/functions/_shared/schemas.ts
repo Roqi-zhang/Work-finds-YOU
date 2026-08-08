@@ -10,7 +10,7 @@ export const RUBRIC_VERSION = "rubric-v1";
 
 export const PROMPT_VERSIONS = {
   jdExtraction: "jd-extract-v1",
-  jdProfiling: "jd-profile-v1",
+  jdProfiling: "jd-profile-v2",
   resumeExtraction: "resume-extract-v1",
   resumeProfiling: "resume-profile-v1",
   match: "match-v1",
