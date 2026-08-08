@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import TopBar from "@/components/swiss/TopBar";
+import ExportMenu from "@/components/swiss/ExportMenu";
 import {
   getMatchReport,
   putMatchReport,
@@ -69,7 +70,12 @@ export default function Match() {
     );
   }, [search]);
 
-  const localReport: MatchReport | null = useMemo(() => (jobId ? getMatchReport(jobId) : null), [jobId]);
+  // `fresh=1` arrives from the match animation — never flash the previous report.
+  const fresh = useMemo(() => new URLSearchParams(search).get("fresh") === "1", [search]);
+  const localReport: MatchReport | null = useMemo(
+    () => (jobId && !fresh ? getMatchReport(jobId) : null),
+    [jobId, fresh],
+  );
   const [report, setReport] = useState<MatchReport | null>(localReport);
   const [loading, setLoading] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -133,6 +139,7 @@ export default function Match() {
     });
   };
 
+  const reportRef = useRef<HTMLElement>(null);
   const bgTicksRef = useRef<SVGGElement | null>(null);
   const handRef = useRef<SVGLineElement | null>(null);
 
@@ -204,7 +211,7 @@ export default function Match() {
     return (
       <div className="p-match">
         {bgDial}
-        <main className="page content">
+        <main className="page content" ref={reportRef}>
           <TopBar />
           <section className="screen" id="s1">
             <div>
@@ -282,7 +289,7 @@ export default function Match() {
     <div className="p-match">
       <>
         {bgDial}
-        <main className="page content">
+        <main className="page content" ref={reportRef}>
           <TopBar />
 
           <nav className="progress">
@@ -308,6 +315,33 @@ export default function Match() {
                 <button className="btn" id="applyBtn" type="button" onClick={onApply}>
                   直接投递 →
                 </button>
+                <ExportMenu
+                  fileBase={`Match-${R.score}`}
+                  captureRef={reportRef}
+                  buildDoc={() => ({
+                    title: `匹配报告 · ${R.score}% match`,
+                    subtitle: R.overview,
+                    sections: [
+                      {
+                        heading: "01 · 核心决策",
+                        lines: [
+                          `是否优先投：${R.decision.flag}`,
+                          `匹配分：${R.decision.score} / 100`,
+                          `胜算等级：${R.decision.win}`,
+                          `投递优先级：${R.decision.rank}`,
+                        ],
+                      },
+                      {
+                        heading: "02 · 三个关键判断",
+                        lines: R.judgements.map((j) => `[${j.kind}] ${j.title} — ${j.desc}`),
+                      },
+                      {
+                        heading: "03 · 投前 3 步",
+                        lines: R.steps.map((st, i) => `${i + 1}. ${st.title} — ${st.desc}`),
+                      },
+                    ],
+                  })}
+                />
               </div>
             </div>
             <div className="moon-score">
@@ -461,6 +495,7 @@ export default function Match() {
                 <div className="ev-block">
                   <div className="k">资料来源</div>
                   <div className="srcs">
+                    {!R.sources.length && <div className="empty">本次分析未记录该环节</div>}
                     {R.sources.map((s) => (
                       <a href="#" key={s.label}>
                         <span>{s.label}</span>
@@ -473,6 +508,7 @@ export default function Match() {
                 <div className="ev-block">
                   <div className="k">分析步骤</div>
                   <div className="steps">
+                    {!R.pipeline.length && <div className="empty">本次分析未记录该环节</div>}
                     {R.pipeline.map((p, i) => (
                       <div className="r" key={p.step}>
                         <span className="n">{String(i + 1).padStart(2, "0")}</span>
@@ -499,6 +535,7 @@ export default function Match() {
                 <div className="ev-block">
                   <div className="k">推理记录</div>
                   <div className="trace" id="trace" data-src-id="model.trace">
+                    {!R.trace.length && <div className="empty">本次分析未记录该环节</div>}
                     {R.trace.map((r) => (
                       <div className="r" key={r.t}>
                         <span className="k">{r.t}</span>
@@ -506,9 +543,6 @@ export default function Match() {
                         <span>{r.d}</span>
                       </div>
                     ))}
-                    <div className="empty" style={{ marginTop: 16 }}>
-                      接入模型后此处直接渲染真实 reasoning trace
-                    </div>
                   </div>
                 </div>
               </div>

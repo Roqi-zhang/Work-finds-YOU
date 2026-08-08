@@ -3,8 +3,9 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 
 import TopBar from "@/components/swiss/TopBar";
+import ExportMenu from "@/components/swiss/ExportMenu";
 import { getUI, setUI } from "@/lib/wfy";
-import { parseResume, aiMessage, type DimScored, type EvidenceDetail, type ResumeResult } from "@/lib/ai";
+import { parseResume, runMatch, aiMessage, type DimScored, type EvidenceDetail, type ResumeResult } from "@/lib/ai";
 import { clearTask, getTask, startTask, subscribeTask } from "@/lib/tasks";
 import { loadFile, saveFile } from "@/lib/filestore";
 import "@/styles/pages/profile.css";
@@ -210,6 +211,7 @@ export default function Profile() {
   const [openEvi, setOpenEvi] = useState<Record<number, boolean>>({});
   const [dialog, setDialog] = useState<{ title: string; body: string; okText: string; onConfirm: (() => void) | null } | null>(null);
 
+  const stageRef = useRef<HTMLElement>(null);
   const frontRootRef = useRef<SVGGElement | null>(null);
   const backRootRef = useRef<SVGGElement | null>(null);
   const stamenRootRef = useRef<SVGGElement | null>(null);
@@ -436,12 +438,9 @@ export default function Profile() {
     setDialog({ title, body, okText, onConfirm: cb });
   }
 
+  // Going back never discards work — the resume and the flower are kept.
   function onBack() {
-    if (state === "bloomed" || state === "analysing") {
-      confirmDialog("Discard profile?", "返回将清空当前简历与已生成的能力花，是否继续？", "确认返回", () => history.back());
-    } else {
-      history.back();
-    }
+    history.back();
   }
 
   function onRedo() {
@@ -465,8 +464,22 @@ export default function Profile() {
       setMergeGo(false);
       setMatching(true);
       window.setTimeout(() => setMergeGo(true), 80);
-      window.setTimeout(() => setMergeCap("Match computed · entering"), 1250);
-      window.setTimeout(() => navigate("/match?job=" + encodeURIComponent(targetJobId)), 1900);
+      // Loop the merge animation for as long as the real match request runs.
+      const loop = window.setInterval(() => {
+        setMergeGo(false);
+        window.setTimeout(() => setMergeGo(true), 60);
+      }, 2200);
+      try {
+        await runMatch(targetJobId, true);
+        setMergeCap("Match computed · entering");
+        navigate("/match?job=" + encodeURIComponent(targetJobId) + "&fresh=1");
+      } catch (e) {
+        setHintOverride(aiMessage(e));
+        setMatching(false);
+        setMergeGo(false);
+      } finally {
+        window.clearInterval(loop);
+      }
       return;
     }
     if (state !== "ready") return;
@@ -535,12 +548,34 @@ export default function Profile() {
             </div>
           </aside>
 
-          <section className="stage">
+          <section className="stage" ref={stageRef}>
             <div className="stage-head">
               <span className="caption">Ability Flower · 8 competencies</span>
-              <span className="mode" id="stateTag">
-                {map.tag}
-              </span>
+              {state === "bloomed" && result ? (
+                <ExportMenu
+                  fileBase={`Profile-${rName.replace(/\.[^.]+$/, "")}`}
+                  captureRef={stageRef}
+                  buildDoc={() => ({
+                    title: "候选人画像 · 8 维能力",
+                    subtitle: `${rName} · ${rMeta}`,
+                    sections: DIMS.map((dim, i) => {
+                      const d = (result[i] || {}) as DimResult & { evidence?: string; why?: string; evidenceDetail?: string[] };
+                      return {
+                        heading: `${dim.label} · ${d.score == null ? "—" : d.score + "/5"}`,
+                        lines: [
+                          `Evidence: ${d.evidence || "—"}`,
+                          `Analysis: ${d.why || "—"}`,
+                          ...((d.evidenceDetail as string[] | undefined) ?? []),
+                        ],
+                      };
+                    }),
+                  })}
+                />
+              ) : (
+                <span className="mode" id="stateTag">
+                  {map.tag}
+                </span>
+              )}
             </div>
 
             <div

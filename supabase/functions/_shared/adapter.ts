@@ -90,9 +90,7 @@ export function idealProfileToDims(
       key: d.key,
       level: d.requiredLevel,
       evidence: d.evidence,
-      why: d.why,
-      action: d.action,
-      note: d.note,
+      analysis: d.analysis,
     })),
   );
 }

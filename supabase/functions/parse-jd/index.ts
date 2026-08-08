@@ -17,6 +17,7 @@ import {
 } from "../_shared/schemas.ts";
 import { idealProfileToDims } from "../_shared/adapter.ts";
 import { canonicalHash, sha256Hex } from "../_shared/hash.ts";
+import { getAnalysis, putAnalysis, recordDocument } from "../_shared/docstore.ts";
 
 /* ---------------- Layer 1 + 2 : document evidence → requirement records ------- */
 
@@ -43,9 +44,12 @@ const PROFILE_SYSTEM = `你是资深招聘官，基于已经抽取好的 JD 要�
    - importance = 这条要求对录用决策有多重要；
    - hard = 是否硬性门槛。
    requirementIds 指回要求条目 id；explicitness 区分 JD 明写还是隐含；confidence 为 0–1。
-3. ideal_dimensions 固定输出 8 条，聚合同维度的信号：evidence 引 JD 原文、why 说明判定理由、action 写候选人应准备什么、note 为 6 字以内短标签；JD 完全没提的维度 requiredLevel 填 missing。
+3. ideal_dimensions 固定输出 8 条，聚合同维度的信号，只输出两段文字：
+   - evidence：引 JD 原文，说明这一维的要求体现在哪里；
+   - analysis：以招聘专家视角解读这项要求 —— 这个岗位为什么需要它、达到什么程度算合格、JD 的措辞透露出的强度信号。严禁写成「候选人应该怎么做」的行动建议。
+   JD 完全没提的维度 requiredLevel 填 missing。
 4. 严禁输出任何数值分数，分数由后端计算。
-5. 精简输出：每个 anchor 不超过 40 字，definition 不超过 50 字，evidence/why/action 各不超过 60 字。`;
+5. 精简输出：每个 anchor 不超过 40 字，definition 不超过 50 字，evidence 不超过 60 字、analysis 不超过 80 字。`;
 
 function slugId(co: string, title: string) {
   return `${co}-${title}`.toLowerCase().trim().replace(/[^a-z0-9\u4e00-\u9fa5]+/g, "-").replace(/^-+|-+$/g, "") || `jd-${Date.now()}`;
@@ -161,55 +165,86 @@ Deno.serve(async (req) => {
     let completionTokens = 0;
     let latency = 0;
 
-
-    /* ---------- Call A : Layer 1 + Layer 2 ---------- */
-    const a = await callAIJson<ExtractOut>({
-      messages: [
-        { role: "system", content: EXTRACT_SYSTEM },
-        { role: "user", content: [{ type: "text", text: "请忠实读取这份岗位 JD。" }, block] },
-      ],
-      schema: jdExtractionSchema as unknown as Record<string, unknown>,
-      schemaName: "jd_extraction",
+    const PROMPT_VER = `${PROMPT_VERSIONS.jdExtraction}+${PROMPT_VERSIONS.jdProfiling}`;
+    await recordDocument(admin, {
+      contentHash,
+      kind: "jd",
+      ownerId: user?.id ?? null,
+      textLen: block.type === "text" ? block.text.length : undefined,
+      storagePath: filePath ?? null,
+      fileName: fileName ?? null,
     });
-    promptTokens += a.usage.prompt_tokens;
-    completionTokens += a.usage.completion_tokens;
-    latency += a.latencyMs;
 
-    const evidenceItems = a.data.evidence_items ?? [];
-    const requirementRecords = a.data.requirement_records ?? [];
+    /* ---------- Cross-user analysis cache : a JD is public text ---------- */
+    const cacheKey = {
+      contentHash,
+      kind: "jd" as const,
+      stage: "jd_full",
+      promptVersion: PROMPT_VER,
+      schemaVersion: SCHEMA_VERSION,
+    };
+    const cachedAnalysis = await getAnalysis<{ extract: ExtractOut; profile: ProfileOut }>(admin, cacheKey);
 
-    /* ---------- Call B : Layer 3 + Layer 4 ---------- */
-    const b = await callAIJson<ProfileOut>({
-      messages: [
-        { role: "system", content: PROFILE_SYSTEM },
-        {
-          role: "user",
-          content: [
-            {
-              type: "text",
-              text:
-                `【岗位】${a.data.company || "待确认"} · ${a.data.title || "待确认"} · ${a.data.location || "待确认"}\n\n` +
-                `【要求条目】\n${JSON.stringify(requirementRecords)}\n\n` +
-                `【原文证据】\n${JSON.stringify(evidenceItems)}`,
-            },
-          ],
-        },
-      ],
-      schema: jdProfilingSchema as unknown as Record<string, unknown>,
-      schemaName: "jd_profiling",
-    });
-    promptTokens += b.usage.prompt_tokens;
-    completionTokens += b.usage.completion_tokens;
-    latency += b.latencyMs;
+    let extract: ExtractOut;
+    let profileOut: ProfileOut;
+
+    if (cachedAnalysis) {
+      extract = cachedAnalysis.extract;
+      profileOut = cachedAnalysis.profile;
+    } else {
+      /* ---------- Call A : Layer 1 + Layer 2 ---------- */
+      const a = await callAIJson<ExtractOut>({
+        messages: [
+          { role: "system", content: EXTRACT_SYSTEM },
+          { role: "user", content: [{ type: "text", text: "请忠实读取这份岗位 JD。" }, block] },
+        ],
+        schema: jdExtractionSchema as unknown as Record<string, unknown>,
+        schemaName: "jd_extraction",
+      });
+      promptTokens += a.usage.prompt_tokens;
+      completionTokens += a.usage.completion_tokens;
+      latency += a.latencyMs;
+      extract = a.data;
+
+      /* ---------- Call B : Layer 3 + Layer 4 ---------- */
+      const b = await callAIJson<ProfileOut>({
+        messages: [
+          { role: "system", content: PROFILE_SYSTEM },
+          {
+            role: "user",
+            content: [
+              {
+                type: "text",
+                text:
+                  `【岗位】${extract.company || "待确认"} · ${extract.title || "待确认"} · ${extract.location || "待确认"}\n\n` +
+                  `【要求条目】\n${JSON.stringify(extract.requirement_records ?? [])}\n\n` +
+                  `【原文证据】\n${JSON.stringify(extract.evidence_items ?? [])}`,
+              },
+            ],
+          },
+        ],
+        schema: jdProfilingSchema as unknown as Record<string, unknown>,
+        schemaName: "jd_profiling",
+      });
+      promptTokens += b.usage.prompt_tokens;
+      completionTokens += b.usage.completion_tokens;
+      latency += b.latencyMs;
+      profileOut = b.data;
+
+      await putAnalysis(admin, cacheKey, { extract, profile: profileOut }, b.model);
+    }
+
+    const evidenceItems = extract.evidence_items ?? [];
+    const requirementRecords = extract.requirement_records ?? [];
 
     /* ---------- Evaluation rubric (JD-derived) ---------- */
     const rubric: EvaluationRubric = {
       version: RUBRIC_VERSION,
       source: "jd_derived",
       benchmark_ref: null,
-      roleSummary: b.data.role_summary || "",
+      roleSummary: profileOut.role_summary || "",
       dimensions: Object.fromEntries(
-        (b.data.rubric_dimensions ?? []).map((d) => [
+        (profileOut.rubric_dimensions ?? []).map((d) => [
           d.key,
           {
             definition: d.definition,
@@ -228,7 +263,7 @@ Deno.serve(async (req) => {
       rubricVersion: RUBRIC_VERSION,
       rubricHash,
       roleSummary: rubric.roleSummary,
-      dimensions: b.data.ideal_dimensions ?? [],
+      dimensions: profileOut.ideal_dimensions ?? [],
     };
 
     /* ---------- Legacy UI contract via the adapter ---------- */
@@ -238,19 +273,19 @@ Deno.serve(async (req) => {
       text: r.text,
       hard: r.type === "must_have",
       dim:
-        (b.data.requirement_signals ?? []).find((s) => (s.requirementIds ?? []).includes(r.id))
+        (profileOut.requirement_signals ?? []).find((s) => (s.requirementIds ?? []).includes(r.id))
           ?.dimensionKey || "skill",
     })).slice(0, 14);
 
-    const slug = slugId(a.data.company || "unknown", a.data.title || "role");
+    const slug = slugId(extract.company || "unknown", extract.title || "role");
 
     const row = {
       user_id: user?.id ?? null,
       guest_key: user ? null : guestKey,
       slug,
-      title: a.data.title || "待确认",
-      company: a.data.company || "待确认",
-      location: a.data.location || "待确认",
+      title: extract.title || "待确认",
+      company: extract.company || "待确认",
+      location: extract.location || "待确认",
       source_text: text ?? null,
       file_path: filePath ?? null,
       file_name: filePath ? fileName : null,
@@ -259,13 +294,13 @@ Deno.serve(async (req) => {
       requirements,
       evidence_items: evidenceItems,
       requirement_records: requirementRecords,
-      requirement_signals: b.data.requirement_signals ?? [],
+      requirement_signals: profileOut.requirement_signals ?? [],
       evaluation_rubric: rubric,
       rubric_hash: rubricHash,
       rubric_version: RUBRIC_VERSION,
       ideal_profile: idealProfile,
       content_hash: contentHash,
-      prompt_version: `${PROMPT_VERSIONS.jdExtraction}+${PROMPT_VERSIONS.jdProfiling}`,
+      prompt_version: PROMPT_VER,
       schema_version: SCHEMA_VERSION,
     };
 
@@ -297,7 +332,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    return json({ job, salary: a.data.salary || "待确认", dimensions, requirements });
+    return json({ job, salary: extract.salary || "待确认", dimensions, requirements });
   } catch (e) {
     const err = e as { status?: number; message?: string };
     console.error("parse-jd failed", err);

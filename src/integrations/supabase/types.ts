@@ -218,6 +218,90 @@ export type Database = {
           },
         ]
       }
+      document_analyses: {
+        Row: {
+          content_hash: string
+          created_at: string
+          id: string
+          kind: string
+          model: string | null
+          payload: Json
+          prompt_version: string
+          schema_version: string
+          scope_key: string
+          stage: string
+          updated_at: string
+        }
+        Insert: {
+          content_hash: string
+          created_at?: string
+          id?: string
+          kind: string
+          model?: string | null
+          payload: Json
+          prompt_version: string
+          schema_version: string
+          scope_key?: string
+          stage: string
+          updated_at?: string
+        }
+        Update: {
+          content_hash?: string
+          created_at?: string
+          id?: string
+          kind?: string
+          model?: string | null
+          payload?: Json
+          prompt_version?: string
+          schema_version?: string
+          scope_key?: string
+          stage?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      documents: {
+        Row: {
+          content_hash: string
+          created_at: string
+          file_name: string | null
+          first_seen_at: string
+          id: string
+          kind: string
+          owner_id: string | null
+          seen_count: number
+          storage_path: string | null
+          text_len: number | null
+          updated_at: string
+        }
+        Insert: {
+          content_hash: string
+          created_at?: string
+          file_name?: string | null
+          first_seen_at?: string
+          id?: string
+          kind: string
+          owner_id?: string | null
+          seen_count?: number
+          storage_path?: string | null
+          text_len?: number | null
+          updated_at?: string
+        }
+        Update: {
+          content_hash?: string
+          created_at?: string
+          file_name?: string | null
+          first_seen_at?: string
+          id?: string
+          kind?: string
+          owner_id?: string | null
+          seen_count?: number
+          storage_path?: string | null
+          text_len?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       guest_trials: {
         Row: {
           created_at: string
@@ -341,6 +425,7 @@ export type Database = {
           id: string
           job_profile_id: string
           judgements: Json
+          pipeline: Json
           rationale_summary: string | null
           reasoning_trace: string | null
           schema_version: string
@@ -365,6 +450,7 @@ export type Database = {
           id?: string
           job_profile_id: string
           judgements?: Json
+          pipeline?: Json
           rationale_summary?: string | null
           reasoning_trace?: string | null
           schema_version?: string
@@ -389,6 +475,7 @@ export type Database = {
           id?: string
           job_profile_id?: string
           judgements?: Json
+          pipeline?: Json
           rationale_summary?: string | null
           reasoning_trace?: string | null
           schema_version?: string

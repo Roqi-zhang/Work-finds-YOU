@@ -1,6 +1,7 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import TopBar from "@/components/swiss/TopBar";
+import ExportMenu from "@/components/swiss/ExportMenu";
 import { getUI, setUI, putJob } from "@/lib/wfy";
 import { parseJdFile, aiMessage, type JdResult } from "@/lib/ai";
 import { clearTask, getTask, startTask, subscribeTask } from "@/lib/tasks";
@@ -8,10 +9,14 @@ import { loadFile, saveFile } from "@/lib/filestore";
 import { useAuth } from "@/hooks/useAuth";
 import "@/styles/pages/jobprofile.css";
 
+const DIM_LABELS = ["专业技能", "业务理解", "问题分析", "执行交付", "沟通表达", "协作影响", "学习适应", "动机匹配"];
+
 export default function JobProfile() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const rootRef = useRef<HTMLDivElement>(null);
+  const stageRef = useRef<HTMLElement>(null);
+  const [exportData, setExportData] = useState<{ job: any; result: any[] } | null>(null);
 
   useEffect(() => {
     const root = rootRef.current;
@@ -100,8 +105,7 @@ export default function JobProfile() {
       (root!.querySelector("#tipName") as HTMLElement).textContent = ref.dim.label;
       (root!.querySelector("#tipScore") as HTMLElement).textContent = d.evidence ? (d.score == null ? "证据不足" : d.score + "/5") : "—";
       (root!.querySelector("#tipEvi") as HTMLElement).textContent = d.evidence || "尚未建立画像";
-      (root!.querySelector("#tipWhy") as HTMLElement).textContent = d.why || "上传简历后生成";
-      (root!.querySelector("#tipAct") as HTMLElement).textContent = d.action || "—";
+      (root!.querySelector("#tipWhy") as HTMLElement).textContent = d.analysis || d.why || "上传 JD 后生成";
       const box = visual.getBoundingClientRect();
       let x = e.clientX - box.left + 18, y = e.clientY - box.top + 12;
       x = Math.min(x, box.width - 262); y = Math.min(y, box.height - 180);
@@ -270,6 +274,7 @@ export default function JobProfile() {
       legend.innerHTML = "";
       input.value = "";
       paint(DIMS.map((_, i) => ({ score: 2.5, seed: i })), false);
+      setExportData(null);
       setState("empty");
       saveStore(null);
     }
@@ -288,11 +293,8 @@ export default function JobProfile() {
     const onDlgOk = () => { const cb = onConfirm; closeDialog(); if (cb) cb(); };
     dlgOk.addEventListener("click", onDlgOk);
 
-    const onBack = () => {
-      if (state === "bloomed" || state === "analysing") {
-        confirmDialog("Discard job profile?", "返回将清空当前 JD 与已生成的岗位能力花，是否继续？", "确认返回", () => history.back());
-      } else history.back();
-    };
+    // Going back never discards work — the JD and the role flower are kept.
+    const onBack = () => history.back();
     backBtn.addEventListener("click", onBack);
 
     const onRedo = () => {
@@ -323,8 +325,7 @@ export default function JobProfile() {
             <div class="bar ${s == null ? "none" : ""}">${bar}</div>
             <dl>
               <div class="r"><span class="k">Evidence</span><span class="v">${d.evidence || "—"}</span></div>
-              <div class="r"><span class="k">Why</span><span class="v">${d.why || "—"}</span></div>
-              <div class="r"><span class="k">Action</span><span class="v">${d.action || "—"}</span></div>
+              <div class="r"><span class="k">Analysis</span><span class="v">${d.analysis || d.why || "—"}</span></div>
             </dl>
             <div class="str">[${(d.strength || "missing").toUpperCase()}]</div>
           </div>`;
@@ -343,9 +344,7 @@ export default function JobProfile() {
           score: d?.score ?? null,
           strength: d?.level ?? "missing",
           evidence: d?.evidence,
-          why: d?.why,
-          action: d?.action,
-          note: d?.note,
+          analysis: (d as { analysis?: string })?.analysis ?? d?.why,
         };
       });
       parsedJob = {
@@ -360,6 +359,7 @@ export default function JobProfile() {
       stageEl.classList.add("bloomed");
       renderPetalAnalysis(result);
       saveStore({ state: "bloomed", name: rName.textContent, meta: rMeta.textContent, result, job: parsedJob });
+      setExportData({ job: parsedJob, result });
     }
 
     const onMain = async () => {
@@ -403,6 +403,7 @@ export default function JobProfile() {
       if (!saved) { setState("empty"); return; }
       if (saved.name) { rName.textContent = saved.name; rMeta.textContent = saved.meta || ""; }
       if (saved.state === "bloomed" && saved.result) {
+        setExportData({ job: saved.job || null, result: saved.result });
         paint(saved.result, false);
         stageEl.classList.add("bloomed");
         setState("bloomed");
@@ -481,10 +482,27 @@ export default function JobProfile() {
               </div>
             </aside>
 
-            <section className="stage">
+            <section className="stage" ref={stageRef}>
               <div className="stage-head">
                 <span className="caption">Role Ability Flower · 8 competencies</span>
-                <span className="mode" id="stateTag">STATE / EMPTY</span>
+                <span className="mode" id="stateTag" hidden={!!exportData}>STATE / EMPTY</span>
+                {exportData && (
+                  <ExportMenu
+                    fileBase={`JD-${exportData.job?.company || "role"}-${exportData.job?.title || ""}`}
+                    captureRef={stageRef}
+                    buildDoc={() => ({
+                      title: `岗位画像 · ${exportData.job?.title || ""}`,
+                      subtitle: [exportData.job?.company, exportData.job?.location].filter(Boolean).join(" · "),
+                      sections: DIM_LABELS.map((label, i) => {
+                        const d: any = exportData.result[i] || {};
+                        return {
+                          heading: `${label} · ${d.score == null ? "—" : d.score + "/5"} [${String(d.strength || "missing").toUpperCase()}]`,
+                          lines: [`Evidence: ${d.evidence || "—"}`, `Analysis: ${d.analysis || d.why || "—"}`],
+                        };
+                      }),
+                    })}
+                  />
+                )}
               </div>
 
               <div className="petal-stage" id="petalStage" data-state="empty">
@@ -509,8 +527,7 @@ export default function JobProfile() {
                   <div className="tip" id="tip">
                     <h5><span id="tipName"></span><b id="tipScore"></b></h5>
                     <div className="row"><div className="k">Evidence</div><div className="v" id="tipEvi"></div></div>
-                    <div className="row"><div className="k">Why this score</div><div className="v" id="tipWhy"></div></div>
-                    <div className="row"><div className="k">Action</div><div className="v" id="tipAct"></div></div>
+                    <div className="row"><div className="k">Analysis</div><div className="v" id="tipWhy"></div></div>
                   </div>
                 </div>
 

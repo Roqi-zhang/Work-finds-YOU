@@ -446,6 +446,9 @@ type BackendReport = {
   dimension_scores?: { key: string; label: string; score: number | null; level: string; core?: boolean; why?: string }[];
   sources?: { label: string; at: string }[];
   reasoning_trace?: string | null;
+  pipeline?: { step: string; detail: string }[];
+  decision_factors?: { step: string; detail: string }[];
+  rationale_summary?: string | null;
 };
 
 const MARKS: Record<string, string> = { 最大优势: "", 最大缺口: "w", 最大风险: "i" };
@@ -456,15 +459,20 @@ export function reportFromBackend(job: Job, r: BackendReport): MatchReport {
   const base = reportTemplate({ ...job, m: r.score });
   const d = r.decision || {};
 
-  let trace: { t: string; s: string; d: string }[] = base.trace;
-  try {
-    const parsed = JSON.parse(r.reasoning_trace || "[]") as { step: string; detail: string }[];
-    if (Array.isArray(parsed) && parsed.length) {
-      trace = parsed.map((p, i) => ({ t: String(i + 1).padStart(2, "0"), s: p.step, d: p.detail }));
+  // Reasoning is rendered from real model output only — no mock fallback.
+  let factors: { step: string; detail: string }[] = Array.isArray(r.decision_factors) ? r.decision_factors : [];
+  if (!factors.length) {
+    try {
+      const parsed = JSON.parse(r.reasoning_trace || "[]") as { step: string; detail: string }[];
+      if (Array.isArray(parsed)) factors = parsed;
+    } catch {
+      factors = [];
     }
-  } catch {
-    /* keep template trace */
   }
+  if (r.rationale_summary && !factors.some((f) => f.step === "结论")) {
+    factors = [...factors, { step: "结论", detail: r.rationale_summary }];
+  }
+  const trace = factors.map((p, i) => ({ t: String(i + 1).padStart(2, "0"), s: p.step, d: p.detail }));
 
   return {
     ...base,
@@ -507,7 +515,8 @@ export function reportFromBackend(job: Job, r: BackendReport): MatchReport {
       name: x.label,
       score: x.score == null ? 0 : Math.round((x.score / 5) * 100),
     })),
-    sources: r.sources?.length ? r.sources : base.sources,
+    sources: r.sources?.length ? r.sources : [],
+    pipeline: Array.isArray(r.pipeline) ? r.pipeline : [],
     trace,
   };
 }

@@ -25,6 +25,8 @@ export type DimInput = {
   key: string;
   level: Level;
   evidence?: string;
+  /** JD side only: professional read of this requirement (replaces why/action there). */
+  analysis?: string;
   why?: string;
   action?: string;
   note?: string;

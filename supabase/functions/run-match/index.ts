@@ -153,6 +153,20 @@ Deno.serve(async (req) => {
     ];
 
     const today = new Date().toISOString().slice(0, 10);
+
+    // Real pipeline record — what this run actually did, rendered in section 04.
+    const gapCount = dimensionMatches.filter((m) => m.gapType && m.gapType !== "met").length;
+    const reqRecords = (job.requirement_records as unknown[] | null) ?? (job.requirements as unknown[] | null) ?? [];
+    const expRecords = (profile.experience_records as unknown[] | null) ?? [];
+    const pipeline = [
+      { step: "解析 JD", detail: `读取岗位要求条目 ${reqRecords.length} 条、JD 原文证据 ${jdEvidence.length} 条。` },
+      { step: "解析画像", detail: `读取 Profile v${profile.version} 的经历 ${expRecords.length} 段、简历原文证据 ${resumeEvidence.length} 条。` },
+      { step: "维度对齐", detail: `逐条映射到 8 个能力维度，其中 ${8 - gapCount} 维已满足、${gapCount} 维存在差距。` },
+      { step: "加权算分", detail: `按固定权重公式计算，匹配分 ${score}${missingCore.length ? `，核心维度缺失：${missingCore.join("、")}` : ""}。` },
+      { step: "生成策略", detail: `由差距归因生成关键判断 ${(data.judgements ?? []).length} 条、投前 ${(data.steps ?? []).length} 步。` },
+      { step: "模型调用", detail: `${model}，耗时 ${(latencyMs / 1000).toFixed(1)}s。` },
+    ];
+
     const payload = {
       user_id: user.id,
       user_profile_id: profileId,
@@ -163,6 +177,7 @@ Deno.serve(async (req) => {
       judgements: data.judgements,
       steps: data.steps,
       dimension_scores: dimensions,
+      pipeline,
       sources: [
         { label: `岗位 JD · ${job.title}, ${job.company}`, at: today },
         { label: `你的画像快照 · Profile v${profile.version}`, at: today },

@@ -10,7 +10,7 @@ export const RUBRIC_VERSION = "rubric-v1";
 
 export const PROMPT_VERSIONS = {
   jdExtraction: "jd-extract-v1",
-  jdProfiling: "jd-profile-v1",
+  jdProfiling: "jd-profile-v2",
   resumeExtraction: "resume-extract-v1",
   resumeProfiling: "resume-profile-v1",
   match: "match-v1",
@@ -165,11 +165,10 @@ export type IdealDimension = {
   requiredLevel: Level;
   importance: Importance;
   hard: boolean;
-  why: string;
-  note: string;
-  /** What a candidate should prepare for this dimension. */
-  action: string;
+  /** Verbatim-backed JD requirement for this dimension. */
   evidence: string;
+  /** Professional read of the requirement — never an action for the candidate. */
+  analysis: string;
   signalIds: string[];
 };
 
@@ -304,9 +303,7 @@ export const jdProfilingSchema = obj({
       importance: importanceEnum,
       hard: { type: "boolean" },
       evidence: str,
-      why: str,
-      action: str,
-      note: str,
+      analysis: str,
       signalIds: strArr,
     }),
     8,
