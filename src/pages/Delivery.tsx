@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import TopBar from "@/components/swiss/TopBar";
 import {
   getApplications,
+  refreshApplicationScores,
   setStatus,
   updateApplication,
   focusId,
@@ -43,6 +44,19 @@ export default function Delivery() {
   const didFocus = useRef(false);
 
   const refresh = () => setApps(getApplications());
+
+  // Scores live in the match reports — pull the latest ones in on every visit.
+  useEffect(() => {
+    let alive = true;
+    refreshApplicationScores()
+      .then((next) => {
+        if (alive && next) setApps(getApplications());
+      })
+      .catch(() => undefined);
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   const rail = useMemo(() => {
     const items: RailItem[] = [];

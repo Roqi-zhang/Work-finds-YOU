@@ -94,10 +94,41 @@ Deno.serve(async (req) => {
     const filePath: string | undefined = typeof body.filePath === "string" ? body.filePath : undefined;
     const fileData: string | undefined = typeof body.fileData === "string" ? body.fileData : undefined;
     const fileName: string = typeof body.fileName === "string" ? body.fileName : "jd.txt";
+    const fileHash: string | undefined =
+      typeof body.fileHash === "string" && /^[0-9a-f]{64}$/.test(body.fileHash) ? body.fileHash : undefined;
     if (!text && !filePath && !fileData) return json({ error: "请提供 JD 文本或文件" }, 400);
     if (user && filePath && !filePath.startsWith(`${user.id}/`)) return json({ error: "无权访问该文件" }, 403);
 
     const admin = adminClient();
+
+    /** Replay a stored job profile — used by both cache short-circuits. */
+    const cachedJob = async (hash: string) => {
+      const q = admin
+        .from("job_profiles")
+        .select("id, slug, title, company, location, dimensions, requirements, evidence_items")
+        .eq("content_hash", hash)
+        .eq("status", "succeeded")
+        .limit(1);
+      const { data: hit } = await (user ? q.eq("user_id", user.id) : q.eq("guest_key", guestKey)).maybeSingle();
+      // An empty reading is not a usable cache entry — re-run instead of replaying it.
+      if (hit && Array.isArray(hit.evidence_items) && hit.evidence_items.length > 0) {
+        return json({
+          job: { id: hit.id, slug: hit.slug, title: hit.title, company: hit.company, location: hit.location },
+          salary: "待确认",
+          dimensions: hit.dimensions,
+          requirements: hit.requirements,
+          cached: true,
+        });
+      }
+      return null;
+    };
+
+    /* ---------- Fastest path : the browser already hashed the bytes ----------
+       Hits before any storage download or PDF/DOCX extraction. */
+    if (fileHash) {
+      const replay = await cachedJob(fileHash);
+      if (replay) return replay;
+    }
 
     /* ---------- Guest trial gate : 1 free JD parse per device ---------- */
     const GUEST_LIMIT = 1;
@@ -132,29 +163,14 @@ Deno.serve(async (req) => {
       block = { type: "text", text: text! };
     }
 
-    const contentHash = await sha256Hex(
-      block.type === "text" ? block.text : JSON.stringify(block).slice(0, 200000),
-    );
+    // File uploads are keyed by their raw bytes so the browser can pre-compute the same key.
+    const contentHash = fileHash ??
+      (await sha256Hex(block.type === "text" ? block.text : JSON.stringify(block).slice(0, 200000)));
 
     /* ---------- Cache short-circuit : same document → zero model calls ---------- */
     {
-      const q = admin
-        .from("job_profiles")
-        .select("id, slug, title, company, location, dimensions, requirements, evidence_items")
-        .eq("content_hash", contentHash)
-        .eq("status", "succeeded")
-        .limit(1);
-      const { data: hit } = await (user ? q.eq("user_id", user.id) : q.eq("guest_key", guestKey)).maybeSingle();
-      // An empty reading is not a usable cache entry — re-run instead of replaying it.
-      if (hit && Array.isArray(hit.evidence_items) && hit.evidence_items.length > 0) {
-        return json({
-          job: { id: hit.id, slug: hit.slug, title: hit.title, company: hit.company, location: hit.location },
-          salary: "待确认",
-          dimensions: hit.dimensions,
-          requirements: hit.requirements,
-          cached: true,
-        });
-      }
+      const replay = await cachedJob(contentHash);
+      if (replay) return replay;
     }
 
     /* ---------- Trial gate applies only to a genuinely new document ---------- */

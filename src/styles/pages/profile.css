@@ -142,14 +142,20 @@
 .p-profile .merge.on { display: flex; animation: mtIn .35s var(--ease); }
 @keyframes mtIn { from { opacity: 0 } to { opacity: 1 } }
 .p-profile .merge .arena { position: relative; width: 660px; height: 380px; }
-.p-profile .merge .arena > div { position: absolute; top: 0; width: 340px; height: 380px;
-        transition: transform 1.15s cubic-bezier(.7,0,.2,1), opacity 1.15s var(--ease); }
+.p-profile .merge .arena > div { position: absolute; top: 0; width: 340px; height: 380px; }
 .p-profile .merge .arena > div svg { width: 100%; height: 100%; opacity: 1 !important; transform: none !important; animation: none !important; }
 .p-profile .merge .arena .petal { animation: none !important; stroke-dasharray: none; }
-.p-profile .merge .mine { left: 0; transform: translateX(0) scale(.92); }
-.p-profile .merge .role { right: 0; transform: translateX(0) scale(.92); }
-.p-profile .merge.go .mine { transform: translateX(160px) scale(1.02); opacity: .75; }
-.p-profile .merge.go .role { transform: translateX(-160px) scale(1.02); opacity: .75; }
+/* The two flowers keep drifting in and out for as long as the match is running. */
+.p-profile .merge .mine { left: 0; animation: mergeMine 2.4s cubic-bezier(.7,0,.2,1) infinite alternate; }
+.p-profile .merge .role { right: 0; animation: mergeRole 2.4s cubic-bezier(.7,0,.2,1) infinite alternate; }
+@keyframes mergeMine {
+  from { transform: translateX(0) scale(.92); opacity: 1; }
+  to { transform: translateX(160px) scale(1.02); opacity: .7; }
+}
+@keyframes mergeRole {
+  from { transform: translateX(0) scale(.92); opacity: 1; }
+  to { transform: translateX(-160px) scale(1.02); opacity: .7; }
+}
 .p-profile .merge .cap { font-size: 11px; letter-spacing: .26em; text-transform: uppercase; opacity: .55; }
 .p-profile .merge .caps { display: flex; gap: 60px; }
 

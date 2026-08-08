@@ -556,3 +556,37 @@ export function focusId(search?: string): string | null {
 export function jobParam(search?: string): string | null {
   return new URLSearchParams(search ?? window.location.search).get("job");
 }
+
+/* ---------- keep application scores in sync with the latest match report ---------- */
+export async function refreshApplicationScores(): Promise<Application[] | null> {
+  const list = getApplications();
+  const ids = list.map((a) => a.id).filter((id) => /^[0-9a-f-]{36}$/.test(id));
+  if (!ids.length) return null;
+  const { supabase } = await import("@/integrations/supabase/client");
+  const { data, error } = await supabase
+    .from("match_reports")
+    .select("job_profile_id, score, updated_at")
+    .in("job_profile_id", ids)
+    .eq("status", "succeeded")
+    .order("updated_at", { ascending: false });
+  if (error || !data?.length) return null;
+
+  const latest = new Map<string, number>();
+  for (const r of data) {
+    if (r.score == null) continue;
+    if (!latest.has(r.job_profile_id)) latest.set(r.job_profile_id, r.score as number);
+  }
+
+  let changed = false;
+  const next = list.map((a) => {
+    const s = latest.get(a.id);
+    if (s == null || s === a.m) return a;
+    changed = true;
+    const job = getJob(a.id);
+    if (job) putJob({ ...job, m: s });
+    return { ...a, m: s, body: (a.body || "").replace(/匹配\s*\d+\s*%/g, "匹配 " + s + "%") };
+  });
+  if (!changed) return null;
+  saveApplications(next);
+  return next;
+}
