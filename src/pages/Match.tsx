@@ -139,6 +139,7 @@ export default function Match() {
     });
   };
 
+  const reportRef = useRef<HTMLElement>(null);
   const bgTicksRef = useRef<SVGGElement | null>(null);
   const handRef = useRef<SVGLineElement | null>(null);
 
@@ -210,7 +211,7 @@ export default function Match() {
     return (
       <div className="p-match">
         {bgDial}
-        <main className="page content">
+        <main className="page content" ref={reportRef}>
           <TopBar />
           <section className="screen" id="s1">
             <div>
@@ -288,7 +289,7 @@ export default function Match() {
     <div className="p-match">
       <>
         {bgDial}
-        <main className="page content">
+        <main className="page content" ref={reportRef}>
           <TopBar />
 
           <nav className="progress">
@@ -321,7 +322,15 @@ export default function Match() {
                     title: `匹配报告 · ${R.score}% match`,
                     subtitle: R.overview,
                     sections: [
-                      { heading: "01 · 核心决策", lines: fields.map((f) => `${f.fn}：${f.fv}`) },
+                      {
+                        heading: "01 · 核心决策",
+                        lines: [
+                          `是否优先投：${R.decision.flag}`,
+                          `匹配分：${R.decision.score} / 100`,
+                          `胜算等级：${R.decision.win}`,
+                          `投递优先级：${R.decision.rank}`,
+                        ],
+                      },
                       {
                         heading: "02 · 三个关键判断",
                         lines: R.judgements.map((j) => `[${j.kind}] ${j.title} — ${j.desc}`),
