@@ -83,6 +83,10 @@ export async function callAIJson<T>(opts: {
     const body: Record<string, unknown> = {
       model,
       messages,
+      // Deterministic decoding: the same document must always yield the same grading.
+      temperature: 0,
+      top_p: 1,
+      seed: 7,
       response_format:
         mode === "json_schema"
           ? { type: "json_schema", json_schema: { name: opts.schemaName, strict: true, schema: opts.schema } }
