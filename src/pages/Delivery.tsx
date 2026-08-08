@@ -45,6 +45,19 @@ export default function Delivery() {
 
   const refresh = () => setApps(getApplications());
 
+  // Scores live in the match reports — pull the latest ones in on every visit.
+  useEffect(() => {
+    let alive = true;
+    refreshApplicationScores()
+      .then((next) => {
+        if (alive && next) setApps(getApplications());
+      })
+      .catch(() => undefined);
+    return () => {
+      alive = false;
+    };
+  }, []);
+
   const rail = useMemo(() => {
     const items: RailItem[] = [];
     apps.forEach((a) => {
