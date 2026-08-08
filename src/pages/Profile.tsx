@@ -4,7 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 
 import TopBar from "@/components/swiss/TopBar";
 import { getUI, setUI } from "@/lib/wfy";
-import { parseResume, aiMessage, type DimScored, type EvidenceDetail, type ResumeResult } from "@/lib/ai";
+import { parseResume, runMatch, aiMessage, type DimScored, type EvidenceDetail, type ResumeResult } from "@/lib/ai";
 import { clearTask, getTask, startTask, subscribeTask } from "@/lib/tasks";
 import { loadFile, saveFile } from "@/lib/filestore";
 import "@/styles/pages/profile.css";
