@@ -6,6 +6,7 @@ import {
   setStatus,
   updateApplication,
   focusId,
+  setUI,
   STATUSES,
   type Application,
 } from "@/lib/wfy";
@@ -244,6 +245,25 @@ export default function Delivery() {
                           }}
                         >
                           查看匹配
+                        </a>
+                        <a
+                          href="/jobprofile"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            setUI("match", { jobId: a.id });
+                            navigate("/jobprofile");
+                          }}
+                        >
+                          岗位画像
+                        </a>
+                        <a
+                          href={`/profile?job=${encodeURIComponent(a.id)}`}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            navigate("/profile?job=" + encodeURIComponent(a.id));
+                          }}
+                        >
+                          个人画像
                         </a>
                         <button type="button" onClick={() => handleEditToggle(a)}>
                           {editing ? "完成" : "编辑"}
