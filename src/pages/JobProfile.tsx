@@ -100,8 +100,7 @@ export default function JobProfile() {
       (root!.querySelector("#tipName") as HTMLElement).textContent = ref.dim.label;
       (root!.querySelector("#tipScore") as HTMLElement).textContent = d.evidence ? (d.score == null ? "证据不足" : d.score + "/5") : "—";
       (root!.querySelector("#tipEvi") as HTMLElement).textContent = d.evidence || "尚未建立画像";
-      (root!.querySelector("#tipWhy") as HTMLElement).textContent = d.why || "上传简历后生成";
-      (root!.querySelector("#tipAct") as HTMLElement).textContent = d.action || "—";
+      (root!.querySelector("#tipWhy") as HTMLElement).textContent = d.analysis || d.why || "上传 JD 后生成";
       const box = visual.getBoundingClientRect();
       let x = e.clientX - box.left + 18, y = e.clientY - box.top + 12;
       x = Math.min(x, box.width - 262); y = Math.min(y, box.height - 180);
@@ -323,8 +322,7 @@ export default function JobProfile() {
             <div class="bar ${s == null ? "none" : ""}">${bar}</div>
             <dl>
               <div class="r"><span class="k">Evidence</span><span class="v">${d.evidence || "—"}</span></div>
-              <div class="r"><span class="k">Why</span><span class="v">${d.why || "—"}</span></div>
-              <div class="r"><span class="k">Action</span><span class="v">${d.action || "—"}</span></div>
+              <div class="r"><span class="k">Analysis</span><span class="v">${d.analysis || d.why || "—"}</span></div>
             </dl>
             <div class="str">[${(d.strength || "missing").toUpperCase()}]</div>
           </div>`;
@@ -343,9 +341,7 @@ export default function JobProfile() {
           score: d?.score ?? null,
           strength: d?.level ?? "missing",
           evidence: d?.evidence,
-          why: d?.why,
-          action: d?.action,
-          note: d?.note,
+          analysis: (d as { analysis?: string })?.analysis ?? d?.why,
         };
       });
       parsedJob = {
@@ -509,8 +505,7 @@ export default function JobProfile() {
                   <div className="tip" id="tip">
                     <h5><span id="tipName"></span><b id="tipScore"></b></h5>
                     <div className="row"><div className="k">Evidence</div><div className="v" id="tipEvi"></div></div>
-                    <div className="row"><div className="k">Why this score</div><div className="v" id="tipWhy"></div></div>
-                    <div className="row"><div className="k">Action</div><div className="v" id="tipAct"></div></div>
+                    <div className="row"><div className="k">Analysis</div><div className="v" id="tipWhy"></div></div>
                   </div>
                 </div>
 
