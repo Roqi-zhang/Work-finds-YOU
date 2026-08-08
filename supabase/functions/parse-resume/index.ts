@@ -80,16 +80,27 @@ Deno.serve(async (req) => {
     /* ---------- target job → evaluation rubric ---------- */
     let rubric: EvaluationRubric | null = null;
     let rubricHash = "no-rubric";
-    if (targetJobProfileId) {
+    let targetJobId = targetJobProfileId;
+    if (targetJobId) {
       const { data: job } = await admin
         .from("job_profiles")
-        .select("id, evaluation_rubric, rubric_hash")
-        .eq("id", targetJobProfileId)
-        .eq("user_id", user.id)
+        .select("id, user_id, guest_key, evaluation_rubric, rubric_hash")
+        .eq("id", targetJobId)
         .maybeSingle();
-      if (!job) return json({ error: "目标岗位不存在" }, 404);
-      rubric = (job.evaluation_rubric as EvaluationRubric | null) ?? null;
-      rubricHash = (job.rubric_hash as string | null) ?? "no-rubric";
+      const guestKey: string = typeof body.guestKey === "string" ? body.guestKey.slice(0, 64) : "";
+      const owned = !!job && (job.user_id === user.id || (!job.user_id && !!guestKey && job.guest_key === guestKey));
+      if (owned) {
+        // A JD parsed during the guest trial now belongs to this account.
+        if (!job!.user_id) {
+          await admin.from("job_profiles").update({ user_id: user.id, guest_key: null }).eq("id", job!.id);
+        }
+        rubric = (job!.evaluation_rubric as EvaluationRubric | null) ?? null;
+        rubricHash = (job!.rubric_hash as string | null) ?? "no-rubric";
+      } else {
+        // Stale or foreign target id — grade against the generic rubric instead of failing.
+        console.warn("target job not accessible, falling back to generic rubric", targetJobId);
+        targetJobId = null;
+      }
     }
 
     const { data: resume } = await admin
