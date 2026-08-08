@@ -69,7 +69,12 @@ export default function Match() {
     );
   }, [search]);
 
-  const localReport: MatchReport | null = useMemo(() => (jobId ? getMatchReport(jobId) : null), [jobId]);
+  // `fresh=1` arrives from the match animation — never flash the previous report.
+  const fresh = useMemo(() => new URLSearchParams(search).get("fresh") === "1", [search]);
+  const localReport: MatchReport | null = useMemo(
+    () => (jobId && !fresh ? getMatchReport(jobId) : null),
+    [jobId, fresh],
+  );
   const [report, setReport] = useState<MatchReport | null>(localReport);
   const [loading, setLoading] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
