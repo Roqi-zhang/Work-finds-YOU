@@ -216,8 +216,8 @@ Deno.serve(async (req) => {
         .eq("status", "succeeded")
         .order("created_at", { ascending: false })
         .limit(1);
-      q = targetJobProfileId
-        ? q.eq("target_job_profile_id", targetJobProfileId)
+      q = targetJobId
+        ? q.eq("target_job_profile_id", targetJobId)
         : q.is("target_job_profile_id", null);
       const { data: hit } = await q.maybeSingle();
       if (hit) {
@@ -228,8 +228,8 @@ Deno.serve(async (req) => {
           .eq("user_id", user.id)
           .eq("is_current", true)
           .neq("id", hit.id);
-        clear = targetJobProfileId
-          ? clear.eq("target_job_profile_id", targetJobProfileId)
+        clear = targetJobId
+          ? clear.eq("target_job_profile_id", targetJobId)
           : clear.is("target_job_profile_id", null);
         await clear;
         await admin.from("user_profiles").update({ is_current: true }).eq("id", hit.id);
@@ -290,8 +290,8 @@ Deno.serve(async (req) => {
       .update({ is_current: false })
       .eq("user_id", user.id)
       .eq("is_current", true);
-    currentQuery = targetJobProfileId
-      ? currentQuery.eq("target_job_profile_id", targetJobProfileId)
+    currentQuery = targetJobId
+      ? currentQuery.eq("target_job_profile_id", targetJobId)
       : currentQuery.is("target_job_profile_id", null);
     await currentQuery;
 
@@ -308,7 +308,7 @@ Deno.serve(async (req) => {
       .insert({
         user_id: user.id,
         resume_id: resume?.id ?? null,
-        target_job_profile_id: targetJobProfileId,
+        target_job_profile_id: targetJobId,
         version: (prev?.version ?? 0) + 1,
         is_current: true,
         status: "succeeded",
@@ -334,7 +334,7 @@ Deno.serve(async (req) => {
     // Only reports for this target job become stale — a resume aimed at another
     // JD must not invalidate unrelated history.
     let staleQuery = admin.from("match_reports").update({ stale: true }).eq("user_id", user.id);
-    if (targetJobProfileId) staleQuery = staleQuery.eq("job_profile_id", targetJobProfileId);
+    if (targetJobId) staleQuery = staleQuery.eq("job_profile_id", targetJobId);
     await staleQuery;
 
     await logCall(admin, {
