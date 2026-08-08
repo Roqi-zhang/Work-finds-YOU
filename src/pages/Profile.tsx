@@ -484,6 +484,12 @@ export default function Profile() {
     }
     if (state !== "ready") return;
 
+    // AI 分析需要账号：直接送去登录，而不是点了没反应。
+    if (!user) {
+      navigate(`/auth?next=${encodeURIComponent("/profile" + (targetJobId ? `?job=${targetJobId}` : ""))}`);
+      return;
+    }
+
     const file = fileRef.current || (await loadFile("resume"));
     if (!file) {
       setHintOverride("请重新选择简历文件");

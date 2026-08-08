@@ -140,12 +140,13 @@ Deno.serve(async (req) => {
     {
       const q = admin
         .from("job_profiles")
-        .select("id, slug, title, company, location, dimensions, requirements")
+        .select("id, slug, title, company, location, dimensions, requirements, evidence_items")
         .eq("content_hash", contentHash)
         .eq("status", "succeeded")
         .limit(1);
       const { data: hit } = await (user ? q.eq("user_id", user.id) : q.eq("guest_key", guestKey)).maybeSingle();
-      if (hit) {
+      // An empty reading is not a usable cache entry — re-run instead of replaying it.
+      if (hit && Array.isArray(hit.evidence_items) && hit.evidence_items.length > 0) {
         return json({
           job: { id: hit.id, slug: hit.slug, title: hit.title, company: hit.company, location: hit.location },
           salary: "待确认",
@@ -231,11 +232,23 @@ Deno.serve(async (req) => {
       latency += b.latencyMs;
       profileOut = b.data;
 
-      await putAnalysis(admin, cacheKey, { extract, profile: profileOut }, b.model);
+      // Never cache a reading that found nothing — otherwise the same file keeps
+      // returning an all-[MISSING] profile forever.
+      if ((extract.evidence_items?.length ?? 0) > 0 || (extract.requirement_records?.length ?? 0) > 0) {
+        await putAnalysis(admin, cacheKey, { extract, profile: profileOut }, b.model);
+      }
     }
 
     const evidenceItems = extract.evidence_items ?? [];
     const requirementRecords = extract.requirement_records ?? [];
+
+    if (evidenceItems.length === 0 && requirementRecords.length === 0) {
+      return json(
+        { error: "未能从这份 JD 中读出内容 · 可能是扫描件或图片不清晰，请改为粘贴 JD 文本后重试" },
+        422,
+      );
+    }
+
 
     /* ---------- Evaluation rubric (JD-derived) ---------- */
     const rubric: EvaluationRubric = {
