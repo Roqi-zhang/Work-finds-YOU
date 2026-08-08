@@ -140,12 +140,13 @@ Deno.serve(async (req) => {
     {
       const q = admin
         .from("job_profiles")
-        .select("id, slug, title, company, location, dimensions, requirements")
+        .select("id, slug, title, company, location, dimensions, requirements, evidence_items")
         .eq("content_hash", contentHash)
         .eq("status", "succeeded")
         .limit(1);
       const { data: hit } = await (user ? q.eq("user_id", user.id) : q.eq("guest_key", guestKey)).maybeSingle();
-      if (hit) {
+      // An empty reading is not a usable cache entry — re-run instead of replaying it.
+      if (hit && Array.isArray(hit.evidence_items) && hit.evidence_items.length > 0) {
         return json({
           job: { id: hit.id, slug: hit.slug, title: hit.title, company: hit.company, location: hit.location },
           salary: "待确认",
