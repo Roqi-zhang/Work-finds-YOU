@@ -26,9 +26,16 @@ export function adminClient(): SupabaseClient {
  *  model content block. Images go multimodal; PDF/DOCX are text-extracted
  *  because the configured model does not accept documents inline. */
 export async function fileToBlock(admin: SupabaseClient, bucket: string, path: string, fileName: string) {
-  const { data, error } = await admin.storage.from(bucket).download(path);
-  if (error || !data) throw new Error(`Download failed: ${error?.message || "no data"}`);
-  return await bufferToBlock(new Uint8Array(await data.arrayBuffer()), fileName);
+  // Storage occasionally answers 503 right after an upload — retry with backoff.
+  let lastErr = "no data";
+  for (let attempt = 0; attempt < 4; attempt++) {
+    const { data, error } = await admin.storage.from(bucket).download(path);
+    if (data) return await bufferToBlock(new Uint8Array(await data.arrayBuffer()), fileName);
+    lastErr = error?.message || "no data";
+    console.error(`storage download attempt ${attempt + 1} failed`, lastErr);
+    await new Promise((r) => setTimeout(r, 400 * 2 ** attempt));
+  }
+  throw new Error(`Download failed: ${lastErr}`);
 }
 
 /** Same conversion for bytes that never hit storage (guest inline uploads). */
