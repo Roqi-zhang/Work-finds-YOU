@@ -56,12 +56,27 @@ Deno.serve(async (req) => {
 
     const admin = adminClient();
 
-    const { data: job } = await admin
+    const jobCols =
+      "id, title, company, location, dimensions, requirements, evidence_items, requirement_records, requirement_signals, ideal_profile";
+    let { data: job } = await admin
       .from("job_profiles")
-      .select("id, title, company, location, dimensions, requirements, evidence_items, requirement_records, requirement_signals, ideal_profile")
+      .select(jobCols)
       .eq("id", jobProfileId)
       .eq("user_id", user.id)
       .maybeSingle();
+    if (!job) {
+      // The JD may still be sitting under the guest record made before sign-in — claim it.
+      const { data: unowned } = await admin
+        .from("job_profiles")
+        .select(jobCols)
+        .eq("id", jobProfileId)
+        .is("user_id", null)
+        .maybeSingle();
+      if (unowned) {
+        await admin.from("job_profiles").update({ user_id: user.id, guest_key: null }).eq("id", jobProfileId);
+        job = unowned;
+      }
+    }
     if (!job) return json({ error: "岗位画像不存在" }, 404);
 
     /* ---------- resolve the candidate profile ----------
