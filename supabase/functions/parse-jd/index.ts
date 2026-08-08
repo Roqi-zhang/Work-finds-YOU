@@ -163,6 +163,31 @@ Deno.serve(async (req) => {
       block = { type: "text", text: text! };
     }
 
+    /* ---------- Screenshots: transcribe first, then read the text ----------
+       Asking the model to both OCR and structure an image in one shot often
+       comes back empty; a dedicated transcription pass is far more reliable. */
+    if (block.type === "image_url") {
+      try {
+        const t = await callAIJson<{ text: string }>({
+          messages: [
+            { role: "system", content: "你是 OCR 工具。逐字转录图片中的所有文字，保留原始顺序与换行，不要总结、不要翻译、不要添加任何解释。" },
+            { role: "user", content: [{ type: "text", text: "请转录这张图片里的全部文字。" }, block] },
+          ],
+          schema: {
+            type: "object",
+            additionalProperties: false,
+            required: ["text"],
+            properties: { text: { type: "string" } },
+          },
+          schemaName: "image_transcription",
+        });
+        const ocr = (t.data?.text ?? "").trim();
+        if (ocr.replace(/\s/g, "").length >= 20) block = { type: "text", text: ocr.slice(0, 60000) };
+      } catch (e) {
+        console.error("image transcription failed", e);
+      }
+    }
+
     // File uploads are keyed by their raw bytes so the browser can pre-compute the same key.
     const contentHash = fileHash ??
       (await sha256Hex(block.type === "text" ? block.text : JSON.stringify(block).slice(0, 200000)));
