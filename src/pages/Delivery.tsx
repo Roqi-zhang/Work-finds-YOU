@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import TopBar from "@/components/swiss/TopBar";
 import {
   getApplications,
+  refreshApplicationScores,
   setStatus,
   updateApplication,
   focusId,
