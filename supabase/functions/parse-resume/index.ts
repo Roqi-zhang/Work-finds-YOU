@@ -17,6 +17,7 @@ import {
 } from "../_shared/schemas.ts";
 import { candidateProfileToDims } from "../_shared/adapter.ts";
 import { extractionFingerprint, profilingFingerprint, sha256Hex } from "../_shared/hash.ts";
+import { getAnalysis, putAnalysis, recordDocument } from "../_shared/docstore.ts";
 
 /* -------- Layer 1 + 2 : STRICTLY job-agnostic. No JD, no rubric, ever. -------- */
 
@@ -126,6 +127,25 @@ Deno.serve(async (req) => {
     let completionTokens = 0;
     let latency = 0;
 
+    await recordDocument(admin, {
+      contentHash,
+      kind: "resume",
+      ownerId: user.id,
+      textLen: block.type === "text" ? block.text.length : undefined,
+      storagePath: filePath,
+      fileName,
+    });
+
+    // Resume analyses are private — the cache scope is the owner, never global.
+    const extractKey = {
+      contentHash,
+      kind: "resume" as const,
+      stage: "resume_extract",
+      promptVersion: PROMPT_VERSIONS.resumeExtraction,
+      schemaVersion: SCHEMA_VERSION,
+      scopeKey: user.id,
+    };
+
     /* ---------- Call A : Layer 1 + Layer 2 (cacheable, job-agnostic) ---------- */
     let evidenceItems: EvidenceItem[] = [];
     let experienceRecords: ExperienceRecord[] = [];
@@ -140,9 +160,16 @@ Deno.serve(async (req) => {
       .limit(1)
       .maybeSingle();
 
+    const cachedDoc = cachedExtract?.experience_records
+      ? null
+      : await getAnalysis<ExtractOut>(admin, extractKey);
+
     if (cachedExtract?.experience_records) {
       evidenceItems = (cachedExtract.evidence_items as EvidenceItem[]) ?? [];
       experienceRecords = (cachedExtract.experience_records as ExperienceRecord[]) ?? [];
+    } else if (cachedDoc) {
+      evidenceItems = cachedDoc.evidence_items ?? [];
+      experienceRecords = cachedDoc.experience_records ?? [];
     } else {
       const a = await callAIJson<ExtractOut>({
         messages: [
@@ -157,6 +184,7 @@ Deno.serve(async (req) => {
       latency += a.latencyMs;
       evidenceItems = a.data.evidence_items ?? [];
       experienceRecords = a.data.experience_records ?? [];
+      await putAnalysis(admin, extractKey, a.data, a.model);
     }
 
     const profileFp = await profilingFingerprint({
