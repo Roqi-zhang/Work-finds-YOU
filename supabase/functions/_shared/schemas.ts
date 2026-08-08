@@ -165,11 +165,10 @@ export type IdealDimension = {
   requiredLevel: Level;
   importance: Importance;
   hard: boolean;
-  why: string;
-  note: string;
-  /** What a candidate should prepare for this dimension. */
-  action: string;
+  /** Verbatim-backed JD requirement for this dimension. */
   evidence: string;
+  /** Professional read of the requirement — never an action for the candidate. */
+  analysis: string;
   signalIds: string[];
 };
 
