@@ -231,11 +231,23 @@ Deno.serve(async (req) => {
       latency += b.latencyMs;
       profileOut = b.data;
 
-      await putAnalysis(admin, cacheKey, { extract, profile: profileOut }, b.model);
+      // Never cache a reading that found nothing — otherwise the same file keeps
+      // returning an all-[MISSING] profile forever.
+      if ((extract.evidence_items?.length ?? 0) > 0 || (extract.requirement_records?.length ?? 0) > 0) {
+        await putAnalysis(admin, cacheKey, { extract, profile: profileOut }, b.model);
+      }
     }
 
     const evidenceItems = extract.evidence_items ?? [];
     const requirementRecords = extract.requirement_records ?? [];
+
+    if (evidenceItems.length === 0 && requirementRecords.length === 0) {
+      return json(
+        { error: "未能从这份 JD 中读出内容 · 可能是扫描件或图片不清晰，请改为粘贴 JD 文本后重试" },
+        422,
+      );
+    }
+
 
     /* ---------- Evaluation rubric (JD-derived) ---------- */
     const rubric: EvaluationRubric = {
