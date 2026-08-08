@@ -1,6 +1,7 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import TopBar from "@/components/swiss/TopBar";
+import ExportMenu from "@/components/swiss/ExportMenu";
 import { getUI, setUI, putJob } from "@/lib/wfy";
 import { parseJdFile, aiMessage, type JdResult } from "@/lib/ai";
 import { clearTask, getTask, startTask, subscribeTask } from "@/lib/tasks";
@@ -8,10 +9,14 @@ import { loadFile, saveFile } from "@/lib/filestore";
 import { useAuth } from "@/hooks/useAuth";
 import "@/styles/pages/jobprofile.css";
 
+const DIM_LABELS = ["专业技能", "业务理解", "问题分析", "执行交付", "沟通表达", "协作影响", "学习适应", "动机匹配"];
+
 export default function JobProfile() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const rootRef = useRef<HTMLDivElement>(null);
+  const stageRef = useRef<HTMLElement>(null);
+  const [exportData, setExportData] = useState<{ job: any; result: any[] } | null>(null);
 
   useEffect(() => {
     const root = rootRef.current;
@@ -269,6 +274,7 @@ export default function JobProfile() {
       legend.innerHTML = "";
       input.value = "";
       paint(DIMS.map((_, i) => ({ score: 2.5, seed: i })), false);
+      setExportData(null);
       setState("empty");
       saveStore(null);
     }
@@ -353,6 +359,7 @@ export default function JobProfile() {
       stageEl.classList.add("bloomed");
       renderPetalAnalysis(result);
       saveStore({ state: "bloomed", name: rName.textContent, meta: rMeta.textContent, result, job: parsedJob });
+      setExportData({ job: parsedJob, result });
     }
 
     const onMain = async () => {
@@ -396,6 +403,7 @@ export default function JobProfile() {
       if (!saved) { setState("empty"); return; }
       if (saved.name) { rName.textContent = saved.name; rMeta.textContent = saved.meta || ""; }
       if (saved.state === "bloomed" && saved.result) {
+        setExportData({ job: saved.job || null, result: saved.result });
         paint(saved.result, false);
         stageEl.classList.add("bloomed");
         setState("bloomed");
@@ -474,10 +482,27 @@ export default function JobProfile() {
               </div>
             </aside>
 
-            <section className="stage">
+            <section className="stage" ref={stageRef}>
               <div className="stage-head">
                 <span className="caption">Role Ability Flower · 8 competencies</span>
-                <span className="mode" id="stateTag">STATE / EMPTY</span>
+                <span className="mode" id="stateTag" hidden={!!exportData}>STATE / EMPTY</span>
+                {exportData && (
+                  <ExportMenu
+                    fileBase={`JD-${exportData.job?.company || "role"}-${exportData.job?.title || ""}`}
+                    captureRef={stageRef}
+                    buildDoc={() => ({
+                      title: `岗位画像 · ${exportData.job?.title || ""}`,
+                      subtitle: [exportData.job?.company, exportData.job?.location].filter(Boolean).join(" · "),
+                      sections: DIM_LABELS.map((label, i) => {
+                        const d: any = exportData.result[i] || {};
+                        return {
+                          heading: `${label} · ${d.score == null ? "—" : d.score + "/5"} [${String(d.strength || "missing").toUpperCase()}]`,
+                          lines: [`Evidence: ${d.evidence || "—"}`, `Analysis: ${d.analysis || d.why || "—"}`],
+                        };
+                      }),
+                    })}
+                  />
+                )}
               </div>
 
               <div className="petal-stage" id="petalStage" data-state="empty">
