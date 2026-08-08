@@ -462,8 +462,22 @@ export default function Profile() {
       setMergeGo(false);
       setMatching(true);
       window.setTimeout(() => setMergeGo(true), 80);
-      window.setTimeout(() => setMergeCap("Match computed · entering"), 1250);
-      window.setTimeout(() => navigate("/match?job=" + encodeURIComponent(targetJobId)), 1900);
+      // Loop the merge animation for as long as the real match request runs.
+      const loop = window.setInterval(() => {
+        setMergeGo(false);
+        window.setTimeout(() => setMergeGo(true), 60);
+      }, 2200);
+      try {
+        await runMatch(targetJobId, true);
+        setMergeCap("Match computed · entering");
+        navigate("/match?job=" + encodeURIComponent(targetJobId) + "&fresh=1");
+      } catch (e) {
+        setHintOverride(aiMessage(e));
+        setMatching(false);
+        setMergeGo(false);
+      } finally {
+        window.clearInterval(loop);
+      }
       return;
     }
     if (state !== "ready") return;
