@@ -466,6 +466,7 @@ export default function Match() {
                 <div className="ev-block">
                   <div className="k">资料来源</div>
                   <div className="srcs">
+                    {!R.sources.length && <div className="empty">本次分析未记录该环节</div>}
                     {R.sources.map((s) => (
                       <a href="#" key={s.label}>
                         <span>{s.label}</span>
@@ -478,6 +479,7 @@ export default function Match() {
                 <div className="ev-block">
                   <div className="k">分析步骤</div>
                   <div className="steps">
+                    {!R.pipeline.length && <div className="empty">本次分析未记录该环节</div>}
                     {R.pipeline.map((p, i) => (
                       <div className="r" key={p.step}>
                         <span className="n">{String(i + 1).padStart(2, "0")}</span>
@@ -504,6 +506,7 @@ export default function Match() {
                 <div className="ev-block">
                   <div className="k">推理记录</div>
                   <div className="trace" id="trace" data-src-id="model.trace">
+                    {!R.trace.length && <div className="empty">本次分析未记录该环节</div>}
                     {R.trace.map((r) => (
                       <div className="r" key={r.t}>
                         <span className="k">{r.t}</span>
@@ -511,9 +514,6 @@ export default function Match() {
                         <span>{r.d}</span>
                       </div>
                     ))}
-                    <div className="empty" style={{ marginTop: 16 }}>
-                      接入模型后此处直接渲染真实 reasoning trace
-                    </div>
                   </div>
                 </div>
               </div>
