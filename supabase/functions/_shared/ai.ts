@@ -83,17 +83,20 @@ export async function callAIJson<T>(opts: {
     const body: Record<string, unknown> = {
       model,
       messages,
-      // Deterministic decoding: the same document must always yield the same grading.
-      temperature: 0,
-      top_p: 1,
-      seed: 7,
       response_format:
         mode === "json_schema"
           ? { type: "json_schema", json_schema: { name: opts.schemaName, strict: true, schema: opts.schema } }
           : { type: "json_object" },
     };
-    if (!ep.custom) body.reasoning_effort = "none";
-    else body.enable_thinking = false;
+    if (!ep.custom) {
+      body.reasoning_effort = "none";
+    } else {
+      body.enable_thinking = false;
+      // Deterministic decoding: the same document must always yield the same grading.
+      body.temperature = 0;
+      body.top_p = 1;
+      body.seed = 7;
+    }
 
     return await fetch(ep.url, { method: "POST", headers: ep.headers, body: JSON.stringify(body) });
   };
