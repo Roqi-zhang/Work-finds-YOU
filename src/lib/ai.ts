@@ -122,15 +122,25 @@ export async function parseJdText(text: string) {
   return invoke<JdResult>("parse-jd", { text });
 }
 
+/** Hash the raw bytes in the browser so the server can hit its cache before downloading. */
+async function fileHashHex(file: File) {
+  const buf = await file.arrayBuffer();
+  const digest = await crypto.subtle.digest("SHA-256", buf);
+  return Array.from(new Uint8Array(digest))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+}
+
 export async function parseJdFile(file: File) {
+  const fileHash = await fileHashHex(file).catch(() => undefined);
   const { data: auth } = await supabase.auth.getUser();
   if (!auth.user) {
     // Guest trial: no storage access, so the document travels inline.
     const fileData = await fileToBase64(file);
-    return invoke<JdResult>("parse-jd", { fileData, fileName: file.name });
+    return invoke<JdResult>("parse-jd", { fileData, fileName: file.name, fileHash });
   }
   const { path, fileName } = await uploadFile(file, "jd");
-  return invoke<JdResult>("parse-jd", { filePath: path, fileName });
+  return invoke<JdResult>("parse-jd", { filePath: path, fileName, fileHash });
 }
 
 export type MatchReport = {
