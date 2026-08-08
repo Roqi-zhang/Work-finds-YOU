@@ -287,11 +287,8 @@ export default function JobProfile() {
     const onDlgOk = () => { const cb = onConfirm; closeDialog(); if (cb) cb(); };
     dlgOk.addEventListener("click", onDlgOk);
 
-    const onBack = () => {
-      if (state === "bloomed" || state === "analysing") {
-        confirmDialog("Discard job profile?", "返回将清空当前 JD 与已生成的岗位能力花，是否继续？", "确认返回", () => history.back());
-      } else history.back();
-    };
+    // Going back never discards work — the JD and the role flower are kept.
+    const onBack = () => history.back();
     backBtn.addEventListener("click", onBack);
 
     const onRedo = () => {

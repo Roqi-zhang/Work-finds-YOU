@@ -436,12 +436,9 @@ export default function Profile() {
     setDialog({ title, body, okText, onConfirm: cb });
   }
 
+  // Going back never discards work — the resume and the flower are kept.
   function onBack() {
-    if (state === "bloomed" || state === "analysing") {
-      confirmDialog("Discard profile?", "返回将清空当前简历与已生成的能力花，是否继续？", "确认返回", () => history.back());
-    } else {
-      history.back();
-    }
+    history.back();
   }
 
   function onRedo() {
