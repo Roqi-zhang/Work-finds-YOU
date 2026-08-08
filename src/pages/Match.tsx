@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import TopBar from "@/components/swiss/TopBar";
+import ExportMenu from "@/components/swiss/ExportMenu";
 import {
   getMatchReport,
   putMatchReport,
@@ -313,6 +314,25 @@ export default function Match() {
                 <button className="btn" id="applyBtn" type="button" onClick={onApply}>
                   直接投递 →
                 </button>
+                <ExportMenu
+                  fileBase={`Match-${R.score}`}
+                  captureRef={reportRef}
+                  buildDoc={() => ({
+                    title: `匹配报告 · ${R.score}% match`,
+                    subtitle: R.overview,
+                    sections: [
+                      { heading: "01 · 核心决策", lines: fields.map((f) => `${f.fn}：${f.fv}`) },
+                      {
+                        heading: "02 · 三个关键判断",
+                        lines: R.judgements.map((j) => `[${j.kind}] ${j.title} — ${j.desc}`),
+                      },
+                      {
+                        heading: "03 · 投前 3 步",
+                        lines: R.steps.map((st, i) => `${i + 1}. ${st.title} — ${st.desc}`),
+                      },
+                    ],
+                  })}
+                />
               </div>
             </div>
             <div className="moon-score">
