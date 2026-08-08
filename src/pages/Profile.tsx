@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 
 import TopBar from "@/components/swiss/TopBar";
+import ExportMenu from "@/components/swiss/ExportMenu";
 import { getUI, setUI } from "@/lib/wfy";
 import { parseResume, runMatch, aiMessage, type DimScored, type EvidenceDetail, type ResumeResult } from "@/lib/ai";
 import { clearTask, getTask, startTask, subscribeTask } from "@/lib/tasks";
@@ -210,6 +211,7 @@ export default function Profile() {
   const [openEvi, setOpenEvi] = useState<Record<number, boolean>>({});
   const [dialog, setDialog] = useState<{ title: string; body: string; okText: string; onConfirm: (() => void) | null } | null>(null);
 
+  const stageRef = useRef<HTMLElement>(null);
   const frontRootRef = useRef<SVGGElement | null>(null);
   const backRootRef = useRef<SVGGElement | null>(null);
   const stamenRootRef = useRef<SVGGElement | null>(null);
@@ -546,12 +548,34 @@ export default function Profile() {
             </div>
           </aside>
 
-          <section className="stage">
+          <section className="stage" ref={stageRef}>
             <div className="stage-head">
               <span className="caption">Ability Flower · 8 competencies</span>
-              <span className="mode" id="stateTag">
-                {map.tag}
-              </span>
+              {state === "bloomed" && result ? (
+                <ExportMenu
+                  fileBase={`Profile-${rName.replace(/\.[^.]+$/, "")}`}
+                  captureRef={stageRef}
+                  buildDoc={() => ({
+                    title: "候选人画像 · 8 维能力",
+                    subtitle: `${rName} · ${rMeta}`,
+                    sections: DIMS.map((dim, i) => {
+                      const d = (result[i] || {}) as DimResult & { evidence?: string; why?: string; evidenceDetail?: string[] };
+                      return {
+                        heading: `${dim.label} · ${d.score == null ? "—" : d.score + "/5"}`,
+                        lines: [
+                          `Evidence: ${d.evidence || "—"}`,
+                          `Analysis: ${d.why || "—"}`,
+                          ...((d.evidenceDetail as string[] | undefined) ?? []),
+                        ],
+                      };
+                    }),
+                  })}
+                />
+              ) : (
+                <span className="mode" id="stateTag">
+                  {map.tag}
+                </span>
+              )}
             </div>
 
             <div
