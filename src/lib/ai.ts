@@ -17,6 +17,8 @@ export type DimScored = {
   score: number | null;
   core: boolean;
   evidence?: string;
+  /** JD side only — professional read of the requirement. */
+  analysis?: string;
   why?: string;
   action?: string;
   note?: string;
