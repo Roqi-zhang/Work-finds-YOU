@@ -461,24 +461,17 @@ export default function Profile() {
       const svgEl = document.getElementById("flowerSvg");
       setMergeSvg(svgEl ? svgEl.outerHTML : "");
       setMergeCap("Overlaying two flowers · computing fit");
-      setMergeGo(false);
+      setMergeGo(true);
       setMatching(true);
-      window.setTimeout(() => setMergeGo(true), 80);
-      // Loop the merge animation for as long as the real match request runs.
-      const loop = window.setInterval(() => {
-        setMergeGo(false);
-        window.setTimeout(() => setMergeGo(true), 60);
-      }, 2200);
       try {
-        await runMatch(targetJobId, true);
+        // Not forced: an existing report for this resume + JD pair is reused as-is.
+        await runMatch(targetJobId);
         setMergeCap("Match computed · entering");
         navigate("/match?job=" + encodeURIComponent(targetJobId) + "&fresh=1");
       } catch (e) {
         setHintOverride(aiMessage(e));
         setMatching(false);
         setMergeGo(false);
-      } finally {
-        window.clearInterval(loop);
       }
       return;
     }
