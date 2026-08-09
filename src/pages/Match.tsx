@@ -15,7 +15,7 @@ import {
   applyToJob,
   type MatchReport,
 } from "@/lib/wfy";
-import { runMatch, aiMessage } from "@/lib/ai";
+import { runMatch, aiMessage, isJobProfileId } from "@/lib/ai";
 import "@/styles/pages/match.css";
 
 
@@ -87,6 +87,11 @@ export default function Match() {
   // pull the real AI report; keep the local snapshot as fallback (e.g. signed out)
   useEffect(() => {
     if (!jobId) return;
+    if (!isJobProfileId(jobId)) {
+      setLoading(false);
+      setLoadError("岗位画像已失效，请返回工作台重新建立岗位画像");
+      return;
+    }
     let alive = true;
     setLoading(true);
     setLoadError(null);

@@ -1,16 +1,17 @@
 import { useMemo, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import TopBar from "@/components/swiss/TopBar";
 import JobProfile from "./JobProfile";
 import Profile from "./Profile";
 import { getUI } from "@/lib/wfy";
-import { runMatch, aiMessage } from "@/lib/ai";
+import { runMatch, aiMessage, isJobProfileId } from "@/lib/ai";
 import { useAuth } from "@/hooks/useAuth";
 import "@/styles/pages/workbench.css";
 
 /** 02 · WORKBENCH — JD 解析（左）与个人画像（右）合并为一页，功能与原页面完全一致。 */
 export default function Workbench() {
   const navigate = useNavigate();
+  const { search } = useLocation();
   const { user } = useAuth();
 
   const jobColRef = useRef<HTMLDivElement>(null);
@@ -28,11 +29,15 @@ export default function Workbench() {
   const ready = jobState === "bloomed" && profileState === "bloomed";
 
   const jobId = useMemo(() => {
+    const fromUrl = new URLSearchParams(search).get("job");
+    if (isJobProfileId(fromUrl)) return fromUrl;
     const jp = getUI<{ job?: { id?: string } }>("jobprofile");
-    if (jp?.job?.id) return jp.job.id;
+    const storedJobId = jp?.job?.id;
+    if (isJobProfileId(storedJobId)) return storedJobId;
     const m = getUI<{ jobId?: string }>("match");
-    return m?.jobId || null;
-  }, [jobState, matching]);
+    const matchedJobId = m?.jobId;
+    return isJobProfileId(matchedJobId) ? matchedJobId : null;
+  }, [search, jobState, matching]);
 
   async function onMatch() {
     if (!ready || matching) return;
@@ -40,7 +45,7 @@ export default function Workbench() {
       navigate(`/auth?next=${encodeURIComponent("/workbench")}`);
       return;
     }
-    const id = jobId || (getUI<{ job?: { id?: string } }>("jobprofile")?.job?.id ?? null);
+    const id = jobId;
     if (!id) {
       setHint("岗位信息缺失，请重新建立岗位画像");
       return;

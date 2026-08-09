@@ -48,7 +48,8 @@ Deno.serve(async (req) => {
     if (!user) return json({ error: "未登录" }, 401);
 
     const body = await req.json().catch(() => ({}));
-    const jobProfileId: string | undefined = body.jobProfileId;
+    const jobProfileId: string | undefined =
+      typeof body.jobProfileId === "string" ? body.jobProfileId.trim() : undefined;
     const candidateProfileId: string | undefined =
       typeof body.candidateProfileId === "string" ? body.candidateProfileId : undefined;
     const force = body.force === true;
@@ -58,28 +59,25 @@ Deno.serve(async (req) => {
 
     const jobCols =
       "id, title, company, location, dimensions, requirements, evidence_items, requirement_records, requirement_signals, ideal_profile";
-    let { data: job } = await admin
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(jobProfileId);
+    const jobKey = isUuid ? "id" : "slug";
+
+    // Navigation may carry either the database UUID or the public job slug. Use the
+    // service client for globally de-duplicated JDs, then only claim unowned rows.
+    const { data: found, error: jobError } = await admin
       .from("job_profiles")
-      .select(jobCols)
-      .eq("id", jobProfileId)
-      .eq("user_id", user.id)
+      .select(jobCols + ", user_id")
+      .eq(jobKey, jobProfileId)
       .maybeSingle();
-    if (!job) {
-      // The JD may sit under a guest record made before sign-in, or be a globally
-      // de-duplicated JD created by another account. Read it either way; only claim
-      // it when it is still unowned.
-      const { data: other } = await admin
-        .from("job_profiles")
-        .select(jobCols + ", user_id")
-        .eq("id", jobProfileId)
-        .maybeSingle();
-      if (other) {
-        if (other.user_id == null) {
-          await admin.from("job_profiles").update({ user_id: user.id, guest_key: null }).eq("id", jobProfileId);
-        }
-        const { user_id: _ignored, ...rest } = other as Record<string, unknown>;
-        job = rest as typeof job;
+    if (jobError) throw jobError;
+
+    let job: Record<string, unknown> | null = null;
+    if (found) {
+      if (found.user_id == null) {
+        await admin.from("job_profiles").update({ user_id: user.id, guest_key: null }).eq("id", found.id);
       }
+      const { user_id: _ignored, ...rest } = found as Record<string, unknown>;
+      job = rest;
     }
     if (!job) return json({ error: "岗位画像不存在" }, 404);
 

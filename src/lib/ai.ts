@@ -33,6 +33,10 @@ export class AiError extends Error {
   }
 }
 
+export function isJobProfileId(value: unknown): value is string {
+  return typeof value === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+}
+
 /** Friendly message for the shared failure modes of the AI gateway. */
 export function aiMessage(e: unknown) {
   const err = e as AiError;
