@@ -180,6 +180,8 @@ Deno.serve(async (req) => {
             properties: { text: { type: "string" } },
           },
           schemaName: "image_transcription",
+          timeoutMs: 40_000,
+          maxTokens: 3000,
         });
         const ocr = (t.data?.text ?? "").trim();
         if (ocr.replace(/\s/g, "").length >= 20) block = { type: "text", text: ocr.slice(0, 60000) };
@@ -242,6 +244,7 @@ Deno.serve(async (req) => {
         ],
         schema: jdExtractionSchema as unknown as Record<string, unknown>,
         schemaName: "jd_extraction",
+        timeoutMs: 50_000,
       });
       promptTokens += a.usage.prompt_tokens;
       completionTokens += a.usage.completion_tokens;
@@ -267,6 +270,7 @@ Deno.serve(async (req) => {
         ],
         schema: jdProfilingSchema as unknown as Record<string, unknown>,
         schemaName: "jd_profiling",
+        timeoutMs: 50_000,
       });
       promptTokens += b.usage.prompt_tokens;
       completionTokens += b.usage.completion_tokens;
@@ -396,7 +400,7 @@ Deno.serve(async (req) => {
   } catch (e) {
     const err = e as { status?: number; message?: string };
     console.error("parse-jd failed", err);
-    const status = err.status === 429 || err.status === 402 ? err.status : 500;
+    const status = err.status === 429 || err.status === 402 || err.status === 504 ? err.status : 500;
     return json({ error: err.message || "解析失败" }, status);
   }
 });
