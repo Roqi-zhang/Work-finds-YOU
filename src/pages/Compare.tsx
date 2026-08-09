@@ -198,6 +198,13 @@ export default function Compare() {
     });
   }
 
+  function handleViewMatch() {
+    const j = jobsRef.current.find((x) => x.id === selectedId);
+    if (!j) return;
+    setUI("match", { jobId: j.id });
+    navigate("/match?job=" + encodeURIComponent(j.id));
+  }
+
   function handleApply() {
     const jobs = jobsRef.current;
     const j = jobs.find((x) => x.id === selectedId);
@@ -205,6 +212,7 @@ export default function Compare() {
     applyToJob(j);
     navigate("/delivery?focus=" + encodeURIComponent(j.id));
   }
+
 
   return (
     <div className="p-compare">
@@ -221,8 +229,9 @@ export default function Compare() {
             </h1>
           </div>
           <p className="caption">
-            中心是你的画像，同心轨道上分布 12 个岗位节点。悬停任意节点，中心与它之间生成贝塞尔连线，右侧面板同步显示 Why Yes / Why No / Match。
+            岗位比较池将所有你不确定是否应该投递的岗位进行系统整理，外圈是匹配度较低的岗位，内圈是匹配度较高的岗位，在这里你可以有针对性的权衡利弊。
           </p>
+
         </div>
 
         <section className="stage">
@@ -273,6 +282,9 @@ export default function Compare() {
               <span id="d-no">{detail.no}</span>
             </div>
             <div className="actions">
+              <button className="btn ghost" id="viewMatchBtn" type="button" disabled={disabled} onClick={handleViewMatch}>
+                查看匹配
+              </button>
               <button className="btn" id="applyBtn" type="button" disabled={disabled} onClick={handleApply}>
                 投递 →
               </button>
@@ -280,6 +292,7 @@ export default function Compare() {
                 移出对比
               </button>
             </div>
+
 
             <div style={{ marginTop: "auto", paddingTop: 16, borderTop: "0.5px solid var(--line)" }}>
               <div className="k" style={{ marginBottom: 8 }}>
