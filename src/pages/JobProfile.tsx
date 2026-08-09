@@ -481,7 +481,7 @@ export default function JobProfile({
               <div className="caption">{embedded ? "A · Job Profile" : "03 · Job Profile"}</div>
 
               <h1>解析岗位的<br />理想能力花</h1>
-              <p>上传岗位 JD，8 项胜任力维度将生长为这个岗位的理想能力花。花瓣越舒展代表该岗位越看重这项能力；JD 未提及时只开虚线小瓣，不记 0 分。</p>
+              <p>把一份 JD 变成一张能力地图——哪几项是硬门槛、哪几项只是加分，一眼就能分辨，投递前不再靠猜。</p>
 
               <div className="steps" hidden={embedded}>
                 <div className="step on" id="s1"><span className="n">01</span> 上传 JD</div>
