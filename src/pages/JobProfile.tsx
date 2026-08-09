@@ -529,13 +529,24 @@ export default function JobProfile({
                     buildDoc={() => ({
                       title: `岗位画像 · ${exportData.job?.title || ""}`,
                       subtitle: [exportData.job?.company, exportData.job?.location].filter(Boolean).join(" · "),
-                      sections: DIM_LABELS.map((label, i) => {
-                        const d: any = exportData.result[i] || {};
-                        return {
-                          heading: `${label} · ${d.score == null ? "—" : d.score + "/5"} [${String(d.strength || "missing").toUpperCase()}]`,
-                          lines: [`Evidence: ${d.evidence || "—"}`, `Analysis: ${d.analysis || d.why || "—"}`],
-                        };
-                      }),
+                      sections: [
+                        ...(exportData.keyPoints?.length
+                          ? [
+                              {
+                                heading: "Key points · 岗位最看重的 3 项能力",
+                                lines: exportData.keyPoints.map((p) => `${p.title} — ${p.detail}`),
+                              },
+                            ]
+                          : []),
+                        ...DIM_LABELS.map((label, i) => {
+                          const d: any = exportData.result[i] || {};
+                          return {
+                            heading: `${label} · ${d.score == null ? "—" : d.score + "/5"} [${String(d.strength || "missing").toUpperCase()}]`,
+                            lines: [`Analysis: ${d.analysis || d.why || "—"}`, `Evidence: ${d.evidence || "—"}`],
+                          };
+                        }),
+                      ],
+
                     })}
                   />
                 )}
