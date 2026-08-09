@@ -386,9 +386,11 @@ export default function JobProfile({
       if (animate) stageEl.classList.add("blooming");
       setState("bloomed");
       stageEl.classList.add("bloomed");
-      renderPetalAnalysis(result);
-      saveStore({ state: "bloomed", name: rName.textContent, meta: rMeta.textContent, result, job: parsedJob });
-      setExportData({ job: parsedJob, result });
+      const keyPoints = out.keyPoints ?? [];
+      renderPetalAnalysis(result, keyPoints);
+      saveStore({ state: "bloomed", name: rName.textContent, meta: rMeta.textContent, result, keyPoints, job: parsedJob });
+      setExportData({ job: parsedJob, result, keyPoints });
+
     }
 
     const onMain = async () => {
