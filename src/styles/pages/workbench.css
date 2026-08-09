@@ -56,3 +56,6 @@
     margin-top: 40px;
   }
 }
+
+/* `hidden` must win over the flex layouts inside the panels. */
+.p-workbench [hidden] { display: none !important; }
