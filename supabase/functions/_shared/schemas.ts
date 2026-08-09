@@ -10,11 +10,12 @@ export const RUBRIC_VERSION = "rubric-v1";
 
 export const PROMPT_VERSIONS = {
   jdExtraction: "jd-extract-v1",
-  jdProfiling: "jd-profile-v2",
+  jdProfiling: "jd-profile-v3",
   resumeExtraction: "resume-extract-v1",
-  resumeProfiling: "resume-profile-v1",
-  match: "match-v1",
+  resumeProfiling: "resume-profile-v2",
+  match: "match-v2",
 } as const;
+
 
 export const DIM_KEYS = DIMS.map((d) => d.key) as unknown as string[];
 
@@ -151,11 +152,15 @@ export type CandidateDimension = {
   sourceStatus?: "ok" | "evidence_missing" | "not_applicable_source";
 };
 
+/** Three headline capabilities summarised on top of a profile. */
+export type KeyPoint = { title: string; detail: string };
+
 export type CandidateProfile = {
   schemaVersion: string;
   rubricVersion: string;
   rubricHash: string;
   dimensions: CandidateDimension[];
+  keyPoints?: KeyPoint[];
   sections: { experience: string; skills: string; motivation: string; risks: string };
 };
 
@@ -177,8 +182,10 @@ export type IdealCandidateProfile = {
   rubricVersion: string;
   rubricHash: string;
   roleSummary: string;
+  keyPoints?: KeyPoint[];
   dimensions: IdealDimension[];
 };
+
 
 /* ------------------------------------------------------------------ *
  * Match — Gap Analysis
@@ -268,6 +275,8 @@ export const jdExtractionSchema = obj({
 /* ---- JD Call B: rubric + requirement signals + ideal profile ---- */
 export const jdProfilingSchema = obj({
   role_summary: str,
+  key_points: arr(obj({ title: str, detail: str }), 3, 3),
+
   rubric_dimensions: arr(
     obj({
       key: dimKeyEnum,
@@ -378,8 +387,10 @@ export const resumeProfilingSchema = obj({
     8,
     8,
   ),
+  key_points: arr(obj({ title: str, detail: str }), 3, 3),
   sections: obj({ experience: str, skills: str, motivation: str, risks: str }),
 });
+
 
 /* ---- Match: gap analysis ---- */
 export const matchSchema = obj({
@@ -417,7 +428,19 @@ export const matchSchema = obj({
     3,
     3,
   ),
-  steps: arr(obj({ title: str, desc: str, why: str, effect: str, sample: str }), 3, 3),
+  steps: arr(
+    obj({
+      kind: { type: "string", enum: ["resume", "interview", "portfolio"] },
+      title: str,
+      desc: str,
+      applicable: { type: "boolean" },
+      items: arr(obj({ point: str, suggestion: str, evidence: str }), 3, 1),
+      mindset: str,
+    }),
+    3,
+    3,
+  ),
+
   decision_factors: arr(obj({ step: str, detail: str }), 6),
   rationale_summary: str,
 });

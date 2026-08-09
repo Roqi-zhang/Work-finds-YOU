@@ -142,3 +142,10 @@
 .p-jobprofile .evi-m { display: block; font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: #888; margin-bottom: 3px; }
 .p-jobprofile .evi-r { display: block; font-size: 12px; line-height: 1.6; margin-bottom: 3px; }
 .p-jobprofile .evi-q { display: block; font-size: 12px; line-height: 1.6; opacity: .7; }
+
+/* key points block (shared by JobProfile / Snapshot) */
+.p-jobprofile .legend .kp .kp-i { display: grid; grid-template-columns: 26px 1fr; gap: 10px; padding: 10px 0; border-bottom: .5px solid var(--line); }
+.p-jobprofile .legend .kp .kp-i:last-child { border-bottom: 0; }
+.p-jobprofile .legend .kp .k { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 10px; letter-spacing: .18em; opacity: .5; }
+.p-jobprofile .legend .kp .kp-t { font-size: 13px; margin-bottom: 3px; }
+.p-jobprofile .legend .kp .kp-d { font-size: 12px; line-height: 1.6; opacity: .7; }

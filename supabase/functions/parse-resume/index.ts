@@ -32,26 +32,31 @@ const EXTRACT_SYSTEM = `你是资深招聘官，负责忠实读取一份简历�
 
 /* -------- Layer 3 + 4 : judged against the JD-derived rubric ------------------ */
 
-const PROFILE_SYSTEM = `你是资深招聘官，基于已经还原好的候选人经历，按给定的「评价标准」判断这份简历**证明了什么能力**。
+const PROFILE_SYSTEM = `你是一位资深 HR，非常熟悉候选人能力模型，擅长从候选人的叙述中读出他真实的能力与特质。基于已经还原好的候选人经历，按给定的「评价标准」判断这份简历**证明了什么能力**。
 规则：
 1. capability_signals：从经历中提取能力信号，每条必须写明 experienceId 与 evidenceIds，可追溯回原文。一段经历可产生多条信号，一个维度也可由多段经历共同支撑。禁止为不同维度重写同一段经历。
 2. candidate_dimensions 固定输出 8 条：${DIMS.map((d) => `${d.key}=${d.label}`).join("、")}。
    - level 依据评价标准中的行为锚点判定：strong=完全达到 strong 锚点且有可验证证据；medium=达到 medium 锚点；weak=只有零星迹象；missing=简历中没有证据。
    - evidenceGroups 按经历分组列出支撑证据，evidenceRole 区分主要/辅助；一段经历一个 group，不要把多家公司的句子拼成一段。
-   - why 说明判定理由；note 为 6 字以内短标签。
+   - why 是这一维的核心分析：**严禁复述简历原句**，必须从经历中提炼出候选人体现了什么能力与特质（例如结构化思考、端到端推进力、跨职能协调、抗压与复盘习惯），并说明是从哪种行为推断出来的，控制在 120 字左右。
+   - note 为 6 字以内短标签。
    - evidenceAction 只回答「这份简历还应该如何补充证据或改进表达」，**不要写「你应该去学什么能力」**，能力提升建议由匹配环节负责。
-3. 「没有证据」不等于「能力弱」：找不到证据就填 missing 并在 why 中说明是简历未体现。
-4. motive（动机匹配）通常无法只靠简历判断：没有明确求职动机线索时，level 填 missing 并把 sourceStatus 设为 evidence_missing 或 not_applicable_source，禁止编造动机。
-5. 只依据给定的经历与原文证据，禁止引入任何简历之外的事实。
-6. 严禁输出任何数值分数，分数由后端计算。
-7. sections 为四段中文概述：experience / skills / motivation / risks。`;
+3. key_points 固定 3 条：这份简历体现出的**最突出的 3 项能力**。title 为 8 字以内短标题，detail 用一句话（40 字以内）说明由哪段经历的哪种行为体现出来，不要复述简历原句。
+4. 「没有证据」不等于「能力弱」：找不到证据就填 missing 并在 why 中说明是简历未体现。
+5. motive（动机匹配）通常无法只靠简历判断：没有明确求职动机线索时，level 填 missing 并把 sourceStatus 设为 evidence_missing 或 not_applicable_source，禁止编造动机。
+6. 只依据给定的经历与原文证据，禁止引入任何简历之外的事实。
+7. 严禁输出任何数值分数，分数由后端计算。
+8. sections 为四段中文概述：experience / skills / motivation / risks。`;
+
 
 type ExtractOut = { evidence_items: EvidenceItem[]; experience_records: ExperienceRecord[] };
 type ProfileOut = {
   capability_signals: CapabilitySignal[];
   candidate_dimensions: CandidateDimension[];
+  key_points?: { title: string; detail: string }[];
   sections: { experience: string; skills: string; motivation: string; risks: string };
 };
+
 
 /** Fallback rubric wording when the user reaches /profile without a target JD. */
 const GENERIC_RUBRIC_NOTE =
@@ -272,13 +277,16 @@ Deno.serve(async (req) => {
     completionTokens += b.usage.completion_tokens;
     latency += b.latencyMs;
 
+    const keyPoints = (b.data.key_points ?? []).slice(0, 3);
     const candidateProfile: CandidateProfile = {
       schemaVersion: SCHEMA_VERSION,
       rubricVersion: RUBRIC_VERSION,
       rubricHash,
       dimensions: b.data.candidate_dimensions ?? [],
+      keyPoints,
       sections: b.data.sections,
     };
+
 
     /* ---------- Legacy UI contract via the adapter ---------- */
     const legacyDims = candidateProfileToDims(candidateProfile, evidenceItems);
@@ -313,7 +321,8 @@ Deno.serve(async (req) => {
         is_current: true,
         status: "succeeded",
         dimensions,
-        sections: b.data.sections,
+        sections: { ...b.data.sections, keyPoints },
+
         scoring_version: scoringVersion,
         evidence_items: evidenceItems,
         experience_records: experienceRecords,
@@ -351,8 +360,10 @@ Deno.serve(async (req) => {
       version: profile.version,
       score,
       dimensions,
+      keyPoints,
       sections: b.data.sections,
     });
+
   } catch (e) {
     const err = e as { status?: number; message?: string };
     console.error("parse-resume failed", err);

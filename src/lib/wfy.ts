@@ -291,13 +291,19 @@ export function updateApplication(id: string, patch: Partial<Application>) {
 
 
 /* ---------- match reports ---------- */
+export type StepKind = "resume" | "interview" | "portfolio";
+export type StepItem = { point: string; suggestion: string; evidence: string };
+
 export function reportTemplate(job: Job) {
+
   const m = job.m;
   const flag = m >= 85 ? "优先投" : m >= 70 ? "改完再投" : "可投不优先";
   const win = m >= 85 ? "高" : m >= 75 ? "中高" : m >= 65 ? "中" : "低";
   const rank = m >= 85 ? "Top 1" : m >= 75 ? "Top 3" : "备选";
   const risk = Math.max(10, 100 - m - 20);
   const dims = (
+
+
     [
       ["专业技能", Math.min(99, m + 16)],
       ["系统设计", Math.min(99, m + 10)],
@@ -371,11 +377,9 @@ export function reportTemplate(job: Job) {
         tags: ["专业技能", "执行交付"],
         srcId: "j.strength",
         evidence: {
-          我方证据: "简历第 1 段：「主导交易前端重构，拆分 12 个模块，日活 320 万」。",
           岗位要求: "JD 第 1 条：「Own the architecture of our front-end」。",
-          推理: "规模量级与 owner 角色同时命中，属于可直接复用的经验，而非近似经验。",
-          影响: "+12 分（专业技能 / 执行交付）",
-        },
+          简历证据: "简历第 1 段：「主导交易前端重构，拆分 12 个模块，日活 320 万」。",
+        } as Record<string, string>,
       },
       {
         kind: "最大缺口",
@@ -385,11 +389,9 @@ export function reportTemplate(job: Job) {
         tags: ["工程素养"],
         srcId: "j.gap",
         evidence: {
-          我方证据: "简历第 2 段仅有「负责发布流程优化」，无工具、无指标、无值班记录。",
           岗位要求: "JD 第 4 条：「owns deployment pipeline & participates in on-call」。",
-          推理: "要求为硬性且可量化，模糊表述在初筛阶段无法被判定为命中。",
-          影响: "−8 分（工程素养 " + dims[6].score + "）",
-        },
+          简历证据: "简历第 2 段仅有「负责发布流程优化」，无工具、无指标、无值班记录。",
+        } as Record<string, string>,
       },
       {
         kind: "最大风险",
@@ -399,48 +401,51 @@ export function reportTemplate(job: Job) {
         tags: ["协作沟通", "动机稳定性"],
         srcId: "j.risk",
         evidence: {
-          我方证据: "画像动机维度：近 3 段经历团队规模 8 / 15 / 18 人，平均在职 14 个月。",
           岗位要求: "公司公开信息：团队 60+ 人，横跨 3 个时区，异步协作为主。",
-          推理: "环境差异会同时触发「适配成本」与「稳定性」两类面试追问。",
-          影响: "风险提示 · 不参与总分计算",
-        },
+          简历证据: "画像动机维度：近 3 段经历团队规模 8 / 15 / 18 人，平均在职 14 个月。",
+        } as Record<string, string>,
       },
     ],
     steps: [
       {
+        kind: "resume" as StepKind,
         title: "简历如何完善",
-        desc: "在最近一段经历下新增一条：主导 CI/CD 流水线改造，构建时长 18min → 6min，并注明线上故障复盘参与次数。",
+        desc: "结合 JD 的核心能力点，对这份简历做 3 处针对性改写。",
         srcId: "s.resume",
-        evidence: {
-          为什么: "对应「最大缺口：缺少可验证的 CI/CD 与线上排障证据」。",
-          预期效果: "匹配分 " + m + " → " + Math.min(99, m + 8) + "，胜算等级提升一档。",
-          参考写法:
-            "「主导前端 CI/CD 改造：引入并行构建与缓存策略，构建时长 18min → 6min；参与 6 次线上故障复盘，主写 2 份 RCA。」",
-        },
+        mindset: "",
+        items: [
+          {
+            point: "最近一段经历缺少可验证的工程指标。",
+            suggestion:
+              "「主导前端 CI/CD 改造：引入并行构建与缓存策略，构建时长 18min → 6min；参与 6 次线上故障复盘，主写 2 份 RCA。」",
+            evidence: "对应 JD 第 4 条「owns deployment pipeline & participates in on-call」。",
+          },
+        ] as StepItem[],
       },
       {
-        title: "作品集 / 项目表达要补什么",
-        desc: "补一页该领域的前端架构图：模块划分、错误兜底、灰度发布策略，替换掉当前偏视觉的展示页。",
-        srcId: "s.portfolio",
-        evidence: {
-          为什么: "JD 强调领域上下文，画像「产品理解」在该领域缺少证据。",
-          预期效果:
-            "产品理解 " + dims[3].score + " → " + Math.min(99, dims[3].score + 6) + "，强化「可直接上手」印象。",
-          参考写法: "一页三栏：链路模块划分 / 失败与重试兜底 / 灰度与回滚策略，每栏一句结论 + 一个指标。",
-        },
-      },
-      {
-        title: "面试 / 自我介绍要准备什么",
-        desc: "准备一段 60 秒回答：为什么愿意进入 60+ 人跨时区团队，用一段实际跨团队协作经历作为证据。",
+        kind: "interview" as StepKind,
+        title: "面试准备哪段经历",
+        desc: "锁定最匹配的经历，按 STAR 拆解并准备追问。",
         srcId: "s.interview",
-        evidence: {
-          为什么: "对应「最大风险：团队规模偏好与岗位环境不一致」，这是面试必问点。",
-          预期效果: "降低动机稳定性质疑，风险分 " + risk + " → " + Math.max(10, risk - 12) + "。",
-          参考写法:
-            "「我此前在小团队负责全链路，但与海外团队做过 8 个月异步协作，习惯用文档与录屏推进决策，这正是我想进入更大规模组织的原因。」",
-        },
+        mindset: "沉稳自信，遇到不会的问题先讲思路再讲边界。",
+        items: [
+          {
+            point: "重点准备「交易前端重构」这段经历。",
+            suggestion: "用 STAR 拆一遍：背景规模、你的决策、模块拆分方案、上线后的指标变化，并准备一个具体的故障排查实例。",
+            evidence: "该经历与 JD 第 1 条架构 own 的诉求直接对齐。",
+          },
+        ] as StepItem[],
+      },
+      {
+        kind: "portfolio" as StepKind,
+        title: "作品集要放什么",
+        desc: "该岗位未强制要求作品集。",
+        srcId: "s.portfolio",
+        mindset: "",
+        items: [] as StepItem[],
       },
     ],
+
     dimensions: dims,
     sources: [
       { label: "岗位 JD 原文 · " + job.title + ", " + job.co, at: "2026-07-28" },
@@ -477,7 +482,18 @@ type BackendReport = {
     tags?: string[];
     evidence?: { mine?: string; required?: string; reasoning?: string; impact?: string };
   }[];
-  steps?: { title: string; desc: string; why?: string; effect?: string; sample?: string }[];
+  steps?: {
+    kind?: StepKind;
+    title: string;
+    desc: string;
+    applicable?: boolean;
+    items?: StepItem[];
+    mindset?: string;
+    why?: string;
+    effect?: string;
+    sample?: string;
+  }[];
+
   dimension_scores?: { key: string; label: string; score: number | null; level: string; core?: boolean; why?: string }[];
   sources?: { label: string; at: string }[];
   reasoning_trace?: string | null;
@@ -488,7 +504,7 @@ type BackendReport = {
 
 const MARKS: Record<string, string> = { 最大优势: "", 最大缺口: "w", 最大风险: "i" };
 const SRC_IDS = ["j.strength", "j.gap", "j.risk"];
-const STEP_IDS = ["s.resume", "s.portfolio", "s.interview"];
+
 
 export function reportFromBackend(job: Job, r: BackendReport): MatchReport {
   const base = reportTemplate({ ...job, m: r.score });
@@ -530,22 +546,30 @@ export function reportFromBackend(job: Job, r: BackendReport): MatchReport {
       tags: j.tags || [],
       srcId: SRC_IDS[i] || "j." + i,
       evidence: {
-        我方证据: j.evidence?.mine || "—",
         岗位要求: j.evidence?.required || "—",
-        推理: j.evidence?.reasoning || "—",
-        影响: j.evidence?.impact || "—",
+        简历证据: j.evidence?.mine || "—",
       },
+
     })),
-    steps: (r.steps || []).map((s, i) => ({
-      title: s.title,
-      desc: s.desc,
-      srcId: STEP_IDS[i] || "s." + i,
-      evidence: {
-        为什么: s.why || "—",
-        预期效果: s.effect || "—",
-        参考写法: s.sample || "—",
-      },
-    })),
+    steps: (r.steps || [])
+      .filter((s) => s.applicable !== false)
+      .map((s, i) => {
+        const kind: StepKind = s.kind ?? (["resume", "interview", "portfolio"][i] as StepKind) ?? "resume";
+        const legacy: StepItem[] = s.items?.length
+          ? s.items
+          : s.why || s.sample
+            ? [{ point: s.desc, suggestion: s.sample || "—", evidence: s.why || "—" }]
+            : [];
+        return {
+          kind,
+          title: s.title,
+          desc: s.desc,
+          srcId: "s." + kind,
+          mindset: s.mindset || "",
+          items: legacy,
+        };
+      }),
+
     dimensions: (r.dimension_scores || []).map((x) => ({
       name: x.label,
       score: x.score == null ? 0 : Math.round((x.score / 5) * 100),

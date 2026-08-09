@@ -155,12 +155,16 @@ type PetalRef = {
   delay: number;
 };
 
+type KeyPointUI = { title: string; detail: string };
+
 type StoredProfile = {
   state: "ready" | "bloomed";
   name?: string;
   meta?: string;
   result?: DimResult[];
+  keyPoints?: KeyPointUI[];
 };
+
 
 type TipState = {
   on: boolean;
@@ -208,6 +212,7 @@ export default function Profile({
   const [blooming, setBlooming] = useState(false);
   const [bloomedClass, setBloomedClass] = useState(false);
   const [result, setResult] = useState<DimResult[] | null>(null);
+  const [keyPoints, setKeyPoints] = useState<KeyPointUI[]>([]);
   const [tip, setTip] = useState<TipState>(EMPTY_TIP);
   const [matching, setMatching] = useState(false);
   const [mergeGo, setMergeGo] = useState(false);
@@ -334,6 +339,7 @@ export default function Profile({
         setBloomedClass(true);
         setStateVal("bloomed");
         setResult(s.result);
+        setKeyPoints(s.keyPoints || []);
       } else if (s.state === "ready") {
         setStateVal("ready");
         // The picked file lives in IndexedDB, so a login round-trip keeps it.
@@ -359,8 +365,10 @@ export default function Profile({
         setBlooming(true);
         setBloomedClass(true);
         setResult(res);
+        const kp = (out as ResumeResult & { keyPoints?: KeyPointUI[] }).keyPoints || [];
+        setKeyPoints(kp);
         setStateVal("bloomed");
-        saveStore({ state: "bloomed", name: metaRef.current.name, meta: metaRef.current.meta, result: res });
+        saveStore({ state: "bloomed", name: metaRef.current.name, meta: metaRef.current.meta, result: res, keyPoints: kp });
         clearTask("resume");
       } else if (t.status === "error") {
         setStateVal("ready");
@@ -580,7 +588,11 @@ export default function Profile({
                   buildDoc={() => ({
                     title: "候选人画像 · 8 维能力",
                     subtitle: `${rName} · ${rMeta}`,
-                    sections: DIMS.map((dim, i) => {
+                    sections: [
+                      ...(keyPoints.length
+                        ? [{ heading: "Key points · 最突出的 3 项能力", lines: keyPoints.map((p) => `${p.title} — ${p.detail}`) }]
+                        : []),
+                      ...DIMS.map((dim, i) => {
                       const d = (result[i] || {}) as DimResult;
                       const evi = (d.evidenceDetail ?? []).map(
                         (ev) =>
@@ -596,9 +608,11 @@ export default function Profile({
                           ...evi,
                         ],
                       };
-                    }),
-
+                      }),
+                    ],
                   })}
+
+
                 />
               ) : (
                 <span className="mode" id="stateTag">
@@ -738,6 +752,20 @@ export default function Profile({
               </div>
 
               <div className="legend" id="legend">
+                {result && keyPoints.length > 0 && (
+                  <div className="g fade kp">
+                    <h4>00 · Key points · 这份简历最突出的 3 项能力</h4>
+                    {keyPoints.map((p, n) => (
+                      <div className="kp-i" key={p.title + n}>
+                        <span className="k">{String(n + 1).padStart(2, "0")}</span>
+                        <div>
+                          <div className="kp-t">{p.title}</div>
+                          <div className="kp-d">{p.detail}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
                 {result &&
                   GROUPS.map((g, i) => (
                     <div className="g fade" key={g.title} style={{ animationDelay: i * 0.12 + "s" }}>

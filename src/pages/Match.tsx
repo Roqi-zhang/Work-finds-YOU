@@ -450,22 +450,48 @@ export default function Match() {
                 3 步。
               </h2>
               <div className="risklist" style={{ marginTop: 32 }}>
-                {R.steps.map((s, i) => (
-                  <div className="row" key={s.srcId}>
-                    <span className="k">{String(i + 1).padStart(2, "0")}</span>
-                    <div>
-                      <div className="t">{s.title}</div>
-                      <div className="d">{s.desc}</div>
-                      <Fold
-                        srcId={s.srcId}
-                        label="依据"
-                        evidence={s.evidence}
-                        isOpen={isOpen(s.srcId)}
-                        onToggle={toggleFold}
-                      />
+                {R.steps.map((s, i) => {
+                  const cap =
+                    s.kind === "interview"
+                      ? ["准备什么", "怎么准备", "为什么"]
+                      : s.kind === "portfolio"
+                        ? ["放什么", "具体建议", "依据"]
+                        : ["要改什么", "修改建议", "证据"];
+                  return (
+                    <div className="row" key={s.srcId}>
+                      <span className="k">{String(i + 1).padStart(2, "0")}</span>
+                      <div>
+                        <div className="t">{s.title}</div>
+                        <div className="d">{s.desc}</div>
+                        <div className="step-items">
+                          {s.items.map((it, n) => (
+                            <div className="step-item" key={n}>
+                              <div className="si-r">
+                                <span className="k">{cap[0]}</span>
+                                <span>{it.point}</span>
+                              </div>
+                              <div className="si-r">
+                                <span className="k">{cap[1]}</span>
+                                <span className="si-s">{it.suggestion}</span>
+                              </div>
+                              <div className="si-r">
+                                <span className="k">{cap[2]}</span>
+                                <span>{it.evidence}</span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                        {s.mindset && (
+                          <div className="si-r si-mind">
+                            <span className="k">心态提醒</span>
+                            <span>{s.mindset}</span>
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
+
               </div>
             </div>
           </section>
@@ -489,11 +515,8 @@ export default function Match() {
 
             <div className={"ev" + (evOpen ? " open" : "")} id="ev">
               <button className="ev-toggle" id="evToggle" type="button" aria-expanded={evOpen} onClick={toggleEv}>
-                <span>
-                  {evOpen
-                    ? "收起 · Sources / Pipeline / Scores / Reasoning Trace"
-                    : "展开 · Sources / Pipeline / Scores / Reasoning Trace"}
-                </span>
+                <span>{evOpen ? "收起 · Sources / Pipeline / Scores" : "展开 · Sources / Pipeline / Scores"}</span>
+
                 <span className="car">↓</span>
               </button>
               <div className="ev-body">
@@ -537,19 +560,8 @@ export default function Match() {
                   </div>
                 </div>
 
-                <div className="ev-block">
-                  <div className="k">推理记录</div>
-                  <div className="trace" id="trace" data-src-id="model.trace">
-                    {!R.trace.length && <div className="empty">本次分析未记录该环节</div>}
-                    {R.trace.map((r) => (
-                      <div className="r" key={r.t}>
-                        <span className="k">{r.t}</span>
-                        <span className="s">{r.s}</span>
-                        <span>{r.d}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+
+
               </div>
             </div>
           </section>

@@ -115,12 +115,16 @@ export async function parseResume(file: File, targetJobProfileId?: string) {
   return invoke<ResumeResult>("parse-resume", { filePath: path, fileName, targetJobProfileId });
 }
 
+export type KeyPoint = { title: string; detail: string };
+
 export type JdResult = {
   job: { id: string; slug: string; title: string; company: string; location: string };
   salary: string;
   dimensions: DimScored[];
+  keyPoints?: KeyPoint[];
   requirements: { text: string; hard: boolean; dim: string }[];
 };
+
 
 export async function parseJdText(text: string) {
   return invoke<JdResult>("parse-jd", { text });
@@ -158,7 +162,18 @@ export type MatchReport = {
     tags: string[];
     evidence: { mine: string; required: string; reasoning: string; impact: string };
   }[];
-  steps: { title: string; desc: string; why: string; effect: string; sample: string }[];
+  steps: {
+    kind?: "resume" | "interview" | "portfolio";
+    title: string;
+    desc: string;
+    applicable?: boolean;
+    items?: { point: string; suggestion: string; evidence: string }[];
+    mindset?: string;
+    why?: string;
+    effect?: string;
+    sample?: string;
+  }[];
+
   dimension_scores: DimScored[];
   sources: { label: string; at: string }[];
   reasoning_trace: string | null;

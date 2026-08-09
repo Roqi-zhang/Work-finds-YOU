@@ -153,3 +153,10 @@
 
 .p-profile .mt-t { font-size: 11px; letter-spacing: .32em; text-transform: uppercase; }
 .p-profile .mt-s { font-size: 11px; letter-spacing: .06em; color: #888; }
+
+/* key points block */
+.p-profile .legend .kp .kp-i { display: grid; grid-template-columns: 26px 1fr; gap: 10px; padding: 10px 0; border-bottom: .5px solid var(--line); }
+.p-profile .legend .kp .kp-i:last-child { border-bottom: 0; }
+.p-profile .legend .kp .k { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 10px; letter-spacing: .18em; opacity: .5; }
+.p-profile .legend .kp .kp-t { font-size: 13px; margin-bottom: 3px; }
+.p-profile .legend .kp .kp-d { font-size: 12px; line-height: 1.6; opacity: .7; }
