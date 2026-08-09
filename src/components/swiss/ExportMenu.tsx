@@ -27,36 +27,74 @@ export default function ExportMenu({ fileBase, captureRef, buildDoc, disabled }:
     return () => document.removeEventListener("mousedown", onDoc);
   }, [open]);
 
-  const snapshot = async () => {
-    const el = captureRef.current;
-    if (!el) throw new Error("nothing to capture");
-    const { default: html2canvas } = await import("html2canvas");
-    return html2canvas(el, {
-      backgroundColor: getComputedStyle(document.body).backgroundColor || "#F9F9F9",
-      scale: Math.min(2, window.devicePixelRatio || 1),
-      useCORS: true,
-      logging: false,
-    });
-  };
+/** Width (CSS px) the clone is laid out at — A4 portrait at ~150dpi. */
+const PAGE_W = 1240;
 
-  const run = async (kind: "pdf" | "png" | "docx") => {
-    setBusy(kind);
-    try {
-      if (kind === "png") {
-        const canvas = await snapshot();
-        const a = document.createElement("a");
-        a.href = canvas.toDataURL("image/png");
-        a.download = `${fileBase}.png`;
-        a.click();
-      } else if (kind === "pdf") {
-        const canvas = await snapshot();
-        const { jsPDF } = await import("jspdf");
-        const w = canvas.width;
-        const h = canvas.height;
-        const pdf = new jsPDF({ orientation: w > h ? "l" : "p", unit: "pt", format: [w, h] });
-        pdf.addImage(canvas.toDataURL("image/jpeg", 0.92), "JPEG", 0, 0, w, h);
-        pdf.save(`${fileBase}.pdf`);
-      } else {
+/** Print stylesheet applied to the cloned DOM so the export is a document, not a screenshot. */
+const PRINT_CSS = `
+  html, body { background: #F9F9F9 !important; }
+  .topbar, .progress, .bg-dial, .export-menu, .cta-row, .wb-foot,
+  .drop, .actions, .dlg-mask, .merge { display: none !important; }
+  .page, .content { width: 100% !important; max-width: none !important; padding: 0 48px !important; margin: 0 !important; }
+  .screen { display: block !important; min-height: 0 !important; height: auto !important; padding: 24px 0 !important; page-break-inside: auto; }
+  .fold .fb { max-height: none !important; overflow: visible !important; }
+  .fold .ft .car, .ev-toggle .car { display: none !important; }
+  .ev .ev-body { max-height: none !important; overflow: visible !important; opacity: 1 !important; }
+  .evi-body { max-height: none !important; overflow: visible !important; }
+  * { animation: none !important; transition: none !important; }
+`;
+
+function printify(doc: Document) {
+  doc.documentElement.setAttribute("data-theme", "light");
+  doc.documentElement.classList.remove("dark");
+  const style = doc.createElement("style");
+  style.textContent = PRINT_CSS;
+  doc.head.appendChild(style);
+  // Open every collapsible block so nothing is cut off in the export.
+  doc.querySelectorAll(".fold, .ev, .evi, .open-target").forEach((n) => n.classList.add("open"));
+}
+
+const snapshot = async (el: HTMLElement) => {
+  const { default: html2canvas } = await import("html2canvas");
+  return html2canvas(el, {
+    backgroundColor: "#F9F9F9",
+    scale: 2,
+    useCORS: true,
+    logging: false,
+    width: PAGE_W,
+    windowWidth: PAGE_W,
+    onclone: (doc) => printify(doc),
+  });
+};
+
+/** Row index (from the bottom of the slice) that is closest to a blank gutter. */
+function breakPoint(canvas: HTMLCanvasElement, top: number, pageH: number) {
+  const bottom = Math.min(canvas.height, top + pageH);
+  if (bottom >= canvas.height) return bottom;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return bottom;
+  const look = Math.floor(pageH * 0.18);
+  const data = ctx.getImageData(0, bottom - look, canvas.width, look).data;
+  for (let y = look - 1; y >= 0; y--) {
+    let uniform = true;
+    const base = y * canvas.width * 4;
+    const r0 = data[base], g0 = data[base + 1], b0 = data[base + 2];
+    for (let x = 8; x < canvas.width; x += 8) {
+      const i = base + x * 4;
+      if (Math.abs(data[i] - r0) > 4 || Math.abs(data[i + 1] - g0) > 4 || Math.abs(data[i + 2] - b0) > 4) {
+        uniform = false;
+        break;
+      }
+    }
+    if (uniform) return bottom - look + y;
+  }
+  return bottom;
+}
+
+export default function ExportMenuInner() {
+  return null;
+}
+
         const data = buildDoc();
         const { Document, Packer, Paragraph, HeadingLevel, TextRun } = await import("docx");
         const children = [
