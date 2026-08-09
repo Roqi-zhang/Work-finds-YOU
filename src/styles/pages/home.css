@@ -14,6 +14,12 @@
   font-size: 22px; letter-spacing: 0.02em; margin-top: 28px; color: var(--ink); max-width: 22ch;
 }
 .p-home .hero .en-sub { font-size: 13px; opacity: .6; margin-top: 8px; letter-spacing: 0.02em; }
+.p-home .hero .slogan {
+  font-size: 14px; line-height: 1.8; margin-top: 20px; max-width: 34ch;
+  color: var(--ink); opacity: .75; letter-spacing: 0.01em;
+}
+.p-home .hero .slogan .en { display: block; margin-top: 6px; font-size: 12px; opacity: .7; }
+
 .p-home .hero .meta { display: flex; justify-content: space-between; align-items: end; }
 .p-home .hero .meta .caption { font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase; }
 .p-home /* dial */

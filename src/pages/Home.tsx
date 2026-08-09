@@ -11,6 +11,14 @@ const TRIO = [
   { num: "03", h: "对比、投递、复盘", p: "轨道池横向对比、时间线日志式追踪投递状态，形成可复用的决策闭环。" },
 ];
 
+const TICKS = [
+  { num: "01", label: "HOME / 首页", angle: 0 },
+  { num: "02", label: "WORKBENCH", angle: -40 },
+  { num: "03", label: "MATCH", angle: 40 },
+  { num: "04", label: "COMPARE", angle: -80 },
+  { num: "05", label: "DELIVERY", angle: 80 },
+];
+
 export default function Home() {
   return (
     <div className="p-home">
@@ -28,6 +36,13 @@ export default function Home() {
               </h1>
               <div className="zh">选对方向，工作找你。</div>
               <div className="en-sub">Choose the direction, let the work come to you.</div>
+              <p className="slogan">
+                策略、选择有时比努力更重要，助力求职者在有限的投递机会中高效做出一个个明智的选择。
+                <span className="en">
+                  Strategy and choice sometimes matter more than effort — helping job seekers make smart decisions
+                  within limited chances.
+                </span>
+              </p>
             </div>
             <div className="meta">
               <div>
@@ -64,49 +79,33 @@ export default function Home() {
                   <circle className="ring" cx="280" cy="280" r="140" />
                 </g>
 
-                <g className="tick-group">
-                  <line className="tickline" x1="280" y1="24" x2="280" y2="80" />
-                  <text className="tick-label" x="280" y="18" textAnchor="middle">
-                    01
-                  </text>
-                  <circle className="tick-node" cx="280" cy="80" r="8" />
-                  <text className="tick-title" x="280" y="112" textAnchor="middle">
-                    HOME / 首页
-                  </text>
-                </g>
-                <g className="tick-group" transform="rotate(-40 280 280)">
-                  <line className="tickline" x1="280" y1="24" x2="280" y2="80" />
-                  <text className="tick-label" x="280" y="18" textAnchor="middle" transform="rotate(40 280 18)">
-                    02
-                  </text>
-                  <circle className="tick-node" cx="280" cy="80" r="8" />
-                </g>
-                <g className="tick-group" transform="rotate(40 280 280)">
-                  <line className="tickline" x1="280" y1="24" x2="280" y2="80" />
-                  <circle className="tick-node" cx="280" cy="80" r="8" />
-                </g>
-                <g className="tick-group" transform="rotate(-80 280 280)">
-                  <line className="tickline" x1="280" y1="24" x2="280" y2="80" />
-                  <circle className="tick-node" cx="280" cy="80" r="8" />
-                </g>
-                <g className="tick-group" transform="rotate(80 280 280)">
-                  <line className="tickline" x1="280" y1="24" x2="280" y2="80" />
-                  <circle className="tick-node" cx="280" cy="80" r="8" />
-                </g>
-
-                <text className="tick-label" x="120" y="140" textAnchor="middle">02</text>
-                <text className="tick-label" x="440" y="140" textAnchor="middle">03</text>
-                <text className="tick-label" x="60" y="300" textAnchor="middle">04</text>
-                <text className="tick-label" x="500" y="300" textAnchor="middle">05</text>
-
-                <text className="tick-title" x="120" y="164" textAnchor="middle" style={{ fontSize: 12 }}>WORKBENCH</text>
-                <text className="tick-title" x="440" y="164" textAnchor="middle" style={{ fontSize: 12 }}>MATCH</text>
-                <text className="tick-title" x="60" y="324" textAnchor="middle" style={{ fontSize: 12 }}>COMPARE</text>
-                <text className="tick-title" x="500" y="324" textAnchor="middle" style={{ fontSize: 12 }}>DELIVERY</text>
+                {TICKS.map((t) => (
+                  <g className="tick-group" key={t.num} transform={`rotate(${t.angle} 280 280)`}>
+                    <line className="tickline" x1="280" y1="24" x2="280" y2="80" />
+                    <text
+                      className="tick-label"
+                      x="280"
+                      y="18"
+                      textAnchor="middle"
+                      transform={`rotate(${-t.angle} 280 18)`}
+                    >
+                      {t.num}
+                    </text>
+                    <circle className="tick-node" cx="280" cy="80" r="8" />
+                    <text
+                      className="tick-title"
+                      x="280"
+                      y="112"
+                      textAnchor="middle"
+                      transform={`rotate(${-t.angle} 280 112)`}
+                    >
+                      {t.label}
+                    </text>
+                  </g>
+                ))}
               </svg>
 
               <Link className="cta" to="/workbench">
-                <span className="k">CTA</span>
                 <span className="t">开始分析</span>
                 <span className="k">Start →</span>
               </Link>
