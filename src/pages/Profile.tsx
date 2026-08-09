@@ -175,10 +175,14 @@ type TipState = {
 
 const EMPTY_TIP: TipState = { on: false, x: 0, y: 0, name: "", score: "", evi: "", why: "", act: "" };
 
-export default function Profile() {
+export default function Profile({
+  embedded = false,
+  onStateChange,
+}: { embedded?: boolean; onStateChange?: (s: string) => void } = {}) {
   const navigate = useNavigate();
   const { search } = useLocation();
   const { user } = useAuth();
+
 
   // JD-first: the target job comes from `?job=`, falling back to the last saved job profile
   // so leaving and returning to this page keeps the match target.
