@@ -267,9 +267,13 @@ export default function Profile({
       y: Math.max(0, y),
       name: ref.dim.label,
       score: d.evidence ? (d.score == null ? "证据不足" : d.score + "/5") : "—",
-      evi: d.evidence || "尚未建立画像",
+      evi:
+        (d.evidenceDetail ?? [])
+          .map((ev) => `${ev.claim || ev.label || "简历原文"}${ev.quotes?.length ? "「" + ev.quotes[0] + "」" : ""}`)
+          .join("；") || d.evidence || "尚未建立画像",
       why: d.why || "上传简历后生成",
-      act: d.action || "—",
+      act: "",
+
     });
   }
 
