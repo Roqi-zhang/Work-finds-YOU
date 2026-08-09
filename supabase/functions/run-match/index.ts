@@ -52,17 +52,21 @@ Deno.serve(async (req) => {
 
   try {
     const user = await getUser(req);
-    if (!user) return json({ error: "未登录" }, 401);
 
     const body = await req.json().catch(() => ({}));
+    const guestKey: string = typeof body.guestKey === "string" ? body.guestKey.slice(0, 64) : "";
     const jobProfileId: string | undefined =
       typeof body.jobProfileId === "string" ? body.jobProfileId.trim() : undefined;
     const candidateProfileId: string | undefined =
       typeof body.candidateProfileId === "string" ? body.candidateProfileId : undefined;
     const force = body.force === true;
     if (!jobProfileId) return json({ error: "jobProfileId 必填" }, 400);
+    if (!user && !guestKey) return json({ error: "请先登录后再使用 AI 分析" }, 401);
 
     const admin = adminClient();
+
+    // deno-lint-ignore no-explicit-any
+    const own = (q: any) => (user ? q.eq("user_id", user.id) : q.is("user_id", null).eq("guest_key", guestKey));
 
     const jobCols =
       "id, title, company, location, dimensions, requirements, evidence_items, requirement_records, requirement_signals, ideal_profile";
@@ -80,7 +84,7 @@ Deno.serve(async (req) => {
 
     let job: Record<string, unknown> | null = null;
     if (found) {
-      if (found.user_id == null) {
+      if (user && found.user_id == null) {
         await admin.from("job_profiles").update({ user_id: user.id, guest_key: null }).eq("id", found.id);
       }
       const { user_id: _ignored, ...rest } = found as Record<string, unknown>;
@@ -97,22 +101,20 @@ Deno.serve(async (req) => {
     let profile: Record<string, unknown> | null = null;
 
     if (candidateProfileId) {
-      const { data } = await admin
-        .from("user_profiles").select(cols)
-        .eq("id", candidateProfileId).eq("user_id", user.id).maybeSingle();
+      const { data } = await own(
+        admin.from("user_profiles").select(cols).eq("id", candidateProfileId),
+      ).maybeSingle();
       profile = data;
     }
     if (!profile) {
-      const { data } = await admin
-        .from("user_profiles").select(cols)
-        .eq("user_id", user.id).eq("target_job_profile_id", job.id).eq("is_current", true)
+      const { data } = await own(admin.from("user_profiles").select(cols))
+        .eq("target_job_profile_id", job.id).eq("is_current", true)
         .order("created_at", { ascending: false }).limit(1).maybeSingle();
       profile = data;
     }
     if (!profile) {
-      const { data } = await admin
-        .from("user_profiles").select(cols)
-        .eq("user_id", user.id).is("target_job_profile_id", null).eq("is_current", true)
+      const { data } = await own(admin.from("user_profiles").select(cols))
+        .is("target_job_profile_id", null).eq("is_current", true)
         .order("created_at", { ascending: false }).limit(1).maybeSingle();
       profile = data;
     }
@@ -122,10 +124,7 @@ Deno.serve(async (req) => {
 
     /* ---------- cached report for this (profile, job) pair ---------- */
     if (!force) {
-      const { data: cached } = await admin
-        .from("match_reports")
-        .select("*")
-        .eq("user_id", user.id)
+      const { data: cached } = await own(admin.from("match_reports").select("*"))
         .eq("user_profile_id", profileId)
         .eq("job_profile_id", job.id)
         .eq("stale", false)
@@ -134,19 +133,24 @@ Deno.serve(async (req) => {
       if (cached) return json({ report: cached, cached: true, job });
     }
 
-    /* ---------- free-tier gate : 3 complete match reports per account ----------
+    /* ---------- quota gate ----------
        Checked server-side, after the cache lookup so re-reading a report is free. */
-    const quota = await getUsage(admin, user.id);
-    if (quota.remaining <= 0) {
-      return json(
-        {
-          error: `免费额度已用完（${quota.limit} 次完整匹配）。已生成的报告仍可随时查看，付费档位即将开放。`,
-          code: "QUOTA_EXCEEDED",
-          usage: { used: quota.used, limit: quota.limit, remaining: 0 },
-        },
-        402,
-      );
+    let quota = { used: 0, limit: DAILY_LIMIT, remaining: DAILY_LIMIT };
+    if (user) {
+      const q = await getDailyUsage(admin, user.id, user.email);
+      if (q.remaining <= 0) {
+        return json(
+          { error: QUOTA_MESSAGE.daily, code: "QUOTA_EXCEEDED", usage: { used: q.used, limit: q.limit, remaining: 0 } },
+          429,
+        );
+      }
+      quota = { used: q.used, limit: q.limit, remaining: q.remaining };
+    } else {
+      const g = await getGuestTrial(admin, guestKey);
+      if (g && g.match_runs >= GUEST_LIMIT) return json({ error: QUOTA_MESSAGE.guest }, 401);
+      quota = { used: 0, limit: GUEST_LIMIT, remaining: GUEST_LIMIT };
     }
+
 
     const resumeEvidence = (profile.evidence_items as EvidenceItem[] | null) ?? [];
     const jdEvidence = (job.evidence_items as EvidenceItem[] | null) ?? [];
