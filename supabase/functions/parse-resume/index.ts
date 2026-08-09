@@ -246,10 +246,11 @@ Deno.serve(async (req) => {
 
     /* ---------- Cache short-circuit : same resume + same rubric ---------- */
     {
-      let q = admin
-        .from("user_profiles")
-        .select("id, version, dimensions, sections")
-        .eq("user_id", user.id)
+      let q = own(
+        admin
+          .from("user_profiles")
+          .select("id, version, dimensions, sections"),
+      )
         .eq("profiling_fingerprint", profileFp)
         .eq("status", "succeeded")
         .order("created_at", { ascending: false })
@@ -260,10 +261,11 @@ Deno.serve(async (req) => {
       const { data: hit } = await q.maybeSingle();
       if (hit) {
         if (resume) await admin.from("resumes").update({ status: "succeeded" }).eq("id", resume.id);
-        let clear = admin
-          .from("user_profiles")
-          .update({ is_current: false })
-          .eq("user_id", user.id)
+        let clear = own(
+          admin
+            .from("user_profiles")
+            .update({ is_current: false }),
+        )
           .eq("is_current", true)
           .neq("id", hit.id);
         clear = targetJobId
