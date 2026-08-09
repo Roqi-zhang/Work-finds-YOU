@@ -563,19 +563,8 @@ export default function Match() {
                   </div>
                 </div>
 
-                <div className="ev-block">
-                  <div className="k">推理记录</div>
-                  <div className="trace" id="trace" data-src-id="model.trace">
-                    {!R.trace.length && <div className="empty">本次分析未记录该环节</div>}
-                    {R.trace.map((r) => (
-                      <div className="r" key={r.t}>
-                        <span className="k">{r.t}</span>
-                        <span className="s">{r.s}</span>
-                        <span>{r.d}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+
+
               </div>
             </div>
           </section>
