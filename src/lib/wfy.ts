@@ -291,7 +291,11 @@ export function updateApplication(id: string, patch: Partial<Application>) {
 
 
 /* ---------- match reports ---------- */
+export type StepKind = "resume" | "interview" | "portfolio";
+export type StepItem = { point: string; suggestion: string; evidence: string };
+
 export function reportTemplate(job: Job) {
+
   const m = job.m;
   const flag = m >= 85 ? "优先投" : m >= 70 ? "改完再投" : "可投不优先";
   const win = m >= 85 ? "高" : m >= 75 ? "中高" : m >= 65 ? "中" : "低";
