@@ -500,15 +500,48 @@ type BackendReport = {
   pipeline?: { step: string; detail: string }[];
   decision_factors?: { step: string; detail: string }[];
   rationale_summary?: string | null;
+  evidence_links?: { id: string; side?: string; rawQuote?: string }[];
 };
 
 const MARKS: Record<string, string> = { 最大优势: "", 最大缺口: "w", 最大风险: "i" };
 const SRC_IDS = ["j.strength", "j.gap", "j.risk"];
 
+/** Internal evidence ids (r1 / e10) are meaningless to users — swap them for the real quote. */
+const ID_RE = /\b([re])\s?(\d{1,3})\b[、,，]?\s*/gi;
+
+function clip(s: string, n = 40) {
+  const t = s.replace(/\s+/g, " ").trim();
+  return t.length > n ? t.slice(0, n) + "…" : t;
+}
+
+function makeResolver(links: BackendReport["evidence_links"]) {
+  const map = new Map((links || []).map((l) => [String(l.id).toLowerCase(), String(l.rawQuote || "")]));
+  return (text?: string) => {
+    if (!text) return "";
+    if (!ID_RE.test(text)) return text.trim();
+    ID_RE.lastIndex = 0;
+    const quotes: string[] = [];
+    const rest = text
+      .replace(ID_RE, (_m, p, n) => {
+        const q = map.get(`${String(p).toLowerCase()}${n}`);
+        if (q) quotes.push(`「${clip(q)}」`);
+        return "";
+      })
+      .replace(/^[：:；;、,，。.\s]+/, "")
+      .trim();
+    const joined = quotes.join("；");
+    if (joined && rest) return `${joined}${/[。；;]$/.test(joined) ? "" : "；"}${rest}`;
+    return joined || rest;
+  };
+}
+
+
 
 export function reportFromBackend(job: Job, r: BackendReport): MatchReport {
   const base = reportTemplate({ ...job, m: r.score });
   const d = r.decision || {};
+  const resolve = makeResolver(r.evidence_links);
+
 
   // Reasoning is rendered from real model output only — no mock fallback.
   let factors: { step: string; detail: string }[] = Array.isArray(r.decision_factors) ? r.decision_factors : [];
@@ -546,20 +579,26 @@ export function reportFromBackend(job: Job, r: BackendReport): MatchReport {
       tags: j.tags || [],
       srcId: SRC_IDS[i] || "j." + i,
       evidence: {
-        岗位要求: j.evidence?.required || "—",
-        简历证据: j.evidence?.mine || "—",
+        岗位要求: resolve(j.evidence?.required) || "—",
+        简历证据: resolve(j.evidence?.mine) || "—",
       },
+
 
     })),
     steps: (r.steps || [])
       .filter((s) => s.applicable !== false)
       .map((s, i) => {
         const kind: StepKind = s.kind ?? (["resume", "interview", "portfolio"][i] as StepKind) ?? "resume";
-        const legacy: StepItem[] = s.items?.length
+        const legacy: StepItem[] = (s.items?.length
           ? s.items
           : s.why || s.sample
             ? [{ point: s.desc, suggestion: s.sample || "—", evidence: s.why || "—" }]
-            : [];
+            : []
+        ).map((it) => ({
+          point: resolve(it.point) || it.point,
+          suggestion: resolve(it.suggestion) || it.suggestion,
+          evidence: resolve(it.evidence) || "—",
+        }));
         return {
           kind,
           title: s.title,
@@ -567,6 +606,7 @@ export function reportFromBackend(job: Job, r: BackendReport): MatchReport {
           srcId: "s." + kind,
           mindset: s.mindset || "",
           items: legacy,
+
         };
       }),
 
