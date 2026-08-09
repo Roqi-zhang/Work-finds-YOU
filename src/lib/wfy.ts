@@ -504,7 +504,7 @@ type BackendReport = {
 
 const MARKS: Record<string, string> = { 最大优势: "", 最大缺口: "w", 最大风险: "i" };
 const SRC_IDS = ["j.strength", "j.gap", "j.risk"];
-const STEP_IDS = ["s.resume", "s.portfolio", "s.interview"];
+
 
 export function reportFromBackend(job: Job, r: BackendReport): MatchReport {
   const base = reportTemplate({ ...job, m: r.score });
