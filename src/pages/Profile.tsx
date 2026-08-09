@@ -550,7 +550,7 @@ export default function Profile({
             </div>
 
 
-            <div style={{ marginTop: "auto" }}>
+            <div style={{ marginTop: "auto" }} hidden={embedded}>
               <div className="caption" style={{ marginBottom: 10 }}>
                 Parser
               </div>
