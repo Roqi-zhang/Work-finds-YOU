@@ -308,6 +308,8 @@ export type Database = {
           guest_key: string
           id: string
           jd_parses: number
+          match_runs: number
+          resume_parses: number
           updated_at: string
         }
         Insert: {
@@ -315,6 +317,8 @@ export type Database = {
           guest_key: string
           id?: string
           jd_parses?: number
+          match_runs?: number
+          resume_parses?: number
           updated_at?: string
         }
         Update: {
@@ -322,6 +326,8 @@ export type Database = {
           guest_key?: string
           id?: string
           jd_parses?: number
+          match_runs?: number
+          resume_parses?: number
           updated_at?: string
         }
         Relationships: []
@@ -422,6 +428,7 @@ export type Database = {
           dimension_scores: Json
           error: string | null
           evidence_links: Json | null
+          guest_key: string | null
           id: string
           job_profile_id: string
           judgements: Json
@@ -436,7 +443,7 @@ export type Database = {
           status: Database["public"]["Enums"]["analysis_status"]
           steps: Json
           updated_at: string
-          user_id: string
+          user_id: string | null
           user_profile_id: string
         }
         Insert: {
@@ -447,6 +454,7 @@ export type Database = {
           dimension_scores?: Json
           error?: string | null
           evidence_links?: Json | null
+          guest_key?: string | null
           id?: string
           job_profile_id: string
           judgements?: Json
@@ -461,7 +469,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["analysis_status"]
           steps?: Json
           updated_at?: string
-          user_id: string
+          user_id?: string | null
           user_profile_id: string
         }
         Update: {
@@ -472,6 +480,7 @@ export type Database = {
           dimension_scores?: Json
           error?: string | null
           evidence_links?: Json | null
+          guest_key?: string | null
           id?: string
           job_profile_id?: string
           judgements?: Json
@@ -486,7 +495,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["analysis_status"]
           steps?: Json
           updated_at?: string
-          user_id?: string
+          user_id?: string | null
           user_profile_id?: string
         }
         Relationships: [
@@ -615,6 +624,7 @@ export type Database = {
           evidence_items: Json | null
           experience_records: Json | null
           extraction_fingerprint: string | null
+          guest_key: string | null
           id: string
           is_current: boolean
           profiling_fingerprint: string | null
@@ -628,7 +638,7 @@ export type Database = {
           status: Database["public"]["Enums"]["analysis_status"]
           target_job_profile_id: string | null
           updated_at: string
-          user_id: string
+          user_id: string | null
           version: number
         }
         Insert: {
@@ -640,6 +650,7 @@ export type Database = {
           evidence_items?: Json | null
           experience_records?: Json | null
           extraction_fingerprint?: string | null
+          guest_key?: string | null
           id?: string
           is_current?: boolean
           profiling_fingerprint?: string | null
@@ -653,7 +664,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["analysis_status"]
           target_job_profile_id?: string | null
           updated_at?: string
-          user_id: string
+          user_id?: string | null
           version?: number
         }
         Update: {
@@ -665,6 +676,7 @@ export type Database = {
           evidence_items?: Json | null
           experience_records?: Json | null
           extraction_fingerprint?: string | null
+          guest_key?: string | null
           id?: string
           is_current?: boolean
           profiling_fingerprint?: string | null
@@ -678,7 +690,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["analysis_status"]
           target_job_profile_id?: string | null
           updated_at?: string
-          user_id?: string
+          user_id?: string | null
           version?: number
         }
         Relationships: [
