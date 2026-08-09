@@ -406,12 +406,9 @@ Deno.serve(async (req) => {
 
 
     if (!user) {
-      if (guestRow) {
-        await admin.from("guest_trials").update({ jd_parses: guestRow.jd_parses + 1 }).eq("id", guestRow.id);
-      } else {
-        await admin.from("guest_trials").insert({ guest_key: guestKey, jd_parses: 1 });
-      }
+      await consumeGuest(admin, guestKey, "jd");
     } else {
+      await consumeDaily(admin, user.id, "jd");
       await logCall(admin, {
         user_id: user.id,
         task: "parse-jd",
@@ -421,6 +418,7 @@ Deno.serve(async (req) => {
         latency_ms: latency,
       });
     }
+
 
     return json({ job, salary: extract.salary || "待确认", dimensions, requirements, keyPoints });
   } catch (e) {
