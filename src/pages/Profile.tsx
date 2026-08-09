@@ -577,16 +577,23 @@ export default function Profile({
                     title: "候选人画像 · 8 维能力",
                     subtitle: `${rName} · ${rMeta}`,
                     sections: DIMS.map((dim, i) => {
-                      const d = (result[i] || {}) as DimResult & { evidence?: string; why?: string; evidenceDetail?: string[] };
+                      const d = (result[i] || {}) as DimResult;
+                      const evi = (d.evidenceDetail ?? []).map(
+                        (ev) =>
+                          `· ${[ev.label, ev.role].filter(Boolean).join(" · ") || "简历原文"}${ev.claim ? "：" + ev.claim : ""}${
+                            ev.quotes?.length ? " 「" + ev.quotes.join("」「") + "」" : ""
+                          }`,
+                      );
                       return {
                         heading: `${dim.label} · ${d.score == null ? "—" : d.score + "/5"}`,
                         lines: [
-                          `Evidence: ${d.evidence || "—"}`,
                           `Analysis: ${d.why || "—"}`,
-                          ...((d.evidenceDetail as string[] | undefined) ?? []),
+                          `Evidence:${evi.length ? "" : " " + (d.evidence || "简历中未见相关证据")}`,
+                          ...evi,
                         ],
                       };
                     }),
+
                   })}
                 />
               ) : (
