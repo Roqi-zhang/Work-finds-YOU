@@ -213,8 +213,13 @@ Deno.serve(async (req) => {
 
     /* ---------- Trial gate applies only to a genuinely new document ---------- */
     if (!user && guestRow && guestRow.jd_parses >= GUEST_LIMIT) {
-      return json({ error: "免费试用已用完 · 登录后再赠送 3 次完整匹配" }, 401);
+      return json({ error: QUOTA_MESSAGE.guest }, 401);
     }
+    if (user) {
+      const q = await getDailyUsage(admin, user.id, user.email);
+      if (q.remaining <= 0) return json({ error: QUOTA_MESSAGE.daily, code: "QUOTA_EXCEEDED" }, 429);
+    }
+
 
     let promptTokens = 0;
     let completionTokens = 0;
