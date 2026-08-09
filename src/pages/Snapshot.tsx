@@ -36,6 +36,7 @@ export default function Snapshot() {
   const [error, setError] = useState<string | null>(null);
   const [head, setHead] = useState<{ title: string; sub: string }>({ title: "—", sub: "" });
   const [dims, setDims] = useState<Dim[]>([]);
+  const [keyPoints, setKeyPoints] = useState<{ title: string; detail: string }[]>([]);
 
   useEffect(() => {
     let alive = true;
@@ -50,7 +51,7 @@ export default function Snapshot() {
         if (kind === "job") {
           const { data, error } = await supabase
             .from("job_profiles")
-            .select("title, company, location, dimensions")
+            .select("title, company, location, dimensions, ideal_profile")
             .eq("id", jobId)
             .maybeSingle();
           if (error) throw error;
@@ -61,10 +62,11 @@ export default function Snapshot() {
             sub: [data.company, data.location].filter(Boolean).join(" · "),
           });
           setDims((data.dimensions as unknown as Dim[]) || []);
+          setKeyPoints(((data.ideal_profile as { keyPoints?: { title: string; detail: string }[] } | null)?.keyPoints) || []);
         } else {
           const { data, error } = await supabase
             .from("user_profiles")
-            .select("dimensions, updated_at")
+            .select("dimensions, sections, updated_at")
             .eq("target_job_profile_id", jobId)
             .order("updated_at", { ascending: false })
             .limit(1)
@@ -74,6 +76,7 @@ export default function Snapshot() {
           if (!alive) return;
           setHead({ title: "个人画像", sub: "针对该岗位生成的候选人画像快照" });
           setDims((data.dimensions as unknown as Dim[]) || []);
+          setKeyPoints(((data.sections as { keyPoints?: { title: string; detail: string }[] } | null)?.keyPoints) || []);
         }
       } catch (e) {
         if (alive) setError((e as Error).message || "读取失败");
@@ -109,6 +112,20 @@ export default function Snapshot() {
 
             {!loading && !error && (
               <div className="legend">
+                {keyPoints.length > 0 && (
+                  <div className="g kp">
+                    <h4>{kind === "job" ? "00 · Key points · 岗位最看重的 3 项能力" : "00 · Key points · 最突出的 3 项能力"}</h4>
+                    {keyPoints.map((p, n) => (
+                      <div className="kp-i" key={p.title + n}>
+                        <span className="k">{String(n + 1).padStart(2, "0")}</span>
+                        <div>
+                          <div className="kp-t">{p.title}</div>
+                          <div className="kp-d">{p.detail}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
                 {GROUPS.map((g) => (
                   <div className="g" key={g.title}>
                     <h4>{g.title}</h4>
