@@ -691,7 +691,12 @@ export default function Profile({
                   <button className="btn ghost" id="redoBtn" hidden={state !== "bloomed"} onClick={onRedo}>
                     重新建立画像
                   </button>
-                  <button className={"btn" + (state === "analysing" ? " loading" : "")} id="mainBtn" onClick={onMainBtn}>
+                  <button
+                    className={"btn" + (state === "analysing" ? " loading" : "")}
+                    id="mainBtn"
+                    hidden={embedded && state === "bloomed"}
+                    onClick={onMainBtn}
+                  >
                     {state === "analysing" ? (
                       <>
                         分析中<span className="dot"></span><span className="dot"></span><span className="dot"></span>
@@ -706,10 +711,11 @@ export default function Profile({
                   {!user && (
                     <>
                       {hintLine ? " · " : ""}
-                      <Link to={`/auth?next=${encodeURIComponent("/profile" + (targetJobId ? `?job=${targetJobId}` : ""))}`} style={{ textDecoration: "underline" }}>
+                      <Link to={`/auth?next=${encodeURIComponent("/workbench" + (targetJobId ? `?job=${targetJobId}` : ""))}`} style={{ textDecoration: "underline" }}>
                         去登录 →
                       </Link>
                     </>
+
                   )}
                 </span>
 
