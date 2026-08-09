@@ -380,14 +380,18 @@ export default function Profile({
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") closeDialog();
     };
-    window.addEventListener("dragover", onDragOver);
-    window.addEventListener("drop", onDrop);
+    // In the workbench two panels share the window — only the drop zone handles files.
+    if (!embedded) {
+      window.addEventListener("dragover", onDragOver);
+      window.addEventListener("drop", onDrop);
+    }
     document.addEventListener("keydown", onKey);
     return () => {
       window.removeEventListener("dragover", onDragOver);
       window.removeEventListener("drop", onDrop);
       document.removeEventListener("keydown", onKey);
     };
+
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
