@@ -156,6 +156,11 @@ Deno.serve(async (req) => {
       ],
       schema: matchSchema as unknown as Record<string, unknown>,
       schemaName: "match_report",
+      // The custom endpoint frequently blows the wall-clock budget on this large
+      // schema —匹配分析统一走稳定低延迟的 Lovable 网关。
+      gateway: "lovable",
+      timeoutMs: 110_000,
+      maxTokens: 8000,
     });
 
     const dimensionMatches = data.dimension_matches ?? [];
