@@ -515,11 +515,8 @@ export default function Match() {
 
             <div className={"ev" + (evOpen ? " open" : "")} id="ev">
               <button className="ev-toggle" id="evToggle" type="button" aria-expanded={evOpen} onClick={toggleEv}>
-                <span>
-                  {evOpen
-                    ? "收起 · Sources / Pipeline / Scores / Reasoning Trace"
-                    : "展开 · Sources / Pipeline / Scores / Reasoning Trace"}
-                </span>
+                <span>{evOpen ? "收起 · Sources / Pipeline / Scores" : "展开 · Sources / Pipeline / Scores"}</span>
+
                 <span className="car">↓</span>
               </button>
               <div className="ev-body">
