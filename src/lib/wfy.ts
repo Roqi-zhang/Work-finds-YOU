@@ -482,7 +482,18 @@ type BackendReport = {
     tags?: string[];
     evidence?: { mine?: string; required?: string; reasoning?: string; impact?: string };
   }[];
-  steps?: { title: string; desc: string; why?: string; effect?: string; sample?: string }[];
+  steps?: {
+    kind?: StepKind;
+    title: string;
+    desc: string;
+    applicable?: boolean;
+    items?: StepItem[];
+    mindset?: string;
+    why?: string;
+    effect?: string;
+    sample?: string;
+  }[];
+
   dimension_scores?: { key: string; label: string; score: number | null; level: string; core?: boolean; why?: string }[];
   sources?: { label: string; at: string }[];
   reasoning_trace?: string | null;
