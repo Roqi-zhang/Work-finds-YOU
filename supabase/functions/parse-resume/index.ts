@@ -321,7 +321,8 @@ Deno.serve(async (req) => {
         is_current: true,
         status: "succeeded",
         dimensions,
-        sections: b.data.sections,
+        sections: { ...b.data.sections, keyPoints },
+
         scoring_version: scoringVersion,
         evidence_items: evidenceItems,
         experience_records: experienceRecords,
