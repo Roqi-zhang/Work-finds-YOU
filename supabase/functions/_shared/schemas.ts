@@ -10,11 +10,12 @@ export const RUBRIC_VERSION = "rubric-v1";
 
 export const PROMPT_VERSIONS = {
   jdExtraction: "jd-extract-v1",
-  jdProfiling: "jd-profile-v2",
+  jdProfiling: "jd-profile-v3",
   resumeExtraction: "resume-extract-v1",
-  resumeProfiling: "resume-profile-v1",
-  match: "match-v1",
+  resumeProfiling: "resume-profile-v2",
+  match: "match-v2",
 } as const;
+
 
 export const DIM_KEYS = DIMS.map((d) => d.key) as unknown as string[];
 
