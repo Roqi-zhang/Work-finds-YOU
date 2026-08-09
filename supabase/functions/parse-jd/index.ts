@@ -240,7 +240,12 @@ Deno.serve(async (req) => {
         ],
         schema: jdExtractionSchema as unknown as Record<string, unknown>,
         schemaName: "jd_extraction",
+        // Keep JD parsing on the same low-latency gateway used by OCR. The
+        // optional custom endpoint can take longer than an edge request budget
+        // when compiling these strict schemas.
+        gateway: "lovable",
         timeoutMs: 50_000,
+        maxTokens: 3000,
       });
       promptTokens += a.usage.prompt_tokens;
       completionTokens += a.usage.completion_tokens;
@@ -266,7 +271,9 @@ Deno.serve(async (req) => {
         ],
         schema: jdProfilingSchema as unknown as Record<string, unknown>,
         schemaName: "jd_profiling",
+        gateway: "lovable",
         timeoutMs: 50_000,
+        maxTokens: 4000,
       });
       promptTokens += b.usage.prompt_tokens;
       completionTokens += b.usage.completion_tokens;
