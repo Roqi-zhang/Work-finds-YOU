@@ -147,3 +147,13 @@ body { overflow-x: hidden; }
   content: ""; width: 6px; height: 6px; border-radius: 50%; border: 0.5px solid var(--ink);
 }
 .p-match .progress a.on::before { background: var(--ink-strong); border-color: var(--ink-strong); }
+
+/* 04 · structured pre-apply steps */
+.p-match .step-items { display: flex; flex-direction: column; gap: 14px; padding: 4px 0 2px; }
+.p-match .step-item { display: grid; grid-template-columns: 26px 1fr; gap: 12px; padding-bottom: 12px; border-bottom: .5px solid var(--line); }
+.p-match .step-item:last-child { border-bottom: 0; padding-bottom: 0; }
+.p-match .step-item .si-n { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 10px; letter-spacing: .18em; opacity: .5; }
+.p-match .step-item .si-p { font-size: 13px; margin-bottom: 6px; }
+.p-match .step-item .si-s { font-size: 13px; line-height: 1.75; border-left: .5px solid var(--line); padding-left: 12px; margin-bottom: 6px; white-space: pre-wrap; }
+.p-match .step-item .si-e { font-size: 12px; line-height: 1.65; opacity: .68; }
+.p-match .si-mind { margin-top: 12px; font-size: 12px; line-height: 1.7; opacity: .72; border-top: .5px solid var(--line); padding-top: 10px; }
