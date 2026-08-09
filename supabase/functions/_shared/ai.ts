@@ -149,15 +149,16 @@ export async function callAIJson<T>(opts: {
     const body: Record<string, unknown> = {
       model,
       messages,
-      max_tokens: opts.maxTokens ?? 4000,
       response_format:
         mode === "json_schema"
           ? { type: "json_schema", json_schema: { name: opts.schemaName, strict: true, schema: opts.schema } }
           : { type: "json_object" },
     };
     if (!ep.custom) {
+      body.max_completion_tokens = opts.maxTokens ?? 4000;
       body.reasoning_effort = "none";
     } else {
+      body.max_tokens = opts.maxTokens ?? 4000;
       body.enable_thinking = false;
       // Deterministic decoding: the same document must always yield the same grading.
       body.temperature = 0;
