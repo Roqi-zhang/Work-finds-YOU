@@ -194,7 +194,12 @@ Deno.serve(async (req) => {
         ],
         schema: resumeExtractionSchema as unknown as Record<string, unknown>,
         schemaName: "resume_extraction",
+        // 自有端点在大 schema 上经常跑满时钟预算，简历解析统一走低延迟的 Lovable 网关。
+        gateway: "lovable",
+        timeoutMs: 60_000,
+        maxTokens: 8000,
       });
+
       promptTokens += a.usage.prompt_tokens;
       completionTokens += a.usage.completion_tokens;
       latency += a.latencyMs;
