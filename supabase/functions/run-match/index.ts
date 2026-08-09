@@ -65,19 +65,24 @@ Deno.serve(async (req) => {
       .eq("user_id", user.id)
       .maybeSingle();
     if (!job) {
-      // The JD may still be sitting under the guest record made before sign-in — claim it.
-      const { data: unowned } = await admin
+      // The JD may sit under a guest record made before sign-in, or be a globally
+      // de-duplicated JD created by another account. Read it either way; only claim
+      // it when it is still unowned.
+      const { data: other } = await admin
         .from("job_profiles")
-        .select(jobCols)
+        .select(jobCols + ", user_id")
         .eq("id", jobProfileId)
-        .is("user_id", null)
         .maybeSingle();
-      if (unowned) {
-        await admin.from("job_profiles").update({ user_id: user.id, guest_key: null }).eq("id", jobProfileId);
-        job = unowned;
+      if (other) {
+        if (other.user_id == null) {
+          await admin.from("job_profiles").update({ user_id: user.id, guest_key: null }).eq("id", jobProfileId);
+        }
+        const { user_id: _ignored, ...rest } = other as Record<string, unknown>;
+        job = rest as typeof job;
       }
     }
     if (!job) return json({ error: "岗位画像不存在" }, 404);
+
 
     /* ---------- resolve the candidate profile ----------
        Explicit id wins; otherwise the profile built for THIS job;
