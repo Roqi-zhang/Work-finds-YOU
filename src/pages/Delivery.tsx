@@ -254,38 +254,42 @@ export default function Delivery() {
                       )}
 
                       <div className="foot">
-                        <a
-                          href={`/match?focus=${encodeURIComponent(a.id)}`}
-                          onClick={(e) => {
-                            e.preventDefault();
-                            navigate("/match?focus=" + encodeURIComponent(a.id));
-                          }}
-                        >
-                          查看匹配
-                        </a>
-                        <a
-                          href="/workbench"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            setUI("match", { jobId: a.id });
-                            navigate("/workbench");
-                          }}
-                        >
-                          岗位画像
-                        </a>
-                        <a
-                          href={`/workbench?job=${encodeURIComponent(a.id)}`}
-                          onClick={(e) => {
-                            e.preventDefault();
-                            navigate("/workbench?job=" + encodeURIComponent(a.id));
-                          }}
-                        >
-                          个人画像
-                        </a>
+                        {!a.manual && (
+                          <>
+                            <a
+                              href={`/match?focus=${encodeURIComponent(a.id)}`}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                navigate("/match?focus=" + encodeURIComponent(a.id));
+                              }}
+                            >
+                              查看匹配
+                            </a>
+                            <a
+                              href={`/snapshot?job=${encodeURIComponent(a.id)}&kind=job`}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                navigate("/snapshot?job=" + encodeURIComponent(a.id) + "&kind=job");
+                              }}
+                            >
+                              岗位画像
+                            </a>
+                            <a
+                              href={`/snapshot?job=${encodeURIComponent(a.id)}&kind=resume`}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                navigate("/snapshot?job=" + encodeURIComponent(a.id) + "&kind=resume");
+                              }}
+                            >
+                              个人画像
+                            </a>
+                          </>
+                        )}
                         <button type="button" onClick={() => handleEditToggle(a)}>
                           {editing ? "完成" : "编辑"}
                         </button>
                       </div>
+
                     </div>
                   </article>
                 );
