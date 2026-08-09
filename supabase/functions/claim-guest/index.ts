@@ -40,7 +40,22 @@ Deno.serve(async (req) => {
       if (!error) claimed++;
     }
 
-    return json({ claimed });
+    // Guest profiles and match reports move over wholesale — they are device-scoped
+    // and cannot collide with anything the account already owns.
+    const { count: profiles } = await admin
+      .from("user_profiles")
+      .update({ user_id: user.id, guest_key: null }, { count: "exact" })
+      .is("user_id", null)
+      .eq("guest_key", guestKey)
+      .select("id");
+    const { count: reports } = await admin
+      .from("match_reports")
+      .update({ user_id: user.id, guest_key: null }, { count: "exact" })
+      .is("user_id", null)
+      .eq("guest_key", guestKey)
+      .select("id");
+
+    return json({ claimed, profiles: profiles ?? 0, reports: reports ?? 0 });
   } catch (e) {
     console.error("claim-guest failed", e);
     return json({ error: (e as Error).message || "认领失败" }, 500);
