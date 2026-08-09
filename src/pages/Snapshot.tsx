@@ -43,16 +43,18 @@ export default function Snapshot() {
     (async () => {
       setLoading(true);
       setError(null);
-      if (!UUID.test(jobId)) {
+      if (!jobId) {
         if (alive) { setError("这条记录还没有可查看的分析快照。"); setLoading(false); }
         return;
       }
       try {
+        // Delivery rows may carry either the job UUID or its public slug.
+        const jobCol = UUID.test(jobId) ? "id" : "slug";
         if (kind === "job") {
           const { data, error } = await supabase
             .from("job_profiles")
             .select("title, company, location, dimensions, ideal_profile")
-            .eq("id", jobId)
+            .eq(jobCol, jobId)
             .maybeSingle();
           if (error) throw error;
           if (!data) throw new Error("未找到该岗位的画像快照。");
@@ -64,17 +66,51 @@ export default function Snapshot() {
           setDims((data.dimensions as unknown as Dim[]) || []);
           setKeyPoints(((data.ideal_profile as { keyPoints?: { title: string; detail: string }[] } | null)?.keyPoints) || []);
         } else {
-          const { data, error } = await supabase
-            .from("user_profiles")
-            .select("dimensions, sections, updated_at")
-            .eq("target_job_profile_id", jobId)
-            .order("updated_at", { ascending: false })
-            .limit(1)
+          // Resolve the JD first so slugs work, then walk the fallbacks:
+          // profile referenced by the match report → profile built for this JD → latest profile.
+          const { data: job } = await supabase
+            .from("job_profiles")
+            .select("id, title")
+            .eq(jobCol, jobId)
             .maybeSingle();
-          if (error) throw error;
-          if (!data) throw new Error("这个岗位下还没有生成个人画像。");
+          const jobUuid = job?.id ?? (UUID.test(jobId) ? jobId : null);
+
+          const cols = "dimensions, sections, updated_at";
+          let data: { dimensions: unknown; sections: unknown } | null = null;
+
+          if (jobUuid) {
+            const { data: rep } = await supabase
+              .from("match_reports")
+              .select("user_profile_id")
+              .eq("job_profile_id", jobUuid)
+              .order("updated_at", { ascending: false })
+              .limit(1)
+              .maybeSingle();
+            if (rep?.user_profile_id) {
+              const { data: byRep } = await supabase
+                .from("user_profiles").select(cols).eq("id", rep.user_profile_id).maybeSingle();
+              data = byRep;
+            }
+            if (!data) {
+              const { data: byJob } = await supabase
+                .from("user_profiles").select(cols)
+                .eq("target_job_profile_id", jobUuid)
+                .order("updated_at", { ascending: false }).limit(1).maybeSingle();
+              data = byJob;
+            }
+          }
+          if (!data) {
+            const { data: latest } = await supabase
+              .from("user_profiles").select(cols)
+              .order("updated_at", { ascending: false }).limit(1).maybeSingle();
+            data = latest;
+          }
+          if (!data) throw new Error("还没有生成过个人画像，请先上传简历。");
           if (!alive) return;
-          setHead({ title: "个人画像", sub: "针对该岗位生成的候选人画像快照" });
+          setHead({
+            title: "个人画像",
+            sub: job?.title ? `与「${job.title}」匹配时使用的候选人画像快照` : "候选人画像快照",
+          });
           setDims((data.dimensions as unknown as Dim[]) || []);
           setKeyPoints(((data.sections as { keyPoints?: { title: string; detail: string }[] } | null)?.keyPoints) || []);
         }

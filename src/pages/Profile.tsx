@@ -505,11 +505,8 @@ export default function Profile({
     }
     if (state !== "ready") return;
 
-    // AI 分析需要账号：直接送去登录，而不是点了没反应。
-    if (!user) {
-      navigate(`/auth?next=${encodeURIComponent("/profile" + (targetJobId ? `?job=${targetJobId}` : ""))}`);
-      return;
-    }
+    // 访客可免费跑一次简历分析，额度耗尽由服务端提示登录。
+
 
     const file = fileRef.current || (await loadFile("resume"));
     if (!file) {

@@ -41,10 +41,8 @@ export default function Workbench() {
 
   async function onMatch() {
     if (!ready || matching) return;
-    if (!user) {
-      navigate(`/auth?next=${encodeURIComponent("/workbench")}`);
-      return;
-    }
+    // Guests get one free match — the server decides when sign-in becomes required.
+
     const id = jobId;
     if (!id) {
       setHint("岗位信息缺失，请重新建立岗位画像");

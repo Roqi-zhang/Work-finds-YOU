@@ -1,5 +1,14 @@
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
-import { adminClient, fileToBlock, getUser, logCall } from "../_shared/req.ts";
+import { adminClient, bufferToBlock, decodeBase64, fileToBlock, getUser, logCall } from "../_shared/req.ts";
+import {
+  consumeDaily,
+  consumeGuest,
+  getDailyUsage,
+  getGuestTrial,
+  GUEST_LIMIT,
+  QUOTA_MESSAGE,
+  type GuestRow,
+} from "../_shared/quota.ts";
 import { callAIJson, MODEL, type ContentBlock } from "../_shared/ai.ts";
 import { DIMS, computeScore } from "../_shared/scoring.ts";
 import {
@@ -69,18 +78,36 @@ Deno.serve(async (req) => {
 
   try {
     const user = await getUser(req);
-    if (!user) return json({ error: "未登录" }, 401);
 
     const body = await req.json().catch(() => ({}));
     const { filePath, fileName } = body as { filePath?: string; fileName?: string };
+    const fileData: string | undefined = typeof body.fileData === "string" ? body.fileData : undefined;
+    const guestKey: string = typeof body.guestKey === "string" ? body.guestKey.slice(0, 64) : "";
     const targetJobProfileId: string | null =
       typeof body.targetJobProfileId === "string" && body.targetJobProfileId ? body.targetJobProfileId : null;
-    if (!filePath || typeof filePath !== "string" || !fileName || typeof fileName !== "string") {
-      return json({ error: "filePath 与 fileName 必填" }, 400);
-    }
-    if (!filePath.startsWith(`${user.id}/`)) return json({ error: "无权访问该文件" }, 403);
+    if (!fileName || typeof fileName !== "string") return json({ error: "fileName 必填" }, 400);
+    if (!filePath && !fileData) return json({ error: "请提供简历文件" }, 400);
+    if (user && filePath && !filePath.startsWith(`${user.id}/`)) return json({ error: "无权访问该文件" }, 403);
+    if (!user && !guestKey) return json({ error: "请先登录后再使用 AI 分析" }, 401);
 
     const admin = adminClient();
+
+    /** Scope every ownership query to the account, or to the guest device. */
+    const scopeKey = user ? user.id : `guest:${guestKey}`;
+    // deno-lint-ignore no-explicit-any
+    const own = (q: any) => (user ? q.eq("user_id", user.id) : q.is("user_id", null).eq("guest_key", guestKey));
+
+    /* ---------- quota gate ---------- */
+    let guestRow: GuestRow | null = null;
+    if (user) {
+      const q = await getDailyUsage(admin, user.id, user.email);
+      if (q.remaining <= 0) return json({ error: QUOTA_MESSAGE.daily, code: "QUOTA_EXCEEDED" }, 429);
+    } else {
+      guestRow = await getGuestTrial(admin, guestKey);
+      if (guestRow && guestRow.resume_parses >= GUEST_LIMIT) {
+        return json({ error: QUOTA_MESSAGE.guest }, 401);
+      }
+    }
 
     /* ---------- target job → evaluation rubric ---------- */
     let rubric: EvaluationRubric | null = null;
@@ -92,11 +119,14 @@ Deno.serve(async (req) => {
         .select("id, user_id, guest_key, evaluation_rubric, rubric_hash")
         .eq("id", targetJobId)
         .maybeSingle();
-      const guestKey: string = typeof body.guestKey === "string" ? body.guestKey.slice(0, 64) : "";
-      const owned = !!job && (job.user_id === user.id || (!job.user_id && !!guestKey && job.guest_key === guestKey));
+      const owned =
+        !!job &&
+        (user
+          ? job.user_id === user.id || (!job.user_id && !!guestKey && job.guest_key === guestKey)
+          : !job.user_id && job.guest_key === guestKey);
       if (owned) {
         // A JD parsed during the guest trial now belongs to this account.
-        if (!job!.user_id) {
+        if (user && !job!.user_id) {
           await admin.from("job_profiles").update({ user_id: user.id, guest_key: null }).eq("id", job!.id);
         }
         rubric = (job!.evaluation_rubric as EvaluationRubric | null) ?? null;
@@ -108,15 +138,20 @@ Deno.serve(async (req) => {
       }
     }
 
-    const { data: resume } = await admin
-      .from("resumes")
-      .insert({ user_id: user.id, file_path: filePath, file_name: fileName, status: "running" })
-      .select("id")
-      .single();
+    // Guests have no storage access, so their file travels inline and gets no resume row.
+    const resume = user && filePath
+      ? (await admin
+          .from("resumes")
+          .insert({ user_id: user.id, file_path: filePath, file_name: fileName, status: "running" })
+          .select("id")
+          .single()).data
+      : null;
 
     let block: ContentBlock;
     try {
-      block = (await fileToBlock(admin, "resumes", filePath, fileName)) as ContentBlock;
+      block = (filePath
+        ? await fileToBlock(admin, "resumes", filePath, fileName)
+        : await bufferToBlock(decodeBase64(fileData!), fileName)) as ContentBlock;
     } catch (e) {
       const msg = String((e as Error).message);
       if (resume) await admin.from("resumes").update({ status: "failed", error: msg }).eq("id", resume.id);
@@ -146,9 +181,9 @@ Deno.serve(async (req) => {
     await recordDocument(admin, {
       contentHash,
       kind: "resume",
-      ownerId: user.id,
+      ownerId: user?.id ?? null,
       textLen: block.type === "text" ? block.text.length : undefined,
-      storagePath: filePath,
+      storagePath: filePath ?? null,
       fileName,
     });
 
@@ -159,22 +194,24 @@ Deno.serve(async (req) => {
       stage: "resume_extract",
       promptVersion: PROMPT_VERSIONS.resumeExtraction,
       schemaVersion: SCHEMA_VERSION,
-      scopeKey: user.id,
+      scopeKey,
     };
 
     /* ---------- Call A : Layer 1 + Layer 2 (cacheable, job-agnostic) ---------- */
     let evidenceItems: EvidenceItem[] = [];
     let experienceRecords: ExperienceRecord[] = [];
 
-    const { data: cachedExtract } = await admin
-      .from("user_profiles")
-      .select("evidence_items, experience_records")
-      .eq("user_id", user.id)
+    const { data: cachedExtract } = await own(
+      admin
+        .from("user_profiles")
+        .select("evidence_items, experience_records"),
+    )
       .eq("extraction_fingerprint", extractFp)
       .not("experience_records", "is", null)
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle();
+
 
     const cachedDoc = cachedExtract?.experience_records
       ? null
@@ -218,10 +255,11 @@ Deno.serve(async (req) => {
 
     /* ---------- Cache short-circuit : same resume + same rubric ---------- */
     {
-      let q = admin
-        .from("user_profiles")
-        .select("id, version, dimensions, sections")
-        .eq("user_id", user.id)
+      let q = own(
+        admin
+          .from("user_profiles")
+          .select("id, version, dimensions, sections"),
+      )
         .eq("profiling_fingerprint", profileFp)
         .eq("status", "succeeded")
         .order("created_at", { ascending: false })
@@ -232,10 +270,11 @@ Deno.serve(async (req) => {
       const { data: hit } = await q.maybeSingle();
       if (hit) {
         if (resume) await admin.from("resumes").update({ status: "succeeded" }).eq("id", resume.id);
-        let clear = admin
-          .from("user_profiles")
-          .update({ is_current: false })
-          .eq("user_id", user.id)
+        let clear = own(
+          admin
+            .from("user_profiles")
+            .update({ is_current: false }),
+        )
           .eq("is_current", true)
           .neq("id", hit.id);
         clear = targetJobId
@@ -302,20 +341,21 @@ Deno.serve(async (req) => {
     const { score, dimensions, scoringVersion } = computeScore(legacyDims);
 
     // `is_current` is now scoped to the target job, not global.
-    let currentQuery = admin
-      .from("user_profiles")
-      .update({ is_current: false })
-      .eq("user_id", user.id)
-      .eq("is_current", true);
+    let currentQuery = own(
+      admin
+        .from("user_profiles")
+        .update({ is_current: false }),
+    ).eq("is_current", true);
     currentQuery = targetJobId
       ? currentQuery.eq("target_job_profile_id", targetJobId)
       : currentQuery.is("target_job_profile_id", null);
     await currentQuery;
 
-    const { data: prev } = await admin
-      .from("user_profiles")
-      .select("version")
-      .eq("user_id", user.id)
+    const { data: prev } = await own(
+      admin
+        .from("user_profiles")
+        .select("version"),
+    )
       .order("version", { ascending: false })
       .limit(1)
       .maybeSingle();
@@ -323,7 +363,8 @@ Deno.serve(async (req) => {
     const { data: profile, error: pErr } = await admin
       .from("user_profiles")
       .insert({
-        user_id: user.id,
+        user_id: user?.id ?? null,
+        guest_key: user ? null : guestKey,
         resume_id: resume?.id ?? null,
         target_job_profile_id: targetJobId,
         version: (prev?.version ?? 0) + 1,
@@ -351,18 +392,24 @@ Deno.serve(async (req) => {
 
     // Only reports for this target job become stale — a resume aimed at another
     // JD must not invalidate unrelated history.
-    let staleQuery = admin.from("match_reports").update({ stale: true }).eq("user_id", user.id);
+    let staleQuery = own(admin.from("match_reports").update({ stale: true }));
     if (targetJobId) staleQuery = staleQuery.eq("job_profile_id", targetJobId);
     await staleQuery;
 
-    await logCall(admin, {
-      user_id: user.id,
-      task: "parse-resume",
-      model: MODEL,
-      prompt_tokens: promptTokens,
-      completion_tokens: completionTokens,
-      latency_ms: latency,
-    });
+    if (user) {
+      await consumeDaily(admin, user.id, "resume");
+      await logCall(admin, {
+        user_id: user.id,
+        task: "parse-resume",
+        model: MODEL,
+        prompt_tokens: promptTokens,
+        completion_tokens: completionTokens,
+        latency_ms: latency,
+      });
+    } else {
+      await consumeGuest(admin, guestKey, "resume");
+    }
+
 
     return json({
       profileId: profile.id,

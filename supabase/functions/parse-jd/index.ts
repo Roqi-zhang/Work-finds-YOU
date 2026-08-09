@@ -18,6 +18,15 @@ import {
 import { idealProfileToDims } from "../_shared/adapter.ts";
 import { canonicalHash, sha256Hex } from "../_shared/hash.ts";
 import { getAnalysis, putAnalysis, recordDocument } from "../_shared/docstore.ts";
+import {
+  consumeDaily,
+  consumeGuest,
+  getDailyUsage,
+  getGuestTrial,
+  GUEST_LIMIT,
+  QUOTA_MESSAGE,
+  type GuestRow,
+} from "../_shared/quota.ts";
 
 /* ---------------- Layer 1 + 2 : document evidence → requirement records ------- */
 
@@ -142,17 +151,12 @@ Deno.serve(async (req) => {
     }
 
     /* ---------- Guest trial gate : 1 free JD parse per device ---------- */
-    const GUEST_LIMIT = 1;
-    let guestRow: { id: string; jd_parses: number } | null = null;
+    let guestRow: GuestRow | null = null;
     if (!user) {
       if (!guestKey) return json({ error: "请先登录后再使用 AI 分析" }, 401);
-      const { data } = await admin
-        .from("guest_trials")
-        .select("id, jd_parses")
-        .eq("guest_key", guestKey)
-        .maybeSingle();
-      guestRow = data as typeof guestRow;
+      guestRow = await getGuestTrial(admin, guestKey);
     }
+
 
     let block: ContentBlock;
     if (filePath || fileData) {
@@ -209,8 +213,13 @@ Deno.serve(async (req) => {
 
     /* ---------- Trial gate applies only to a genuinely new document ---------- */
     if (!user && guestRow && guestRow.jd_parses >= GUEST_LIMIT) {
-      return json({ error: "免费试用已用完 · 登录后再赠送 3 次完整匹配" }, 401);
+      return json({ error: QUOTA_MESSAGE.guest }, 401);
     }
+    if (user) {
+      const q = await getDailyUsage(admin, user.id, user.email);
+      if (q.remaining <= 0) return json({ error: QUOTA_MESSAGE.daily, code: "QUOTA_EXCEEDED" }, 429);
+    }
+
 
     let promptTokens = 0;
     let completionTokens = 0;
@@ -397,12 +406,9 @@ Deno.serve(async (req) => {
 
 
     if (!user) {
-      if (guestRow) {
-        await admin.from("guest_trials").update({ jd_parses: guestRow.jd_parses + 1 }).eq("id", guestRow.id);
-      } else {
-        await admin.from("guest_trials").insert({ guest_key: guestKey, jd_parses: 1 });
-      }
+      await consumeGuest(admin, guestKey, "jd");
     } else {
+      await consumeDaily(admin, user.id, "jd");
       await logCall(admin, {
         user_id: user.id,
         task: "parse-jd",
@@ -412,6 +418,7 @@ Deno.serve(async (req) => {
         latency_ms: latency,
       });
     }
+
 
     return json({ job, salary: extract.salary || "待确认", dimensions, requirements, keyPoints });
   } catch (e) {
