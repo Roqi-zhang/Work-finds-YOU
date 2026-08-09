@@ -96,15 +96,34 @@ export default function Match() {
     setLoading(true);
     setLoadError(null);
     runMatch(jobId)
-      .then(({ report: r }) => {
+      .then(({ report: r, job: backendJob }) => {
         if (!alive) return;
-        const job = getJob(jobId) || localReport?.job;
+        // The local job store can be empty (e.g. matching straight from the
+        // workbench), so fall back to the job the backend just returned.
+        const bj = backendJob as Record<string, unknown> | undefined;
+        const fallback = bj
+          ? {
+              id: String(bj.id ?? jobId),
+              title: String(bj.title ?? "待确认"),
+              co: String(bj.company ?? "待确认"),
+              loc: String(bj.location ?? "待确认"),
+              m: 0,
+              s: "待确认",
+              yes: "JD 匹配",
+              no: "待确认",
+            }
+          : null;
+        const job = getJob(jobId) || localReport?.job || fallback;
         if (job) {
+          putJob(job);
           const mapped = reportFromBackend(job, r as never);
           putMatchReport(mapped);
           setReport(mapped);
+        } else {
+          setLoadError("岗位信息缺失，请返回工作台重新建立岗位画像");
         }
       })
+
       .catch((e) => {
         if (alive) setLoadError(aiMessage(e));
       })
