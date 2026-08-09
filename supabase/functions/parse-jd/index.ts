@@ -1,6 +1,6 @@
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import { adminClient, bufferToBlock, decodeBase64, fileToBlock, getUser, logCall } from "../_shared/req.ts";
-import { callAIJson, MODEL, type ContentBlock } from "../_shared/ai.ts";
+import { callAIJson, callAIText, MODEL, type ContentBlock } from "../_shared/ai.ts";
 import { DIMS, computeScore } from "../_shared/scoring.ts";
 import {
   PROMPT_VERSIONS,
@@ -167,27 +167,19 @@ Deno.serve(async (req) => {
        Asking the model to both OCR and structure an image in one shot often
        comes back empty; a dedicated transcription pass is far more reliable. */
     if (block.type === "image_url") {
-      try {
-        const t = await callAIJson<{ text: string }>({
-          messages: [
-            { role: "system", content: "你是 OCR 工具。逐字转录图片中的所有文字，保留原始顺序与换行，不要总结、不要翻译、不要添加任何解释。" },
-            { role: "user", content: [{ type: "text", text: "请转录这张图片里的全部文字。" }, block] },
-          ],
-          schema: {
-            type: "object",
-            additionalProperties: false,
-            required: ["text"],
-            properties: { text: { type: "string" } },
-          },
-          schemaName: "image_transcription",
-          timeoutMs: 40_000,
-          maxTokens: 3000,
-        });
-        const ocr = (t.data?.text ?? "").trim();
-        if (ocr.replace(/\s/g, "").length >= 20) block = { type: "text", text: ocr.slice(0, 60000) };
-      } catch (e) {
-        console.error("image transcription failed", e);
+      const t = await callAIText({
+        messages: [
+          { role: "system", content: "你是 OCR 工具。逐字转录图片中的所有文字，保留原始顺序与换行，不要总结、不要翻译、不要添加任何解释。只输出转录文字。" },
+          { role: "user", content: [{ type: "text", text: "请转录这张图片里的全部文字。" }, block] },
+        ],
+        timeoutMs: 30_000,
+        maxTokens: 2500,
+      });
+      const ocr = t.text.trim();
+      if (ocr.replace(/\s/g, "").length < 20) {
+        return json({ error: "未能识别图片中的 JD 文字，请上传更清晰的截图或直接粘贴 JD 文本" }, 422);
       }
+      block = { type: "text", text: ocr.slice(0, 60000) };
     }
 
     // File uploads are keyed by their raw bytes so the browser can pre-compute the same key.
