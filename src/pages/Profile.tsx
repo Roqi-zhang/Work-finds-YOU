@@ -214,7 +214,7 @@ export default function Profile({
   const [mergeSvg, setMergeSvg] = useState("");
   const [mergeCap, setMergeCap] = useState("Overlaying two flowers · computing fit");
 
-  const [openEvi, setOpenEvi] = useState<Record<number, boolean>>({});
+  
   const [dialog, setDialog] = useState<{ title: string; body: string; okText: string; onConfirm: (() => void) | null } | null>(null);
 
   const stageRef = useRef<HTMLElement>(null);
