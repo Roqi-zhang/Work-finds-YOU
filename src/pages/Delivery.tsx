@@ -153,6 +153,33 @@ export default function Delivery() {
     }
   };
 
+  const visible = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return apps;
+    return apps.filter((a) =>
+      [a.co, a.title, a.body, a.quote].filter(Boolean).join(" ").toLowerCase().includes(q)
+    );
+  }, [apps, query]);
+
+  const closeForm = () => {
+    setFormOpen(false);
+    setForm({ co: "", title: "", status: STATUSES[0], appliedAt: new Date().toISOString().slice(0, 10), body: "" });
+  };
+
+  const handleCreate = () => {
+    if (!form.co.trim() || !form.title.trim()) return;
+    createApplication({
+      co: form.co.trim(),
+      title: form.title.trim(),
+      status: form.status,
+      appliedAt: form.appliedAt,
+      body: form.body.trim(),
+    });
+    closeForm();
+    refresh();
+  };
+
+
   return (
     <div className="p-delivery">
       <main className="page">
