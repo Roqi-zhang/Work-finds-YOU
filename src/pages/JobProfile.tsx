@@ -478,9 +478,10 @@ export default function JobProfile({
                 <div className="step" id="s3"><span className="n">03</span> 下一步</div>
               </div>
 
-              <div className="actions">
+              <div className="actions" hidden={embedded}>
                 <button className="btn ghost" id="backBtn">← 返回</button>
               </div>
+
 
               <div style={{ marginTop: "auto" }}>
                 <div className="caption" style={{ marginBottom: 10 }}>Parser</div>
