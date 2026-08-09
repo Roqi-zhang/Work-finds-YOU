@@ -273,8 +273,12 @@ export default function JobProfile({
       const f = e.dataTransfer?.files?.[0];
       if (f) handle(f);
     };
-    window.addEventListener("dragover", winDragOver);
-    window.addEventListener("drop", winDrop);
+    // In the workbench two panels share the window — only the drop zone handles files.
+    if (!embedded) {
+      window.addEventListener("dragover", winDragOver);
+      window.addEventListener("drop", winDrop);
+    }
+
 
     const onCardClick = () => { if (state === "ready") { input.value = ""; input.click(); } };
     rcard.addEventListener("click", onCardClick);
