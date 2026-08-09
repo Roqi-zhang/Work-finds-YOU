@@ -29,6 +29,63 @@ export class AIError extends Error {
   }
 }
 
+/** Lightweight completion for OCR/transcription tasks that do not need a JSON grammar. */
+export async function callAIText(opts: {
+  messages: ChatMessage[];
+  model?: string;
+  timeoutMs?: number;
+  maxTokens?: number;
+}): Promise<{ text: string; usage: Record<string, number>; model: string; latencyMs: number }> {
+  const ep = endpoint();
+  const model = opts.model || ep.model;
+  const started = Date.now();
+  const body: Record<string, unknown> = {
+    model,
+    messages: opts.messages,
+    max_tokens: opts.maxTokens ?? 2500,
+  };
+  if (!ep.custom) {
+    body.reasoning_effort = "none";
+  } else {
+    body.enable_thinking = false;
+    body.temperature = 0;
+    body.top_p = 1;
+    body.seed = 7;
+  }
+
+  let res: Response;
+  try {
+    res = await fetch(ep.url, {
+      method: "POST",
+      headers: ep.headers,
+      body: JSON.stringify(body),
+      signal: AbortSignal.timeout(opts.timeoutMs ?? 30_000),
+    });
+  } catch (e) {
+    if ((e as Error).name === "TimeoutError" || (e as Error).name === "AbortError") {
+      throw new AIError(504, "图片文字识别超时，请改为粘贴 JD 文本或上传清晰截图后重试");
+    }
+    throw e;
+  }
+
+  if (!res.ok) {
+    const responseBody = await res.text();
+    console.error(`AI text call failed [${res.status}]: ${responseBody}`);
+    throw new AIError(res.status, responseBody);
+  }
+
+  const json = await res.json();
+  return {
+    text: String(json?.choices?.[0]?.message?.content ?? "").trim(),
+    usage: {
+      prompt_tokens: json?.usage?.prompt_tokens ?? 0,
+      completion_tokens: json?.usage?.completion_tokens ?? 0,
+    },
+    model,
+    latencyMs: Date.now() - started,
+  };
+}
+
 function endpoint() {
   const key = Deno.env.get("CUSTOM_AI_API_KEY");
   if (key && customBase()) {
