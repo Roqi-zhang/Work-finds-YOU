@@ -434,12 +434,13 @@ export default function JobProfile({
       if (!saved) { setState("empty"); return; }
       if (saved.name) { rName.textContent = saved.name; rMeta.textContent = saved.meta || ""; }
       if (saved.state === "bloomed" && saved.result) {
-        setExportData({ job: saved.job || null, result: saved.result });
+        setExportData({ job: saved.job || null, result: saved.result, keyPoints: saved.keyPoints || [] });
         paint(saved.result, false);
         stageEl.classList.add("bloomed");
         setState("bloomed");
         parsedJob = saved.job || null;
-        renderPetalAnalysis(saved.result);
+        renderPetalAnalysis(saved.result, saved.keyPoints || []);
+
       } else if (saved.state === "ready") {
         setState("ready");
         // The picked file lives in IndexedDB, so a login round-trip keeps it.
