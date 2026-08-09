@@ -546,11 +546,10 @@ export function reportFromBackend(job: Job, r: BackendReport): MatchReport {
       tags: j.tags || [],
       srcId: SRC_IDS[i] || "j." + i,
       evidence: {
-        我方证据: j.evidence?.mine || "—",
         岗位要求: j.evidence?.required || "—",
-        推理: j.evidence?.reasoning || "—",
-        影响: j.evidence?.impact || "—",
+        简历证据: j.evidence?.mine || "—",
       },
+
     })),
     steps: (r.steps || [])
       .filter((s) => s.applicable !== false)
