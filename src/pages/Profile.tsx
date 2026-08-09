@@ -514,14 +514,16 @@ export default function Profile({
   const map = STATE_MAP[state];
   const hintLine = hintOverride ?? map.hint;
 
+  const Shell = (embedded ? "div" : "main") as "main";
+
   return (
     <div className="p-profile">
-      <main className="page">
-        <TopBar />
+      <Shell className={embedded ? "wb-shell" : "page"}>
+        {!embedded && <TopBar />}
 
-        <section className="layout">
+        <section className={"layout" + (embedded ? " wb" : "")}>
           <aside className="side">
-            <div className="caption">02 · Candidate Profile</div>
+            <div className="caption">{embedded ? "B · Candidate Profile" : "02 · Candidate Profile"}</div>
             <h1>
               创建属于你的
               <br />
@@ -541,11 +543,12 @@ export default function Profile({
               </div>
             </div>
 
-            <div className="actions">
+            <div className="actions" hidden={embedded}>
               <button className="btn ghost" id="backBtn" onClick={onBack}>
                 ← 返回
               </button>
             </div>
+
 
             <div style={{ marginTop: "auto" }}>
               <div className="caption" style={{ marginBottom: 10 }}>
