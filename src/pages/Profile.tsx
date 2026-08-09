@@ -175,10 +175,14 @@ type TipState = {
 
 const EMPTY_TIP: TipState = { on: false, x: 0, y: 0, name: "", score: "", evi: "", why: "", act: "" };
 
-export default function Profile() {
+export default function Profile({
+  embedded = false,
+  onStateChange,
+}: { embedded?: boolean; onStateChange?: (s: string) => void } = {}) {
   const navigate = useNavigate();
   const { search } = useLocation();
   const { user } = useAuth();
+
 
   // JD-first: the target job comes from `?job=`, falling back to the last saved job profile
   // so leaving and returning to this page keeps the match target.
@@ -223,6 +227,11 @@ export default function Profile() {
   const currentRef = useRef<DimResult[]>(DIMS.map(() => ({ score: null })));
   const stateRef = useRef(state);
   stateRef.current = state;
+  const stateCbRef = useRef(onStateChange);
+  stateCbRef.current = onStateChange;
+  useEffect(() => { stateCbRef.current?.(state); }, [state]);
+
+
 
   function paint(data: DimResult[], animate: boolean) {
     currentRef.current = data;
@@ -371,14 +380,18 @@ export default function Profile() {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") closeDialog();
     };
-    window.addEventListener("dragover", onDragOver);
-    window.addEventListener("drop", onDrop);
+    // In the workbench two panels share the window — only the drop zone handles files.
+    if (!embedded) {
+      window.addEventListener("dragover", onDragOver);
+      window.addEventListener("drop", onDrop);
+    }
     document.addEventListener("keydown", onKey);
     return () => {
       window.removeEventListener("dragover", onDragOver);
       window.removeEventListener("drop", onDrop);
       document.removeEventListener("keydown", onKey);
     };
+
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -438,10 +451,11 @@ export default function Profile() {
     setDialog({ title, body, okText, onConfirm: cb });
   }
 
-  // Going back never discards work — the resume and the flower are kept.
+  // Back follows the nav order instead of browser history.
   function onBack() {
-    history.back();
+    navigate("/");
   }
+
 
   function onRedo() {
     confirmDialog("Rebuild profile?", "重新建立画像将清空当前结果，需要重新上传简历，是否继续？", "确认重建", () => {
@@ -457,7 +471,7 @@ export default function Profile() {
     }
     if (state === "bloomed") {
       // JD-first flow continues into the match; without a target JD, go pick one.
-      if (!targetJobId) { navigate("/jobprofile"); return; }
+      if (!targetJobId) { navigate("/workbench"); return; }
       const svgEl = document.getElementById("flowerSvg");
       setMergeSvg(svgEl ? svgEl.outerHTML : "");
       setMergeCap("Overlaying two flowers · computing fit");
@@ -500,14 +514,16 @@ export default function Profile() {
   const map = STATE_MAP[state];
   const hintLine = hintOverride ?? map.hint;
 
+  const Shell = (embedded ? "div" : "main") as "main";
+
   return (
     <div className="p-profile">
-      <main className="page">
-        <TopBar />
+      <Shell className={embedded ? "wb-shell" : "page"}>
+        {!embedded && <TopBar />}
 
-        <section className="layout">
+        <section className={"layout" + (embedded ? " wb" : "")}>
           <aside className="side">
-            <div className="caption">02 · Candidate Profile</div>
+            <div className="caption">{embedded ? "B · Candidate Profile" : "02 · Candidate Profile"}</div>
             <h1>
               创建属于你的
               <br />
@@ -527,11 +543,12 @@ export default function Profile() {
               </div>
             </div>
 
-            <div className="actions">
+            <div className="actions" hidden={embedded}>
               <button className="btn ghost" id="backBtn" onClick={onBack}>
                 ← 返回
               </button>
             </div>
+
 
             <div style={{ marginTop: "auto" }}>
               <div className="caption" style={{ marginBottom: 10 }}>
@@ -674,7 +691,12 @@ export default function Profile() {
                   <button className="btn ghost" id="redoBtn" hidden={state !== "bloomed"} onClick={onRedo}>
                     重新建立画像
                   </button>
-                  <button className={"btn" + (state === "analysing" ? " loading" : "")} id="mainBtn" onClick={onMainBtn}>
+                  <button
+                    className={"btn" + (state === "analysing" ? " loading" : "")}
+                    id="mainBtn"
+                    hidden={embedded && state === "bloomed"}
+                    onClick={onMainBtn}
+                  >
                     {state === "analysing" ? (
                       <>
                         分析中<span className="dot"></span><span className="dot"></span><span className="dot"></span>
@@ -689,10 +711,11 @@ export default function Profile() {
                   {!user && (
                     <>
                       {hintLine ? " · " : ""}
-                      <Link to={`/auth?next=${encodeURIComponent("/profile" + (targetJobId ? `?job=${targetJobId}` : ""))}`} style={{ textDecoration: "underline" }}>
+                      <Link to={`/auth?next=${encodeURIComponent("/workbench" + (targetJobId ? `?job=${targetJobId}` : ""))}`} style={{ textDecoration: "underline" }}>
                         去登录 →
                       </Link>
                     </>
+
                   )}
                 </span>
 
@@ -814,7 +837,7 @@ export default function Profile() {
             </div>
           </div>
         </div>
-      </main>
+      </Shell>
     </div>
   );
 }

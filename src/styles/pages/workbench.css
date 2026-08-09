@@ -1,0 +1,61 @@
+.p-workbench .wb-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 48px;
+  align-items: start;
+}
+.p-workbench .wb-col { min-width: 0; }
+.p-workbench .wb-col + .wb-col { border-left: 0.5px solid var(--line); padding-left: 48px; }
+
+/* Each embedded panel stacks: title block on top, flower + analysis below. */
+.p-jobprofile .layout.wb,
+.p-profile .layout.wb {
+  display: block;
+}
+.p-jobprofile .layout.wb .side,
+.p-profile .layout.wb .side {
+  position: static;
+  gap: 20px;
+  margin-bottom: 28px;
+}
+.p-jobprofile .layout.wb .side h1,
+.p-profile .layout.wb .side h1 { font-size: 36px; }
+.p-jobprofile .layout.wb .side p,
+.p-profile .layout.wb .side p { max-width: none; }
+.p-jobprofile .layout.wb .stage,
+.p-profile .layout.wb .stage { border-left: 0; padding-left: 0; }
+.p-jobprofile .layout.wb .legend,
+.p-profile .layout.wb .legend { grid-template-columns: 1fr; gap: 28px; }
+
+.p-workbench .wb-foot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  border-top: 0.5px solid var(--line);
+  margin-top: 8px;
+  padding: 28px 0 56px;
+}
+.p-workbench .wb-hint {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  opacity: 0.6;
+}
+.p-workbench .btn[disabled] { opacity: 0.35; cursor: not-allowed; }
+
+@media (max-width: 1080px) {
+  .p-workbench .wb-grid { grid-template-columns: 1fr; }
+  .p-workbench .wb-col + .wb-col {
+    border-left: 0;
+    padding-left: 0;
+    border-top: 0.5px solid var(--line);
+    padding-top: 40px;
+    margin-top: 40px;
+  }
+}
+
+/* `hidden` must win over the flex layouts inside the panels. */
+.p-workbench [hidden] { display: none !important; }

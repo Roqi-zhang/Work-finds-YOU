@@ -11,12 +11,18 @@ import "@/styles/pages/jobprofile.css";
 
 const DIM_LABELS = ["专业技能", "业务理解", "问题分析", "执行交付", "沟通表达", "协作影响", "学习适应", "动机匹配"];
 
-export default function JobProfile() {
+export default function JobProfile({
+  embedded = false,
+  onStateChange,
+}: { embedded?: boolean; onStateChange?: (s: string) => void } = {}) {
   const navigate = useNavigate();
   const { user } = useAuth();
   const rootRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<HTMLElement>(null);
   const [exportData, setExportData] = useState<{ job: any; result: any[] } | null>(null);
+  const stateCbRef = useRef(onStateChange);
+  stateCbRef.current = onStateChange;
+
 
   useEffect(() => {
     const root = rootRef.current;
@@ -226,10 +232,14 @@ export default function JobProfile() {
       mainBtn.classList.toggle("loading", next === "analysing");
       if (next === "analysing") mainBtn.innerHTML = '分析中<span class="dot"></span><span class="dot"></span><span class="dot"></span>';
       redoBtn.hidden = next !== "bloomed";
+      // In the workbench the flow button lives in the shared footer.
+      mainBtn.hidden = embedded && next === "bloomed";
       (root!.querySelector("#s1") as HTMLElement).classList.toggle("on", next === "empty");
       (root!.querySelector("#s2") as HTMLElement).classList.toggle("on", next === "ready" || next === "analysing");
       (root!.querySelector("#s3") as HTMLElement).classList.toggle("on", next === "bloomed");
+      stateCbRef.current?.(next);
     }
+
 
     function handle(file: File | null | undefined) {
       if (!file) return;
@@ -263,8 +273,12 @@ export default function JobProfile() {
       const f = e.dataTransfer?.files?.[0];
       if (f) handle(f);
     };
-    window.addEventListener("dragover", winDragOver);
-    window.addEventListener("drop", winDrop);
+    // In the workbench two panels share the window — only the drop zone handles files.
+    if (!embedded) {
+      window.addEventListener("dragover", winDragOver);
+      window.addEventListener("drop", winDrop);
+    }
+
 
     const onCardClick = () => { if (state === "ready") { input.value = ""; input.click(); } };
     rcard.addEventListener("click", onCardClick);
@@ -294,7 +308,7 @@ export default function JobProfile() {
     dlgOk.addEventListener("click", onDlgOk);
 
     // Going back never discards work — the JD and the role flower are kept.
-    const onBack = () => history.back();
+    const onBack = () => navigate("/");
     backBtn.addEventListener("click", onBack);
 
     const onRedo = () => {
@@ -380,7 +394,7 @@ export default function JobProfile() {
           no: "待确认",
         });
         setUI("match", { jobId });
-        navigate("/profile?job=" + encodeURIComponent(jobId));
+        navigate("/workbench?job=" + encodeURIComponent(jobId));
         return;
       }
       if (state !== "ready") return;
@@ -454,15 +468,18 @@ export default function JobProfile() {
     };
   }, [navigate]);
 
+  const Shell = (embedded ? "div" : "main") as "main";
+
   return (
     <div className="p-jobprofile">
       <div ref={rootRef}>
-        <main className="page">
-          <TopBar />
+        <Shell className={embedded ? "wb-shell" : "page"}>
+          {!embedded && <TopBar />}
 
-          <section className="layout">
+          <section className={"layout" + (embedded ? " wb" : "")}>
             <aside className="side">
-              <div className="caption">03 · Job Profile</div>
+              <div className="caption">{embedded ? "A · Job Profile" : "03 · Job Profile"}</div>
+
               <h1>解析岗位的<br />理想能力花</h1>
               <p>上传岗位 JD，8 项胜任力维度将生长为这个岗位的理想能力花。花瓣越舒展代表该岗位越看重这项能力；JD 未提及时只开虚线小瓣，不记 0 分。</p>
 
@@ -472,9 +489,10 @@ export default function JobProfile() {
                 <div className="step" id="s3"><span className="n">03</span> 下一步</div>
               </div>
 
-              <div className="actions">
+              <div className="actions" hidden={embedded}>
                 <button className="btn ghost" id="backBtn">← 返回</button>
               </div>
+
 
               <div style={{ marginTop: "auto" }}>
                 <div className="caption" style={{ marginBottom: 10 }}>Parser</div>
@@ -536,7 +554,7 @@ export default function JobProfile() {
                 <div className="stage-actions">
                   <div className="btnrow">
                     <button className="btn ghost" id="redoBtn" hidden>重新建立岗位画像</button>
-                    <button className="btn" id="mainBtn">上传简历</button>
+                    <button className="btn" id="mainBtn">上传 JD</button>
                   </div>
                   <span className="hintline">
                     <span id="hintLine">click or drag · PDF / Word / Image</span>
@@ -556,7 +574,7 @@ export default function JobProfile() {
               </div>
             </section>
           </section>
-        </main>
+        </Shell>
 
         <div className="mask" id="mask">
           <div className="dlg">

@@ -261,20 +261,20 @@ export default function Delivery() {
                           查看匹配
                         </a>
                         <a
-                          href="/jobprofile"
+                          href="/workbench"
                           onClick={(e) => {
                             e.preventDefault();
                             setUI("match", { jobId: a.id });
-                            navigate("/jobprofile");
+                            navigate("/workbench");
                           }}
                         >
                           岗位画像
                         </a>
                         <a
-                          href={`/profile?job=${encodeURIComponent(a.id)}`}
+                          href={`/workbench?job=${encodeURIComponent(a.id)}`}
                           onClick={(e) => {
                             e.preventDefault();
-                            navigate("/profile?job=" + encodeURIComponent(a.id));
+                            navigate("/workbench?job=" + encodeURIComponent(a.id));
                           }}
                         >
                           个人画像

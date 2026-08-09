@@ -237,7 +237,7 @@ export default function Match() {
                   : loadError || "上传一份 JD 建立岗位画像，或从对比池里选择一个岗位，即可查看匹配分析报告。"}
               </p>
               <div className="cta-row" style={{ marginTop: 32 }}>
-                <button className="btn" type="button" onClick={() => navigate("/jobprofile")}>
+                <button className="btn" type="button" onClick={() => navigate("/workbench")}>
                   上传 JD 建立岗位画像 →
                 </button>
                 <button className="btn ghost" type="button" onClick={() => navigate("/compare")}>
