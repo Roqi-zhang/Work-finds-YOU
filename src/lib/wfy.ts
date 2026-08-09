@@ -589,11 +589,16 @@ export function reportFromBackend(job: Job, r: BackendReport): MatchReport {
       .filter((s) => s.applicable !== false)
       .map((s, i) => {
         const kind: StepKind = s.kind ?? (["resume", "interview", "portfolio"][i] as StepKind) ?? "resume";
-        const legacy: StepItem[] = s.items?.length
+        const legacy: StepItem[] = (s.items?.length
           ? s.items
           : s.why || s.sample
             ? [{ point: s.desc, suggestion: s.sample || "—", evidence: s.why || "—" }]
-            : [];
+            : []
+        ).map((it) => ({
+          point: resolve(it.point) || it.point,
+          suggestion: resolve(it.suggestion) || it.suggestion,
+          evidence: resolve(it.evidence) || "—",
+        }));
         return {
           kind,
           title: s.title,
@@ -601,6 +606,7 @@ export function reportFromBackend(job: Job, r: BackendReport): MatchReport {
           srcId: "s." + kind,
           mindset: s.mindset || "",
           items: legacy,
+
         };
       }),
 
