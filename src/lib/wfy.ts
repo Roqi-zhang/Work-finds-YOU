@@ -28,7 +28,9 @@ export type Application = {
   body: string;
   quote: string;
   events: AppEvent[];
+  manual?: boolean;
 };
+
 
 export const KEYS = {
   pool: "wfy.pool",
