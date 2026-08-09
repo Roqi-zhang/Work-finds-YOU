@@ -297,10 +297,8 @@ export function reportTemplate(job: Job) {
   const win = m >= 85 ? "高" : m >= 75 ? "中高" : m >= 65 ? "中" : "低";
   const rank = m >= 85 ? "Top 1" : m >= 75 ? "Top 3" : "备选";
   const risk = Math.max(10, 100 - m - 20);
-export type StepKind = "resume" | "interview" | "portfolio";
-export type StepItem = { point: string; suggestion: string; evidence: string };
-
   const dims = (
+
 
     [
       ["专业技能", Math.min(99, m + 16)],
