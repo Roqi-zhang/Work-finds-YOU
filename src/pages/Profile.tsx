@@ -471,7 +471,7 @@ export default function Profile({
     }
     if (state === "bloomed") {
       // JD-first flow continues into the match; without a target JD, go pick one.
-      if (!targetJobId) { navigate("/jobprofile"); return; }
+      if (!targetJobId) { navigate("/workbench"); return; }
       const svgEl = document.getElementById("flowerSvg");
       setMergeSvg(svgEl ? svgEl.outerHTML : "");
       setMergeCap("Overlaying two flowers · computing fit");
