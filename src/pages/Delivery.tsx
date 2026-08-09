@@ -261,7 +261,7 @@ export default function Delivery() {
                           查看匹配
                         </a>
                         <a
-                          href="/jobprofile"
+                          href="/workbench"
                           onClick={(e) => {
                             e.preventDefault();
                             setUI("match", { jobId: a.id });
