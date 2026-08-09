@@ -18,6 +18,15 @@ import {
 import { idealProfileToDims } from "../_shared/adapter.ts";
 import { canonicalHash, sha256Hex } from "../_shared/hash.ts";
 import { getAnalysis, putAnalysis, recordDocument } from "../_shared/docstore.ts";
+import {
+  consumeDaily,
+  consumeGuest,
+  getDailyUsage,
+  getGuestTrial,
+  GUEST_LIMIT,
+  QUOTA_MESSAGE,
+  type GuestRow,
+} from "../_shared/quota.ts";
 
 /* ---------------- Layer 1 + 2 : document evidence → requirement records ------- */
 
