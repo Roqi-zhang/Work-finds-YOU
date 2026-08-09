@@ -232,10 +232,14 @@ export default function JobProfile({
       mainBtn.classList.toggle("loading", next === "analysing");
       if (next === "analysing") mainBtn.innerHTML = '分析中<span class="dot"></span><span class="dot"></span><span class="dot"></span>';
       redoBtn.hidden = next !== "bloomed";
+      // In the workbench the flow button lives in the shared footer.
+      mainBtn.hidden = embedded && next === "bloomed";
       (root!.querySelector("#s1") as HTMLElement).classList.toggle("on", next === "empty");
       (root!.querySelector("#s2") as HTMLElement).classList.toggle("on", next === "ready" || next === "analysing");
       (root!.querySelector("#s3") as HTMLElement).classList.toggle("on", next === "bloomed");
+      stateCbRef.current?.(next);
     }
+
 
     function handle(file: File | null | undefined) {
       if (!file) return;
