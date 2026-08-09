@@ -277,7 +277,11 @@ Deno.serve(async (req) => {
       ],
       schema: resumeProfilingSchema as unknown as Record<string, unknown>,
       schemaName: "resume_profiling",
+      gateway: "lovable",
+      timeoutMs: 80_000,
+      maxTokens: 8000,
     });
+
     promptTokens += b.usage.prompt_tokens;
     completionTokens += b.usage.completion_tokens;
     latency += b.latencyMs;
