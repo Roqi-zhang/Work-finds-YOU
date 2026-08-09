@@ -494,7 +494,7 @@ export default function JobProfile({
               </div>
 
 
-              <div style={{ marginTop: "auto" }}>
+              <div style={{ marginTop: "auto" }} hidden={embedded}>
                 <div className="caption" style={{ marginBottom: 10 }}>Parser</div>
                 <div className="moon"><i></i><i></i><i></i><i></i><i></i></div>
               </div>
