@@ -5,12 +5,12 @@ import { useAuth } from "@/hooks/useAuth";
 
 const NAV = [
   { to: "/", label: "01 Home", end: true },
-  { to: "/jobprofile", label: "02 Job" },
-  { to: "/profile", label: "03 Profile" },
-  { to: "/match", label: "04 Match" },
-  { to: "/compare", label: "05 Compare" },
-  { to: "/delivery", label: "06 Delivery" },
+  { to: "/workbench", label: "02 Workbench" },
+  { to: "/match", label: "03 Match" },
+  { to: "/compare", label: "04 Compare" },
+  { to: "/delivery", label: "05 Delivery" },
 ];
+
 
 export default function TopBar({ date = "2026 · 07 · 12" }: { date?: string }) {
   const { toggle } = useTheme();
