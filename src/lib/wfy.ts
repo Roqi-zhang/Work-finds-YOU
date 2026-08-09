@@ -541,16 +541,25 @@ export function reportFromBackend(job: Job, r: BackendReport): MatchReport {
         影响: j.evidence?.impact || "—",
       },
     })),
-    steps: (r.steps || []).map((s, i) => ({
-      title: s.title,
-      desc: s.desc,
-      srcId: STEP_IDS[i] || "s." + i,
-      evidence: {
-        为什么: s.why || "—",
-        预期效果: s.effect || "—",
-        参考写法: s.sample || "—",
-      },
-    })),
+    steps: (r.steps || [])
+      .filter((s) => s.applicable !== false)
+      .map((s, i) => {
+        const kind: StepKind = s.kind ?? (["resume", "interview", "portfolio"][i] as StepKind) ?? "resume";
+        const legacy: StepItem[] = s.items?.length
+          ? s.items
+          : s.why || s.sample
+            ? [{ point: s.desc, suggestion: s.sample || "—", evidence: s.why || "—" }]
+            : [];
+        return {
+          kind,
+          title: s.title,
+          desc: s.desc,
+          srcId: "s." + kind,
+          mindset: s.mindset || "",
+          items: legacy,
+        };
+      }),
+
     dimensions: (r.dimension_scores || []).map((x) => ({
       name: x.label,
       score: x.score == null ? 0 : Math.round((x.score / 5) * 100),
