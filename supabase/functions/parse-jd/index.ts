@@ -1,6 +1,6 @@
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import { adminClient, bufferToBlock, decodeBase64, fileToBlock, getUser, logCall } from "../_shared/req.ts";
-import { callAIJson, callAIText, MODEL, type ContentBlock } from "../_shared/ai.ts";
+import { callAIJson, callAIText, MODEL, OCR_MODEL, type ContentBlock } from "../_shared/ai.ts";
 import { DIMS, computeScore } from "../_shared/scoring.ts";
 import {
   PROMPT_VERSIONS,
@@ -172,7 +172,11 @@ Deno.serve(async (req) => {
           { role: "system", content: "你是 OCR 工具。逐字转录图片中的所有文字，保留原始顺序与换行，不要总结、不要翻译、不要添加任何解释。只输出转录文字。" },
           { role: "user", content: [{ type: "text", text: "请转录这张图片里的全部文字。" }, block] },
         ],
-        timeoutMs: 30_000,
+        // The configured custom endpoint is optimized for text analysis and can
+        // stall on screenshots. Route only OCR through a fast vision model.
+        gateway: "lovable",
+        model: OCR_MODEL,
+        timeoutMs: 25_000,
         maxTokens: 2500,
       });
       const ocr = t.text.trim();
