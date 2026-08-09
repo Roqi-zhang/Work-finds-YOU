@@ -121,11 +121,13 @@ export async function callAIJson<T>(opts: {
   schema: Record<string, unknown>;
   schemaName: string;
   model?: string;
+  /** Latency-sensitive tasks can bypass a configured custom endpoint. */
+  gateway?: "default" | "lovable";
   /** Hard wall-clock budget for this call. Keeps us under the 150s gateway limit. */
   timeoutMs?: number;
   maxTokens?: number;
 }): Promise<{ data: T; usage: Record<string, number>; model: string; latencyMs: number }> {
-  const ep = endpoint();
+  const ep = endpoint(opts.gateway === "lovable");
   const model = opts.model || ep.model;
   const started = Date.now();
   const budget = opts.timeoutMs ?? 55_000;
