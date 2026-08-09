@@ -4,6 +4,7 @@
 
 const LOVABLE_GATEWAY = "https://ai.gateway.lovable.dev/v1/chat/completions";
 const LOVABLE_MODEL = "openai/gpt-5.6-sol";
+export const OCR_MODEL = "google/gemini-3.6-flash";
 
 function customBase() {
   const base = Deno.env.get("CUSTOM_AI_BASE_URL");
@@ -33,10 +34,12 @@ export class AIError extends Error {
 export async function callAIText(opts: {
   messages: ChatMessage[];
   model?: string;
+  /** OCR and other multimodal calls can bypass a configured text-only endpoint. */
+  gateway?: "default" | "lovable";
   timeoutMs?: number;
   maxTokens?: number;
 }): Promise<{ text: string; usage: Record<string, number>; model: string; latencyMs: number }> {
-  const ep = endpoint();
+  const ep = endpoint(opts.gateway === "lovable");
   const model = opts.model || ep.model;
   const started = Date.now();
   const body: Record<string, unknown> = {
@@ -86,9 +89,9 @@ export async function callAIText(opts: {
   };
 }
 
-function endpoint() {
+function endpoint(forceLovable = false) {
   const key = Deno.env.get("CUSTOM_AI_API_KEY");
-  if (key && customBase()) {
+  if (!forceLovable && key && customBase()) {
     return {
       url: `${customBase()}/chat/completions`,
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
