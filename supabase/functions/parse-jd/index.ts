@@ -142,17 +142,12 @@ Deno.serve(async (req) => {
     }
 
     /* ---------- Guest trial gate : 1 free JD parse per device ---------- */
-    const GUEST_LIMIT = 1;
-    let guestRow: { id: string; jd_parses: number } | null = null;
+    let guestRow: GuestRow | null = null;
     if (!user) {
       if (!guestKey) return json({ error: "请先登录后再使用 AI 分析" }, 401);
-      const { data } = await admin
-        .from("guest_trials")
-        .select("id, jd_parses")
-        .eq("guest_key", guestKey)
-        .maybeSingle();
-      guestRow = data as typeof guestRow;
+      guestRow = await getGuestTrial(admin, guestKey);
     }
+
 
     let block: ContentBlock;
     if (filePath || fileData) {
