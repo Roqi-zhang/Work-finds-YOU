@@ -608,8 +608,10 @@ export default function Profile({
                           ...evi,
                         ],
                       };
-                    }),
+                      }),
                     ],
+                  })}
+
 
                 />
               ) : (
