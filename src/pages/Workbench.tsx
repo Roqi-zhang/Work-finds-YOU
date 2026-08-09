@@ -32,9 +32,11 @@ export default function Workbench() {
     const fromUrl = new URLSearchParams(search).get("job");
     if (isJobProfileId(fromUrl)) return fromUrl;
     const jp = getUI<{ job?: { id?: string } }>("jobprofile");
-    if (isJobProfileId(jp?.job?.id)) return jp.job.id;
+    const storedJobId = jp?.job?.id;
+    if (isJobProfileId(storedJobId)) return storedJobId;
     const m = getUI<{ jobId?: string }>("match");
-    return isJobProfileId(m?.jobId) ? m.jobId : null;
+    const matchedJobId = m?.jobId;
+    return isJobProfileId(matchedJobId) ? matchedJobId : null;
   }, [search, jobState, matching]);
 
   async function onMatch() {

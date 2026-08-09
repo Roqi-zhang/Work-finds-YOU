@@ -190,9 +190,11 @@ export default function Profile({
     const fromUrl = new URLSearchParams(search).get("job");
     if (isJobProfileId(fromUrl)) return fromUrl;
     const m = getUI<{ jobId?: string }>("match");
-    if (isJobProfileId(m?.jobId)) return m.jobId;
+    const matchedJobId = m?.jobId;
+    if (isJobProfileId(matchedJobId)) return matchedJobId;
     const jp = getUI<{ job?: { id?: string } }>("jobprofile");
-    return isJobProfileId(jp?.job?.id) ? jp.job.id : null;
+    const storedJobId = jp?.job?.id;
+    return isJobProfileId(storedJobId) ? storedJobId : null;
   }, [search]);
 
 
