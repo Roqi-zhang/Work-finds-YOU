@@ -131,32 +131,31 @@ export default function Snapshot() {
                           </div>
                           <dl>
                             <div className="r">
-                              <span className="k">Evidence</span>
-                              <span className="v">{d.evidence || "—"}</span>
-                            </div>
-                            <div className="r">
                               <span className="k">Analysis</span>
                               <span className="v">{d.analysis || d.why || "—"}</span>
                             </div>
+                            <div className="r">
+                              <span className="k">Evidence</span>
+                              <span className="v">
+                                {d.evidenceDetail?.length ? (
+                                  <span className="evi">
+                                    {d.evidenceDetail.map((ev, n) => (
+                                      <span className="evi-i" key={n}>
+                                        <span className="evi-m">{ev.label || "简历原文"}</span>
+                                        {ev.claim && <span className="evi-r">{ev.claim}</span>}
+                                        {(ev.quotes || []).map((q, qi) => (
+                                          <span className="evi-q" key={qi}>「{q}」</span>
+                                        ))}
+                                      </span>
+                                    ))}
+                                  </span>
+                                ) : (
+                                  d.evidence || "—"
+                                )}
+                              </span>
+                            </div>
                           </dl>
-                          {!!d.evidenceDetail?.length && (
-                            <details>
-                              <summary style={{ fontSize: 11, letterSpacing: "0.18em", textTransform: "uppercase", cursor: "pointer", opacity: 0.6 }}>
-                                依据 ↓
-                              </summary>
-                              <dl>
-                                {d.evidenceDetail.map((ev, n) => (
-                                  <div className="r" key={n}>
-                                    <span className="k">{ev.label || "来源"}</span>
-                                    <span className="v">
-                                      {ev.claim || ""}
-                                      {ev.quotes?.length ? "：" + ev.quotes.join(" / ") : ""}
-                                    </span>
-                                  </div>
-                                ))}
-                              </dl>
-                            </details>
-                          )}
+
                           <div className="str">[{String(d.level || "missing").toUpperCase()}]</div>
                         </div>
                       );
