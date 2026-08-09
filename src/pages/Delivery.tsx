@@ -2,15 +2,16 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import TopBar from "@/components/swiss/TopBar";
 import {
+  createApplication,
   getApplications,
   refreshApplicationScores,
   setStatus,
   updateApplication,
   focusId,
-  setUI,
   STATUSES,
   type Application,
 } from "@/lib/wfy";
+
 import "@/styles/pages/delivery.css";
 
 const MON_NAMES = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
@@ -37,11 +38,21 @@ export default function Delivery() {
   const [apps, setApps] = useState<Application[]>(() => getApplications());
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showQuoteFor, setShowQuoteFor] = useState<string | null>(null);
+  const [query, setQuery] = useState("");
+  const [formOpen, setFormOpen] = useState(false);
+  const [form, setForm] = useState({
+    co: "",
+    title: "",
+    status: STATUSES[0],
+    appliedAt: new Date().toISOString().slice(0, 10),
+    body: "",
+  });
   const entriesRef = useRef<HTMLDivElement | null>(null);
   const h2Refs = useRef<Record<string, HTMLHeadingElement | null>>({});
   const pRefs = useRef<Record<string, HTMLParagraphElement | null>>({});
   const quoteRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const didFocus = useRef(false);
+
 
   const refresh = () => setApps(getApplications());
 
