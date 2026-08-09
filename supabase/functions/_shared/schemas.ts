@@ -387,8 +387,10 @@ export const resumeProfilingSchema = obj({
     8,
     8,
   ),
+  key_points: arr(obj({ title: str, detail: str }), 3, 3),
   sections: obj({ experience: str, skills: str, motivation: str, risks: str }),
 });
+
 
 /* ---- Match: gap analysis ---- */
 export const matchSchema = obj({
