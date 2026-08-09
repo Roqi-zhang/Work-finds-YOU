@@ -542,7 +542,7 @@ export default function JobProfile({
                 <div className="stage-actions">
                   <div className="btnrow">
                     <button className="btn ghost" id="redoBtn" hidden>重新建立岗位画像</button>
-                    <button className="btn" id="mainBtn" hidden={embedded}>上传 JD</button>
+                    <button className="btn" id="mainBtn">上传 JD</button>
                   </div>
                   <span className="hintline">
                     <span id="hintLine">click or drag · PDF / Word / Image</span>
