@@ -394,7 +394,7 @@ export default function JobProfile({
           no: "待确认",
         });
         setUI("match", { jobId });
-        navigate("/profile?job=" + encodeURIComponent(jobId));
+        navigate("/workbench?job=" + encodeURIComponent(jobId));
         return;
       }
       if (state !== "ready") return;
