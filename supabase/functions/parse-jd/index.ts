@@ -369,6 +369,12 @@ Deno.serve(async (req) => {
     const { data: job, error } = await writer.select("id, slug, title, company, location").single();
     if (error) throw error;
 
+    // A re-parsed JD invalidates every match built on the previous version.
+    if (existing) {
+      await admin.from("match_reports").update({ stale: true }).eq("job_profile_id", existing.id);
+    }
+
+
     if (!user) {
       if (guestRow) {
         await admin.from("guest_trials").update({ jd_parses: guestRow.jd_parses + 1 }).eq("id", guestRow.id);
