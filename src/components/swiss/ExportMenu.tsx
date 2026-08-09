@@ -214,9 +214,11 @@ export default function ExportMenu({ fileBase, captureRef, buildDoc, disabled }:
       </button>
       {open && !disabled && (
         <div className="export-pop">
-          <button type="button" onClick={() => run("pdf")}>PDF</button>
+          <button type="button" onClick={() => run("pdf")}>PDF（打印）</button>
           <button type="button" onClick={() => run("png")}>图像 PNG</button>
           <button type="button" onClick={() => run("docx")}>Word</button>
+          <span className="export-hint">PDF 请在打印窗口选择「另存为 PDF」</span>
+
         </div>
       )}
     </div>
