@@ -42,7 +42,7 @@ export function aiMessage(e: unknown) {
   const err = e as AiError;
   if (err?.status === 401) return "请先登录后再使用 AI 分析";
   if (err?.status === 429) return "请求过于频繁，请稍后再试";
-  if (err?.status === 402) return "AI 额度已用完，请补充额度后重试";
+  if (err?.status === 402) return err?.message || "免费额度已用完，付费档位即将开放";
   return err?.message || "分析失败，请重试";
 }
 
@@ -181,9 +181,13 @@ export type MatchReport = {
 };
 
 export async function runMatch(jobProfileId: string, force = false, candidateProfileId?: string) {
-  return invoke<{ report: MatchReport; cached: boolean; job: Record<string, unknown> }>("run-match", {
-    jobProfileId,
-    candidateProfileId,
-    force,
-  });
+  const out = await invoke<{
+    report: MatchReport;
+    cached: boolean;
+    job: Record<string, unknown>;
+    usage?: { used: number; limit: number; remaining: number };
+  }>("run-match", { jobProfileId, candidateProfileId, force });
+  // Let the header refresh the remaining free runs.
+  if (out?.usage) window.dispatchEvent(new Event("wfy:usage"));
+  return out;
 }
