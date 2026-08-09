@@ -500,10 +500,41 @@ type BackendReport = {
   pipeline?: { step: string; detail: string }[];
   decision_factors?: { step: string; detail: string }[];
   rationale_summary?: string | null;
+  evidence_links?: { id: string; side?: string; rawQuote?: string }[];
 };
 
 const MARKS: Record<string, string> = { 最大优势: "", 最大缺口: "w", 最大风险: "i" };
 const SRC_IDS = ["j.strength", "j.gap", "j.risk"];
+
+/** Internal evidence ids (r1 / e10) are meaningless to users — swap them for the real quote. */
+const ID_RE = /\b([re])\s?(\d{1,3})\b[、,，]?\s*/gi;
+
+function clip(s: string, n = 40) {
+  const t = s.replace(/\s+/g, " ").trim();
+  return t.length > n ? t.slice(0, n) + "…" : t;
+}
+
+function makeResolver(links: BackendReport["evidence_links"]) {
+  const map = new Map((links || []).map((l) => [String(l.id).toLowerCase(), String(l.rawQuote || "")]));
+  return (text?: string) => {
+    if (!text) return "";
+    if (!ID_RE.test(text)) return text.trim();
+    ID_RE.lastIndex = 0;
+    const quotes: string[] = [];
+    const rest = text
+      .replace(ID_RE, (_m, p, n) => {
+        const q = map.get(`${String(p).toLowerCase()}${n}`);
+        if (q) quotes.push(`「${clip(q)}」`);
+        return "";
+      })
+      .replace(/^[：:；;、,，。.\s]+/, "")
+      .trim();
+    const joined = quotes.join("；");
+    if (joined && rest) return `${joined}${/[。；;]$/.test(joined) ? "" : "；"}${rest}`;
+    return joined || rest;
+  };
+}
+
 
 
 export function reportFromBackend(job: Job, r: BackendReport): MatchReport {
