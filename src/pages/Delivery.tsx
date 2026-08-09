@@ -190,14 +190,14 @@ export default function Delivery() {
 
         <section className="journal">
           <div className="entries" id="entries" ref={entriesRef}>
-            {!apps.length ? (
+            {!visible.length ? (
               <div className="entry">
                 <div className="date">
                   <span className="d">—</span>NO DATA
                 </div>
                 <div className="body">
-                  <h2>还没有投递记录</h2>
-                  <div className="sub">在匹配页点「直接投递」，或在对比池里选中岗位后点「投递」，记录会出现在这里。</div>
+                  <h2>{query ? "没有匹配的记录" : "还没有投递记录"}</h2>
+                  <div className="sub">在匹配页点「直接投递」，或在对比池里选中岗位后点「投递」，也可以点上方「+ 新增投递」手动记录。</div>
                   <div className="foot">
                     <a href="#" onClick={(e) => { e.preventDefault(); navigate("/compare"); }}>
                       去对比池 →
@@ -206,7 +206,8 @@ export default function Delivery() {
                 </div>
               </div>
             ) : (
-              apps.map((a) => {
+              visible.map((a) => {
+
                 const p = parts(a.appliedAt);
                 const editing = editingId === a.id;
                 const showQuote = !!a.quote || showQuoteFor === a.id;
@@ -238,7 +239,7 @@ export default function Delivery() {
                         </span>
                       </div>
 
-                      <div className="sub">匹配 {a.m}%</div>
+                      <div className="sub">{a.manual ? "手动录入" : `匹配 ${a.m}%`}</div>
                       <p ref={(el) => (pRefs.current[a.id] = el)} contentEditable={editing} suppressContentEditableWarning>
                         {a.body}
                       </p>
