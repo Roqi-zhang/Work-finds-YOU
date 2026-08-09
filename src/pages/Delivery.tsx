@@ -161,29 +161,21 @@ export default function Delivery() {
 
         <div className="top-tools">
           <div className="l">
-            <a href="#">+ 新增投递</a>
-            <span style={{ opacity: 0.5 }}>View · Journal</span>
-            <span style={{ opacity: 0.5 }}>Sort · Newest</span>
+            <button type="button" className="link-btn" onClick={() => setFormOpen(true)}>
+              + 新增投递
+            </button>
           </div>
           <div className="r">
-            <span className="caption" style={{ opacity: 0.5 }}>
-              Filter
-            </span>
-            <button className="icon-btn" title="filter">
-              <svg width="12" height="12" viewBox="0 0 12 12">
-                <circle cx="6" cy="6" r="5" fill="none" stroke="currentColor" strokeWidth="0.5" />
-                <line x1="3" y1="6" x2="9" y2="6" stroke="currentColor" strokeWidth="0.5" />
-              </svg>
-            </button>
-            <button className="icon-btn" title="more">
-              <svg width="12" height="12" viewBox="0 0 12 12">
-                <circle cx="3" cy="6" r="1" fill="currentColor" />
-                <circle cx="6" cy="6" r="1" fill="currentColor" />
-                <circle cx="9" cy="6" r="1" fill="currentColor" />
-              </svg>
-            </button>
+            <input
+              className="search"
+              type="search"
+              value={query}
+              placeholder="搜索公司 / 岗位 / 备注"
+              onChange={(e) => setQuery(e.target.value)}
+            />
           </div>
         </div>
+
 
         <section className="journal">
           <div className="entries" id="entries" ref={entriesRef}>
