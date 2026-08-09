@@ -359,7 +359,56 @@ export default function Delivery() {
             </div>
           </aside>
         </section>
+
+        {formOpen && (
+          <div className="mask on" onClick={(e) => e.target === e.currentTarget && closeForm()}>
+            <div className="dlg form-dlg">
+              <h5>新增投递记录</h5>
+              <div className="fields">
+                <label>
+                  <span>公司名称 *</span>
+                  <input value={form.co} onChange={(e) => setForm({ ...form, co: e.target.value })} />
+                </label>
+                <label>
+                  <span>岗位名称 *</span>
+                  <input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
+                </label>
+                <label>
+                  <span>投递状态</span>
+                  <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })}>
+                    {STATUSES.map((s) => (
+                      <option key={s} value={s}>
+                        {s}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  <span>投递日期</span>
+                  <input
+                    type="date"
+                    value={form.appliedAt}
+                    onChange={(e) => setForm({ ...form, appliedAt: e.target.value })}
+                  />
+                </label>
+                <label>
+                  <span>备注</span>
+                  <textarea rows={3} value={form.body} onChange={(e) => setForm({ ...form, body: e.target.value })} />
+                </label>
+              </div>
+              <div className="row">
+                <button className="btn ghost" type="button" onClick={closeForm}>
+                  取消
+                </button>
+                <button className="btn" type="button" onClick={handleCreate}>
+                  保存
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </main>
     </div>
+
   );
 }
