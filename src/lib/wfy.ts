@@ -579,9 +579,10 @@ export function reportFromBackend(job: Job, r: BackendReport): MatchReport {
       tags: j.tags || [],
       srcId: SRC_IDS[i] || "j." + i,
       evidence: {
-        岗位要求: j.evidence?.required || "—",
-        简历证据: j.evidence?.mine || "—",
+        岗位要求: resolve(j.evidence?.required) || "—",
+        简历证据: resolve(j.evidence?.mine) || "—",
       },
+
 
     })),
     steps: (r.steps || [])
