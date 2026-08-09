@@ -21,6 +21,7 @@
 }
 .p-compare .node:hover, .p-compare .node.active { fill: var(--ink-strong); stroke: var(--ink-strong); r: 12; }
 .p-compare .node-label { font-size: 10px; fill: var(--ink); font-family: "JetBrains Mono", ui-monospace, monospace; letter-spacing: 0.08em; }
+.p-compare .node-label.sub { font-size: 9px; fill: var(--ink); opacity: .55; letter-spacing: 0.04em; }
 .p-compare .bezier { fill: none; stroke: var(--ink-strong); stroke-width: 0.75; stroke-dasharray: 2 3; opacity: 0; transition: opacity .4s var(--ease); }
 .p-compare .bezier.on { opacity: 1; }
 .p-compare /* right side detail */

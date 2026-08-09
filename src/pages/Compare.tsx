@@ -154,9 +154,15 @@ export default function Compare() {
       const t = document.createElementNS("http://www.w3.org/2000/svg", "text");
       t.setAttribute("class", "node-label");
       t.setAttribute("x", "14");
-      t.setAttribute("y", "4");
+      t.setAttribute("y", "0");
       t.textContent = j.co.toUpperCase();
       g.appendChild(t);
+      const t2 = document.createElementNS("http://www.w3.org/2000/svg", "text");
+      t2.setAttribute("class", "node-label sub");
+      t2.setAttribute("x", "14");
+      t2.setAttribute("y", "13");
+      t2.textContent = (j.title || "").length > 14 ? j.title.slice(0, 14) + "…" : j.title || "";
+      g.appendChild(t2);
       nodesEl.appendChild(g);
       c.addEventListener("mouseenter", () => activate(j.id));
       c.addEventListener("click", () => activate(j.id));

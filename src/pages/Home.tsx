@@ -71,7 +71,7 @@ export default function Home() {
                   </text>
                   <circle className="tick-node" cx="280" cy="80" r="8" />
                   <text className="tick-title" x="280" y="112" textAnchor="middle">
-                    CANDIDATE / 画像
+                    HOME / 首页
                   </text>
                 </g>
                 <g className="tick-group" transform="rotate(-40 280 280)">
@@ -99,7 +99,7 @@ export default function Home() {
                 <text className="tick-label" x="60" y="300" textAnchor="middle">04</text>
                 <text className="tick-label" x="500" y="300" textAnchor="middle">05</text>
 
-                <text className="tick-title" x="120" y="164" textAnchor="middle" style={{ fontSize: 12 }}>PROFILE</text>
+                <text className="tick-title" x="120" y="164" textAnchor="middle" style={{ fontSize: 12 }}>WORKBENCH</text>
                 <text className="tick-title" x="440" y="164" textAnchor="middle" style={{ fontSize: 12 }}>MATCH</text>
                 <text className="tick-title" x="60" y="324" textAnchor="middle" style={{ fontSize: 12 }}>COMPARE</text>
                 <text className="tick-title" x="500" y="324" textAnchor="middle" style={{ fontSize: 12 }}>DELIVERY</text>

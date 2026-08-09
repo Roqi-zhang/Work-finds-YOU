@@ -483,7 +483,7 @@ export default function JobProfile({
               <h1>解析岗位的<br />理想能力花</h1>
               <p>上传岗位 JD，8 项胜任力维度将生长为这个岗位的理想能力花。花瓣越舒展代表该岗位越看重这项能力；JD 未提及时只开虚线小瓣，不记 0 分。</p>
 
-              <div className="steps">
+              <div className="steps" hidden={embedded}>
                 <div className="step on" id="s1"><span className="n">01</span> 上传 JD</div>
                 <div className="step" id="s2"><span className="n">02</span> 建立岗位画像</div>
                 <div className="step" id="s3"><span className="n">03</span> 下一步</div>
@@ -494,7 +494,7 @@ export default function JobProfile({
               </div>
 
 
-              <div style={{ marginTop: "auto" }}>
+              <div style={{ marginTop: "auto" }} hidden={embedded}>
                 <div className="caption" style={{ marginBottom: 10 }}>Parser</div>
                 <div className="moon"><i></i><i></i><i></i><i></i><i></i></div>
               </div>

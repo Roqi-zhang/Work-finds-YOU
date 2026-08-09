@@ -531,7 +531,7 @@ export default function Profile({
             </h1>
             <p>上传简历，8 项胜任力维度将生长为这朵花的花瓣。花瓣越舒展代表该能力越突出；证据不足时只开虚线小瓣，不记 0 分。</p>
 
-            <div className="steps">
+            <div className="steps" hidden={embedded}>
               <div className={"step" + (state === "empty" ? " on" : "")} id="s1">
                 <span className="n">01</span> 上传简历
               </div>
@@ -550,7 +550,7 @@ export default function Profile({
             </div>
 
 
-            <div style={{ marginTop: "auto" }}>
+            <div style={{ marginTop: "auto" }} hidden={embedded}>
               <div className="caption" style={{ marginBottom: 10 }}>
                 Parser
               </div>
