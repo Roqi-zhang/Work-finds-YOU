@@ -109,23 +109,30 @@ Deno.serve(async (req) => {
     const cachedJob = async (hash: string) => {
       const q = admin
         .from("job_profiles")
-        .select("id, slug, title, company, location, dimensions, requirements, evidence_items")
+        .select("id, slug, title, company, location, dimensions, requirements, evidence_items, ideal_profile")
         .eq("content_hash", hash)
         .eq("status", "succeeded")
         .limit(1);
       const { data: hit } = await (user ? q.eq("user_id", user.id) : q.eq("guest_key", guestKey)).maybeSingle();
       // An empty reading is not a usable cache entry — re-run instead of replaying it.
       if (hit && Array.isArray(hit.evidence_items) && hit.evidence_items.length > 0) {
+        const keyPoints =
+          ((hit.ideal_profile as { keyPoints?: { title: string; detail: string }[] } | null)?.keyPoints) ?? [];
+        // Rows written before key points existed must be re-analysed, otherwise the
+        // job profile would permanently miss its "3 core capabilities" block.
+        if (keyPoints.length === 0) return null;
         return json({
           job: { id: hit.id, slug: hit.slug, title: hit.title, company: hit.company, location: hit.location },
           salary: "待确认",
           dimensions: hit.dimensions,
           requirements: hit.requirements,
+          keyPoints,
           cached: true,
         });
       }
       return null;
     };
+
 
     /* ---------- Fastest path : the browser already hashed the bytes ----------
        Hits before any storage download or PDF/DOCX extraction. */

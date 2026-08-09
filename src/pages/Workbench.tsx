@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import TopBar from "@/components/swiss/TopBar";
 import JobProfile from "./JobProfile";
 import Profile from "./Profile";
-import { getUI } from "@/lib/wfy";
+import { getUI, putJob, setUI } from "@/lib/wfy";
 import { runMatch, aiMessage, isJobProfileId } from "@/lib/ai";
 import { useAuth } from "@/hooks/useAuth";
 import "@/styles/pages/workbench.css";
@@ -57,9 +57,26 @@ export default function Workbench() {
     setMatching(true);
     setHint("");
     try {
-      await runMatch(id);
+      const { job } = await runMatch(id);
+      // Keep a local record so the match report, pool and delivery board can
+      // resolve this job without another round-trip.
+      const bj = job as Record<string, unknown> | undefined;
+      if (bj?.id) {
+        putJob({
+          id: String(bj.id),
+          title: String(bj.title ?? "待确认"),
+          co: String(bj.company ?? "待确认"),
+          loc: String(bj.location ?? "待确认"),
+          m: 0,
+          s: "待确认",
+          yes: "JD 匹配",
+          no: "待确认",
+        });
+      }
+      setUI("match", { jobId: id });
       setCap("Match computed · entering");
       navigate("/match?job=" + encodeURIComponent(id) + "&fresh=1");
+
     } catch (e) {
       setHint(aiMessage(e));
       setMatching(false);
