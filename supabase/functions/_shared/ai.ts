@@ -61,10 +61,14 @@ export async function callAIJson<T>(opts: {
   schema: Record<string, unknown>;
   schemaName: string;
   model?: string;
+  /** Hard wall-clock budget for this call. Keeps us under the 150s gateway limit. */
+  timeoutMs?: number;
+  maxTokens?: number;
 }): Promise<{ data: T; usage: Record<string, number>; model: string; latencyMs: number }> {
   const ep = endpoint();
   const model = opts.model || ep.model;
   const started = Date.now();
+  const budget = opts.timeoutMs ?? 55_000;
 
   const post = async (mode: "json_schema" | "json_object") => {
     const messages =
@@ -83,6 +87,7 @@ export async function callAIJson<T>(opts: {
     const body: Record<string, unknown> = {
       model,
       messages,
+      max_tokens: opts.maxTokens ?? 4000,
       response_format:
         mode === "json_schema"
           ? { type: "json_schema", json_schema: { name: opts.schemaName, strict: true, schema: opts.schema } }
@@ -98,8 +103,23 @@ export async function callAIJson<T>(opts: {
       body.seed = 7;
     }
 
-    return await fetch(ep.url, { method: "POST", headers: ep.headers, body: JSON.stringify(body) });
+    const left = budget - (Date.now() - started);
+    if (left <= 1000) throw new AIError(504, "AI 响应超时，请稍后重试");
+    try {
+      return await fetch(ep.url, {
+        method: "POST",
+        headers: ep.headers,
+        body: JSON.stringify(body),
+        signal: AbortSignal.timeout(left),
+      });
+    } catch (e) {
+      if ((e as Error).name === "TimeoutError" || (e as Error).name === "AbortError") {
+        throw new AIError(504, "AI 响应超时，请稍后重试");
+      }
+      throw e;
+    }
   };
+
 
   let res = await post("json_schema");
   if (!res.ok && res.status === 400) {
