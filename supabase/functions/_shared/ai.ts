@@ -121,8 +121,12 @@ export async function callAIJson<T>(opts: {
   };
 
 
-  let res = await post("json_schema");
-  if (!res.ok && res.status === 400) {
+  // Aliyun/OpenAI-compatible endpoints can advertise json_schema support while
+  // spending most of the request budget compiling a large strict grammar.
+  // json_object keeps the same schema contract in the system prompt and is
+  // substantially faster for the multi-layer JD schemas used by this app.
+  let res = await post(ep.custom ? "json_object" : "json_schema");
+  if (!ep.custom && !res.ok && res.status === 400) {
     // Providers that don't implement json_schema — retry with json_object + inline schema.
     console.warn("json_schema rejected, retrying with json_object");
     res = await post("json_object");
