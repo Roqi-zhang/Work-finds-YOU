@@ -244,7 +244,6 @@ Deno.serve(async (req) => {
         // optional custom endpoint can take longer than an edge request budget
         // when compiling these strict schemas.
         gateway: "lovable",
-        model: OCR_MODEL,
         timeoutMs: 50_000,
         maxTokens: 3000,
       });
@@ -273,7 +272,6 @@ Deno.serve(async (req) => {
         schema: jdProfilingSchema as unknown as Record<string, unknown>,
         schemaName: "jd_profiling",
         gateway: "lovable",
-        model: OCR_MODEL,
         timeoutMs: 50_000,
         maxTokens: 4000,
       });
