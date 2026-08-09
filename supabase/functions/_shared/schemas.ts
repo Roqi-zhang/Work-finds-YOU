@@ -152,11 +152,15 @@ export type CandidateDimension = {
   sourceStatus?: "ok" | "evidence_missing" | "not_applicable_source";
 };
 
+/** Three headline capabilities summarised on top of a profile. */
+export type KeyPoint = { title: string; detail: string };
+
 export type CandidateProfile = {
   schemaVersion: string;
   rubricVersion: string;
   rubricHash: string;
   dimensions: CandidateDimension[];
+  keyPoints?: KeyPoint[];
   sections: { experience: string; skills: string; motivation: string; risks: string };
 };
 
@@ -178,8 +182,10 @@ export type IdealCandidateProfile = {
   rubricVersion: string;
   rubricHash: string;
   roleSummary: string;
+  keyPoints?: KeyPoint[];
   dimensions: IdealDimension[];
 };
+
 
 /* ------------------------------------------------------------------ *
  * Match — Gap Analysis
