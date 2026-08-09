@@ -68,6 +68,8 @@ type ExtractOut = {
 
 type ProfileOut = {
   role_summary: string;
+  key_points?: { title: string; detail: string }[];
+
   rubric_dimensions: {
     key: string;
     definition: string;
