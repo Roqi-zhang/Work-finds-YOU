@@ -5,7 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import TopBar from "@/components/swiss/TopBar";
 import ExportMenu from "@/components/swiss/ExportMenu";
 import { getUI, setUI } from "@/lib/wfy";
-import { parseResume, runMatch, aiMessage, type DimScored, type EvidenceDetail, type ResumeResult } from "@/lib/ai";
+import { parseResume, runMatch, aiMessage, isJobProfileId, type DimScored, type EvidenceDetail, type ResumeResult } from "@/lib/ai";
 import { clearTask, getTask, startTask, subscribeTask } from "@/lib/tasks";
 import { loadFile, saveFile } from "@/lib/filestore";
 import "@/styles/pages/profile.css";
@@ -188,11 +188,11 @@ export default function Profile({
   // so leaving and returning to this page keeps the match target.
   const targetJobId = useMemo(() => {
     const fromUrl = new URLSearchParams(search).get("job");
-    if (fromUrl) return fromUrl;
+    if (isJobProfileId(fromUrl)) return fromUrl;
     const m = getUI<{ jobId?: string }>("match");
-    if (m?.jobId) return m.jobId;
+    if (isJobProfileId(m?.jobId)) return m.jobId;
     const jp = getUI<{ job?: { id?: string } }>("jobprofile");
-    return jp?.job?.id || null;
+    return isJobProfileId(jp?.job?.id) ? jp.job.id : null;
   }, [search]);
 
 
