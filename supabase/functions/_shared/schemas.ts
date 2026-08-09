@@ -275,6 +275,8 @@ export const jdExtractionSchema = obj({
 /* ---- JD Call B: rubric + requirement signals + ideal profile ---- */
 export const jdProfilingSchema = obj({
   role_summary: str,
+  key_points: arr(obj({ title: str, detail: str }), 3, 3),
+
   rubric_dimensions: arr(
     obj({
       key: dimKeyEnum,
