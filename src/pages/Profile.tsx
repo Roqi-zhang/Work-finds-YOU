@@ -227,6 +227,11 @@ export default function Profile({
   const currentRef = useRef<DimResult[]>(DIMS.map(() => ({ score: null })));
   const stateRef = useRef(state);
   stateRef.current = state;
+  const stateCbRef = useRef(onStateChange);
+  stateCbRef.current = onStateChange;
+  useEffect(() => { stateCbRef.current?.(state); }, [state]);
+
+
 
   function paint(data: DimResult[], animate: boolean) {
     currentRef.current = data;
