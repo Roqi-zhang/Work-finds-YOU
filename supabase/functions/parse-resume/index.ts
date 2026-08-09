@@ -277,13 +277,16 @@ Deno.serve(async (req) => {
     completionTokens += b.usage.completion_tokens;
     latency += b.latencyMs;
 
+    const keyPoints = (b.data.key_points ?? []).slice(0, 3);
     const candidateProfile: CandidateProfile = {
       schemaVersion: SCHEMA_VERSION,
       rubricVersion: RUBRIC_VERSION,
       rubricHash,
       dimensions: b.data.candidate_dimensions ?? [],
+      keyPoints,
       sections: b.data.sections,
     };
+
 
     /* ---------- Legacy UI contract via the adapter ---------- */
     const legacyDims = candidateProfileToDims(candidateProfile, evidenceItems);
