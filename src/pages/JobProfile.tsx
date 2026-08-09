@@ -308,7 +308,7 @@ export default function JobProfile({
     dlgOk.addEventListener("click", onDlgOk);
 
     // Going back never discards work — the JD and the role flower are kept.
-    const onBack = () => history.back();
+    const onBack = () => navigate("/");
     backBtn.addEventListener("click", onBack);
 
     const onRedo = () => {
