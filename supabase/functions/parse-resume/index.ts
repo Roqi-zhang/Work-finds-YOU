@@ -69,18 +69,36 @@ Deno.serve(async (req) => {
 
   try {
     const user = await getUser(req);
-    if (!user) return json({ error: "未登录" }, 401);
 
     const body = await req.json().catch(() => ({}));
     const { filePath, fileName } = body as { filePath?: string; fileName?: string };
+    const fileData: string | undefined = typeof body.fileData === "string" ? body.fileData : undefined;
+    const guestKey: string = typeof body.guestKey === "string" ? body.guestKey.slice(0, 64) : "";
     const targetJobProfileId: string | null =
       typeof body.targetJobProfileId === "string" && body.targetJobProfileId ? body.targetJobProfileId : null;
-    if (!filePath || typeof filePath !== "string" || !fileName || typeof fileName !== "string") {
-      return json({ error: "filePath 与 fileName 必填" }, 400);
-    }
-    if (!filePath.startsWith(`${user.id}/`)) return json({ error: "无权访问该文件" }, 403);
+    if (!fileName || typeof fileName !== "string") return json({ error: "fileName 必填" }, 400);
+    if (!filePath && !fileData) return json({ error: "请提供简历文件" }, 400);
+    if (user && filePath && !filePath.startsWith(`${user.id}/`)) return json({ error: "无权访问该文件" }, 403);
+    if (!user && !guestKey) return json({ error: "请先登录后再使用 AI 分析" }, 401);
 
     const admin = adminClient();
+
+    /** Scope every ownership query to the account, or to the guest device. */
+    const scopeKey = user ? user.id : `guest:${guestKey}`;
+    // deno-lint-ignore no-explicit-any
+    const own = (q: any) => (user ? q.eq("user_id", user.id) : q.is("user_id", null).eq("guest_key", guestKey));
+
+    /* ---------- quota gate ---------- */
+    let guestRow: GuestRow | null = null;
+    if (user) {
+      const q = await getDailyUsage(admin, user.id, user.email);
+      if (q.remaining <= 0) return json({ error: QUOTA_MESSAGE.daily, code: "QUOTA_EXCEEDED" }, 429);
+    } else {
+      guestRow = await getGuestTrial(admin, guestKey);
+      if (guestRow && guestRow.resume_parses >= GUEST_LIMIT) {
+        return json({ error: QUOTA_MESSAGE.guest }, 401);
+      }
+    }
 
     /* ---------- target job → evaluation rubric ---------- */
     let rubric: EvaluationRubric | null = null;
@@ -92,11 +110,14 @@ Deno.serve(async (req) => {
         .select("id, user_id, guest_key, evaluation_rubric, rubric_hash")
         .eq("id", targetJobId)
         .maybeSingle();
-      const guestKey: string = typeof body.guestKey === "string" ? body.guestKey.slice(0, 64) : "";
-      const owned = !!job && (job.user_id === user.id || (!job.user_id && !!guestKey && job.guest_key === guestKey));
+      const owned =
+        !!job &&
+        (user
+          ? job.user_id === user.id || (!job.user_id && !!guestKey && job.guest_key === guestKey)
+          : !job.user_id && job.guest_key === guestKey);
       if (owned) {
         // A JD parsed during the guest trial now belongs to this account.
-        if (!job!.user_id) {
+        if (user && !job!.user_id) {
           await admin.from("job_profiles").update({ user_id: user.id, guest_key: null }).eq("id", job!.id);
         }
         rubric = (job!.evaluation_rubric as EvaluationRubric | null) ?? null;
@@ -108,15 +129,20 @@ Deno.serve(async (req) => {
       }
     }
 
-    const { data: resume } = await admin
-      .from("resumes")
-      .insert({ user_id: user.id, file_path: filePath, file_name: fileName, status: "running" })
-      .select("id")
-      .single();
+    // Guests have no storage access, so their file travels inline and gets no resume row.
+    const resume = user && filePath
+      ? (await admin
+          .from("resumes")
+          .insert({ user_id: user.id, file_path: filePath, file_name: fileName, status: "running" })
+          .select("id")
+          .single()).data
+      : null;
 
     let block: ContentBlock;
     try {
-      block = (await fileToBlock(admin, "resumes", filePath, fileName)) as ContentBlock;
+      block = (filePath
+        ? await fileToBlock(admin, "resumes", filePath, fileName)
+        : await bufferToBlock(decodeBase64(fileData!), fileName)) as ContentBlock;
     } catch (e) {
       const msg = String((e as Error).message);
       if (resume) await admin.from("resumes").update({ status: "failed", error: msg }).eq("id", resume.id);
@@ -146,9 +172,9 @@ Deno.serve(async (req) => {
     await recordDocument(admin, {
       contentHash,
       kind: "resume",
-      ownerId: user.id,
+      ownerId: user?.id ?? null,
       textLen: block.type === "text" ? block.text.length : undefined,
-      storagePath: filePath,
+      storagePath: filePath ?? null,
       fileName,
     });
 
@@ -159,22 +185,24 @@ Deno.serve(async (req) => {
       stage: "resume_extract",
       promptVersion: PROMPT_VERSIONS.resumeExtraction,
       schemaVersion: SCHEMA_VERSION,
-      scopeKey: user.id,
+      scopeKey,
     };
 
     /* ---------- Call A : Layer 1 + Layer 2 (cacheable, job-agnostic) ---------- */
     let evidenceItems: EvidenceItem[] = [];
     let experienceRecords: ExperienceRecord[] = [];
 
-    const { data: cachedExtract } = await admin
-      .from("user_profiles")
-      .select("evidence_items, experience_records")
-      .eq("user_id", user.id)
+    const { data: cachedExtract } = await own(
+      admin
+        .from("user_profiles")
+        .select("evidence_items, experience_records"),
+    )
       .eq("extraction_fingerprint", extractFp)
       .not("experience_records", "is", null)
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle();
+
 
     const cachedDoc = cachedExtract?.experience_records
       ? null
