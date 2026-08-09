@@ -562,7 +562,7 @@ export default function JobProfile({
               </div>
             </section>
           </section>
-        </main>
+        </Shell>
 
         <div className="mask" id="mask">
           <div className="dlg">
