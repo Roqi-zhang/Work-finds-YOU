@@ -155,12 +155,16 @@ type PetalRef = {
   delay: number;
 };
 
+type KeyPointUI = { title: string; detail: string };
+
 type StoredProfile = {
   state: "ready" | "bloomed";
   name?: string;
   meta?: string;
   result?: DimResult[];
+  keyPoints?: KeyPointUI[];
 };
+
 
 type TipState = {
   on: boolean;
