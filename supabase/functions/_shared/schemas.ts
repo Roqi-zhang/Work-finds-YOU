@@ -424,7 +424,19 @@ export const matchSchema = obj({
     3,
     3,
   ),
-  steps: arr(obj({ title: str, desc: str, why: str, effect: str, sample: str }), 3, 3),
+  steps: arr(
+    obj({
+      kind: { type: "string", enum: ["resume", "interview", "portfolio"] },
+      title: str,
+      desc: str,
+      applicable: { type: "boolean" },
+      items: arr(obj({ point: str, suggestion: str, evidence: str }), 3, 1),
+      mindset: str,
+    }),
+    3,
+    3,
+  ),
+
   decision_factors: arr(obj({ step: str, detail: str }), 6),
   rationale_summary: str,
 });
