@@ -19,7 +19,7 @@ export default function JobProfile({
   const { user } = useAuth();
   const rootRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<HTMLElement>(null);
-  const [exportData, setExportData] = useState<{ job: any; result: any[] } | null>(null);
+  const [exportData, setExportData] = useState<{ job: any; result: any[]; keyPoints?: { title: string; detail: string }[] } | null>(null);
   const stateCbRef = useRef(onStateChange);
   stateCbRef.current = onStateChange;
 
