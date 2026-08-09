@@ -150,39 +150,29 @@ export default function ExportMenu({ fileBase, captureRef, buildDoc, disabled }:
       } else if (kind === "pdf") {
         const el = captureRef.current;
         if (!el) throw new Error("nothing to capture");
-        const { canvas, blocks } = await snapshot(el);
-        const { jsPDF } = await import("jspdf");
-        // A4 portrait in points; the canvas is scaled to the printable width.
-        const pdf = new jsPDF({ orientation: "p", unit: "pt", format: "a4" });
-        const pw = pdf.internal.pageSize.getWidth();
-        const ph = pdf.internal.pageSize.getHeight();
-        const margin = 40;
-        const innerW = pw - margin * 2;
-        const innerH = ph - margin * 2;
-        const ratio = innerW / canvas.width; // canvas px -> pt
-        const pageSlice = Math.floor(innerH / ratio); // canvas px per page
-
-        let top = 0;
-        let first = true;
-        while (top < canvas.height) {
-          const bottom = breakPoint(canvas, top, pageSlice, blocks);
-          const sliceH = Math.max(1, bottom - top);
-          const slice = document.createElement("canvas");
-          slice.width = canvas.width;
-          slice.height = sliceH;
-          const sctx = slice.getContext("2d");
-          if (!sctx) break;
-          sctx.fillStyle = "#F9F9F9";
-          sctx.fillRect(0, 0, slice.width, slice.height);
-          sctx.drawImage(canvas, 0, top, canvas.width, sliceH, 0, 0, canvas.width, sliceH);
-          if (!first) pdf.addPage();
-          const drawW = innerW;
-          const x = (pw - drawW) / 2; // centred on the page
-          pdf.addImage(slice.toDataURL("image/jpeg", 0.92), "JPEG", x, margin, drawW, sliceH * ratio);
-          first = false;
-          top = bottom;
+        // Native print: the browser renders the real page layout 1:1 and the
+        // user picks "Save as PDF" in the print dialog.
+        const opened: Element[] = [];
+        el.querySelectorAll(".fold, .ev, .evi").forEach((n) => {
+          if (!n.classList.contains("open")) {
+            n.classList.add("open");
+            opened.push(n);
+          }
+        });
+        const prevTheme = document.documentElement.getAttribute("data-theme");
+        document.documentElement.setAttribute("data-theme", "light");
+        el.classList.add("print-root");
+        setOpen(false);
+        try {
+          await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+          window.print();
+        } finally {
+          el.classList.remove("print-root");
+          opened.forEach((n) => n.classList.remove("open"));
+          if (prevTheme) document.documentElement.setAttribute("data-theme", prevTheme);
+          else document.documentElement.removeAttribute("data-theme");
         }
-        pdf.save(`${fileBase}.pdf`);
+
 
       } else {
         const data = buildDoc();
