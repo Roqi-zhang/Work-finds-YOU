@@ -588,7 +588,11 @@ export default function Profile({
                   buildDoc={() => ({
                     title: "候选人画像 · 8 维能力",
                     subtitle: `${rName} · ${rMeta}`,
-                    sections: DIMS.map((dim, i) => {
+                    sections: [
+                      ...(keyPoints.length
+                        ? [{ heading: "Key points · 最突出的 3 项能力", lines: keyPoints.map((p) => `${p.title} — ${p.detail}`) }]
+                        : []),
+                      ...DIMS.map((dim, i) => {
                       const d = (result[i] || {}) as DimResult;
                       const evi = (d.evidenceDetail ?? []).map(
                         (ev) =>
@@ -746,6 +750,20 @@ export default function Profile({
               </div>
 
               <div className="legend" id="legend">
+                {result && keyPoints.length > 0 && (
+                  <div className="g fade kp">
+                    <h4>00 · Key points · 这份简历最突出的 3 项能力</h4>
+                    {keyPoints.map((p, n) => (
+                      <div className="kp-i" key={p.title + n}>
+                        <span className="k">{String(n + 1).padStart(2, "0")}</span>
+                        <div>
+                          <div className="kp-t">{p.title}</div>
+                          <div className="kp-d">{p.detail}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
                 {result &&
                   GROUPS.map((g, i) => (
                     <div className="g fade" key={g.title} style={{ animationDelay: i * 0.12 + "s" }}>
