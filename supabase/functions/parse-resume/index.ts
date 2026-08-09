@@ -53,8 +53,10 @@ type ExtractOut = { evidence_items: EvidenceItem[]; experience_records: Experien
 type ProfileOut = {
   capability_signals: CapabilitySignal[];
   candidate_dimensions: CandidateDimension[];
+  key_points?: { title: string; detail: string }[];
   sections: { experience: string; skills: string; motivation: string; risks: string };
 };
+
 
 /** Fallback rubric wording when the user reaches /profile without a target JD. */
 const GENERIC_RUBRIC_NOTE =
