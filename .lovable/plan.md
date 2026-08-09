@@ -1,95 +1,120 @@
-# 把登录/注册换成自有服务 + 去除 Lovable 品牌 + 自定义域名 + 国内访问
+# 仅导出前端 + 后端本地部署方案
 
-## 结论前置
-
-- **登录服务本身**能否完全换成自己的：可以，但分两层。如果只是想换掉 Google OAuth 的品牌归属，改动最小（方案 A）；如果想让邮箱注册、会话、确认邮件也完全不经过 Lovable，必须走彻底自建认证（方案 B）。
-- **去除 Lovable 品牌**：前端 UI 中的 Lovable 元素可以全部删除；但方案 A 的认证底层仍在 Lovable Cloud，用户收邮件/点确认链接时仍会看到 Lovable 托管域名。彻底隐藏需要方案 B。
-- **中国国内访问**：当前托管在海外，不连 VPN 大概率慢、部分网络不稳定。国内正式运营需要 ICP 备案 + 国内节点。域名可以现在就用，备案另作后续规划。
-- **自定义域名**：可以，先发布到 Lovable 域名，再在 Project Settings → Domains 连接你买的域名（添加 A 记录到 Lovable IP）。
+## 结论
+可行，且是**最彻底摆脱 Lovable 依赖**的路径。前端是纯 React + Vite + TS 单页应用，后端现在全部跑在 Supabase Edge Functions 里，逻辑可以平移到任何 Node/Deno/Bun 后端。部署到中国大陆服务器即可解决国内访问与备案问题。
 
 ---
 
-## 一、认证方案（二选一）
+## 一、当前项目里有哪些 Lovable 依赖
 
-### 方案 A：只换 Google OAuth 归属，其余认证仍用 Lovable Cloud
-- 你提供：Google OAuth Client ID + Secret、自己的应用名称/Logo、正式域名。
-- 需要做的事：
-  1. 在 Google Cloud Console 创建自己的 OAuth 应用，把 Lovable 的回调域名加入 Authorized redirect URIs。
-  2. 在 Lovable Cloud Auth 设置里填入你自己的 Google Client ID / Secret，替换掉默认托管凭证。
-  3. 前端删除 `src/integrations/lovable/index.ts` 相关调用，Google 按钮改为标准 `supabase.auth.signInWithOAuth`（或等效托管流程，取决于实现）。
-  4. 邮箱/密码注册、会话、RLS 策略、数据库表完全不动。
-- 效果：用户用 Google 登录时， consent 页面显示的是你自己的应用名称和 Logo；登录成功后回到你的域名。
-- 局限：邮箱注册后的确认邮件、密码重置邮件仍由 Lovable Cloud 代发，邮件里的链接可能带 Lovable 域名；认证 API 域名仍是 Lovable Cloud 的 Supabase 子域名。用户不刻意查看网络请求时，日常 UI 不会看到 Lovable 字样。
-
-### 方案 B：完全自建认证服务（邮箱/密码 + Google 都走自己的服务）
-- 候选方案：自己写一个基于 JWT 的认证服务，或用 Auth0 / Logto / Casdoor / Keycloak 等开源方案。
-- 需要做的事：
-  1. 自建用户表、密码哈希、邮箱验证、密码重置、会话刷新。
-  2. 替换 Supabase Auth 模块：你的新服务需要签发与 Supabase PostgREST 兼容的 JWT（配置 JWKS 或共享 JWT Secret），否则所有 `auth.uid()` 的 RLS 策略都要重写。
-  3. 三个服务端函数（`parse-jd`、`parse-resume`、`run-match`）都要从校验 Supabase JWT 改成校验新服务 JWT。
-  4. 游客数据认领逻辑（`claim-guest`）要改，因为 guest/user 关联从 `auth.users` 变成你自己的用户表。
-  5. 现有账号迁移：密码哈希能否迁移取决于目标方案，一般只能让老用户用邮箱重置密码重新登录。
-- 效果：认证流程完全独立，确认邮件、域名、品牌全部是自己的。
-- 风险：邮件送达率、风控、限流、安全更新都需要自己维护；工作量约为方案 A 的 5–8 倍。
-
-### 建议
-短期先用方案 A，去掉前端可见的 Lovable 品牌即可。如果未来要国内备案/独立部署，再评估方案 B。
+| 依赖 | 位置 | 能否本地替代 | 说明 |
+| --- | --- | --- | --- |
+| 前端托管 | Lovable 预览/发布 | 可 | 导出后自己用 Vercel/Netlify/国内服务器/对象存储托管 |
+| 后端 Auth | Lovable Cloud / Supabase Auth | 可 | 替换为自建 JWT / Logto / Casdoor / Keycloak 等 |
+| 后端数据库 | Lovable Cloud / Supabase Postgres | 可 | 迁移到本地/云主机 Postgres |
+| 后端存储 | Lovable Cloud / Supabase Storage | 可 | 替换为本地磁盘 / MinIO / 阿里云 OSS / S3 兼容存储 |
+| 服务端函数 | Supabase Edge Functions | 可 | 平移到 Node.js / Deno / Bun 的 HTTP 服务 |
+| AI 调用 | 阿里云 MaaS（已通过自定义 Key） | 可 | 当前已用自己的 API Key，无需 Lovable AI Gateway |
+| 实时订阅 | 未使用 | — | 若未来使用需自建 WebSocket 或 SSE |
 
 ---
 
-## 二、去除 Lovable 品牌
+## 二、导出前需要确认/清理的前端代码
 
-### 前端可见部分（需要改动）
-- `src/pages/Home.tsx` / `src/components/swiss/TopBar.tsx`：删除或替换任何 Lovable 提供的默认 Logo/水印。
-- `index.html`：`<title>`、`<meta name="description">`、og 标签改为 Job Seek You 自己的文案；不能保留 "Lovable App" 等模板默认字样。
-- `public/placeholder.svg`：如果项目中使用，替换为自有占位图。
-- 发布时 Lovable 的右下角/编辑器 UI 只在编辑态出现，发布后的公开站点不会带编辑器水印。
+### 1. 移除 Lovable 专用集成
+- `src/integrations/lovable/index.ts`：删除，或改为纯 Supabase 标准 OAuth 调用。
+- `src/integrations/supabase/client.ts`：这是自动生成的 Supabase 客户端，里面的 `VITE_SUPABASE_URL` / `VITE_SUPABASE_PUBLISHABLE_KEY` 要换成你本地后端的 API base URL 和公钥。
 
-### 认证流程部分（取决于方案）
-- 方案 A：确认邮件由 Lovable 代发，无法改成你的域名，但邮件内容里的应用名可以改为你的品牌（在 Cloud Auth 邮件模板里设置）。
-- 方案 B：邮件你自己发，域名也是自己的。
+### 2. 前端环境变量
+导出后需自己维护 `.env`：
+- `VITE_API_BASE_URL`：你的本地后端 API 地址（如 `https://api.yourdomain.com`）。
+- `VITE_PUBLIC_KEY`：后端用于鉴权的公钥或 anon key（如果后端模拟 Supabase 风格）。
+- 不再使用 `VITE_SUPABASE_URL` 等 Lovable 专用变量。
 
----
+### 3. 数据层改造
+- `src/lib/ai.ts`：现在调用 `supabase.functions.invoke(...)`，需要改成普通 `fetch` 调用你的本地 API。
+- `src/lib/wfy.ts`、`src/lib/filestore.ts`、`src/lib/guest.ts`：所有 Supabase 客户端调用（`supabase.from(...)`、`supabase.storage`）都要改成调用你的 REST API。
+- 若保留 Supabase 风格的 JWT/RLS，可以最小改动；若换其他后端，需要重写数据访问层。
 
-## 三、中国国内访问
-
-- **当前状态**：前端和后端都托管在海外。中国大陆用户不连 VPN 通常能打开，但速度慢、部分企业网络/地区可能无法稳定访问。
-- **正式运营**：若面向中国大陆公众提供服务，需要 ICP 备案，且域名解析到境内服务器。当前 Lovable Cloud 的 Supabase 后端在海外，无法直接完成备案。
-- **建议路径**：先挂自有域名在海外上线，跑通产品与付费；如果确认要主攻国内市场，再单独规划国内服务器/备案（这是独立于当前开发阶段的决策，不影响现在实现）。
-
----
-
-## 四、自定义域名
-
-### 步骤
-1. 先在 Lovable 发布项目，获得 `xxx.lovable.app` 的公开地址。
-2. 进入 **Project Settings → Project section → Domains**（或 Publish 弹窗里的 Add custom domain）。
-3. 选择 **Connect Domain**，输入你买的域名（例如 `yourdomain.com`）。
-4. Lovable 会给出 DNS 记录：
-   - A 记录 `@` → `185.158.133.1`
-   - A 记录 `www` → `185.158.133.1`
-   - TXT 记录 `_lovable` → `lovable_verify=xxx`
-5. 去你的域名注册商（如 Cloudflare / 阿里云 / 腾讯云）添加这些记录，等待 DNS 传播（通常几分钟到 72 小时）。
-6. 在 Lovable 里选择主域名（建议用 `www.yourdomain.com` 作为主域名，根域 `yourdomain.com` 重定向到 www），其他会自动跳转。
-
-### 注意
-- 自定义域名完成后，Google OAuth 的回调白名单里也要加上你的域名（方案 A）。
-- 中国 ICP 备案要求域名解析到境内服务器，目前海外托管不满足；若后续备案，需要把站点部署到国内节点。
+### 4. UI 默认品牌
+- `index.html` 标题/meta、默认 Logo 等需改为 Job Seek You 自有品牌。
 
 ---
 
-## 五、需要你立即提供的信息（如果选方案 A）
+## 三、后端本地部署方案
 
-1. Google OAuth Client ID 与 Client Secret（通过安全密钥表单提交，不要贴在聊天）。
-2. 你的应用名称（显示在 Google consent 页面）。
-3. 你买的域名（例如 `www.yourdomain.com`）。
+### 推荐架构
+```text
+反向代理（Nginx / Caddy）
+    ├── 静态前端 (dist/)
+    ├── API 服务 (Node/Bun/Deno)
+    │       ├── /auth/*        登录/注册/会话
+    │       ├── /api/jobs      岗位解析/缓存
+    │       ├── /api/resumes   简历解析/缓存
+    │       ├── /api/match     匹配分析
+    │       ├── /api/storage   文件上传/下载
+    │       └── /api/claims    游客数据迁移
+    ├── Postgres 数据库
+    └── 对象存储（MinIO / OSS / S3）
+```
 
-如果选方案 B，请告诉我你倾向的认证方案（自建 JWT / Auth0 / Logto / Casdoor / Keycloak），我再给出迁移细节。
+### 后端需要复刻的模块
+1. **Auth**：自建 JWT 签发/校验，邮箱密码注册，邮件确认，密码重置。可选 Logto/Casdoor 加速。
+2. **数据库**：当前所有 `public` 表结构（`profiles`、`resumes`、`user_profiles`、`job_profiles`、`match_reports`、`applications`、`usage_counters`、`ai_call_logs` 等）导出为 SQL 后在新 Postgres 执行。
+3. **RLS**：自建后端不再用 `auth.uid()`，要在 API 层做权限校验（根据 JWT 中的 user_id 过滤数据）。
+4. **文件存储**：上传简历/JD 到本地存储或 OSS，返回可访问 URL。
+5. **解析服务**：把 `supabase/functions/parse-jd/index.ts`、`parse-resume/index.ts`、`run-match/index.ts` 三个函数逻辑迁移到 API 路由。
+6. **缓存/去重**：`docstore.ts` 里的文档指纹去重逻辑保留。
+7. **AI 调用**：`supabase/functions/_shared/ai.ts` 可直接复用，环境变量 `CUSTOM_AI_API_KEY` / `CUSTOM_AI_BASE_URL` / `CUSTOM_AI_MODEL` 保持不变。
+
+### 最小可运行后端（最快验证）
+用 Express + PostgreSQL + MinIO 重搭：
+- 3 个解析接口（JD、简历、匹配）。
+- 1 个 auth 接口（JWT 登录/注册）。
+- 1 个文件上传接口。
+- 游客逻辑通过 localStorage `guest_key` 继续在前端生成，后端用 `guest_key` 临时关联数据，登录后迁移到 `user_id`。
 
 ---
 
-## 六、不修改代码的前提下，你可以先做的事
+## 四、国内访问与备案
 
-- 删除或替换项目中的默认 Lovable 文案/Logo（不需要我改认证，也可以先做）。
-- 在 Lovable 域名设置里尝试连接你已经购买的域名（发布后才能操作）。
-- 去 Google Cloud Console 创建 OAuth 应用，拿到 Client ID / Secret（这一步不依赖我改代码）。
+- 只要后端部署在**中国大陆服务器**（阿里云 ECS、腾讯云、华为云等），且域名解析到该服务器，国内用户无需 VPN 即可正常访问。
+- 在中国大陆向公众提供服务需要 **ICP 备案**：域名实名制、服务器在境内、主体为企业或个体工商户（个人备案有经营范围限制）。
+- 备案期间网站不可对外访问，建议先用海外服务器跑通产品，再切到国内服务器并提交备案。
+- 如果 AI 模型接口也在海外（阿里云 MaaS 在国内有节点，通常不需要 VPN），需确认模型服务端点的网络可达性。
+
+---
+
+## 五、迁移顺序建议
+
+1. **导出前端**：在 Lovable 中把项目导出为 ZIP，保留 `src/`、`index.html`、`package.json`。
+2. **清理前端**：删除 `src/integrations/lovable`，把 `supabase` 调用替换为本地 `fetch` 调用（可以保留相同接口契约）。
+3. **搭建最小后端**：Express + Postgres + MinIO，先迁移 3 个解析函数 + 文件上传 + 游客数据迁移。
+4. **自建 Auth**：先用 Logto/Casdoor 快速替代，避免从零写邮箱验证。
+5. **数据迁移**：把当前 Lovable Cloud 数据库数据导出，导入新 Postgres。
+6. **国内部署**：买国内服务器和域名，完成 ICP 备案后切换 DNS。
+
+---
+
+## 六、风险与成本
+
+| 项目 | 风险/成本 |
+| --- | --- |
+| 前端导出 | 无风险，代码可直接运行 |
+| 后端重写 | 1–2 周工作量（取决于是否用现成 Auth 方案） |
+| 自建 Auth | 邮件送达、密码找回、风控需自行维护 |
+| 数据库迁移 | 需导出/导入，注意 `auth.users` 表不能直接用，密码哈希需重置 |
+| 国内备案 | 周期 7–20 个工作日，需准备主体资质 |
+| 文件存储 | 小量可用本地磁盘，生产建议 OSS/S3 |
+
+---
+
+## 七、需要你决定的事
+
+1. 后端用什么运行时：Node.js / Bun / Deno？
+2. 认证方案：自建 JWT、Logto、Casdoor、Keycloak 还是 Auth0？
+3. 部署位置：先海外验证，还是直接国内服务器？
+4. 数据库：自己维护 Postgres，还是用阿里云 RDS / 腾讯云 PostgreSQL？
+5. 文件存储：本地磁盘 / MinIO / 阿里云 OSS / AWS S3？
+
+如果确认要走这条路，我可以先输出一份**最小后端接口契约**（与前端数据层对齐），以及**前端数据层替换清单**，作为你下一步开发或交给外包的交接文档。
