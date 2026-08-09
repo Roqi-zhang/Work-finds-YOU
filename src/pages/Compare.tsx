@@ -309,26 +309,8 @@ export default function Compare() {
           </aside>
         </section>
 
-        <div className="controls">
-          <div className="grp">
-            <span className="caption">Sort</span>
-            <button className="on">Match</button>
-            <button>Salary</button>
-            <button>Recency</button>
-          </div>
-          <div className="grp">
-            <span className="caption">Orbits</span>
-            <button>2</button>
-            <button className="on">3</button>
-            <button>4</button>
-          </div>
-          <div className="grp">
-            <span className="caption">Density</span>
-            <button>Sparse</button>
-            <button className="on">Regular</button>
-            <button>Dense</button>
-          </div>
-        </div>
+
+
 
         <div className={"mask" + (dlgOpen ? " on" : "")} id="mask" onClick={(e) => e.target === e.currentTarget && closeDialog()}>
           <div className="dlg">
