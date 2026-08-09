@@ -460,15 +460,18 @@ export default function JobProfile({
     };
   }, [navigate]);
 
+  const Shell = (embedded ? "div" : "main") as "main";
+
   return (
     <div className="p-jobprofile">
       <div ref={rootRef}>
-        <main className="page">
-          <TopBar />
+        <Shell className={embedded ? "wb-shell" : "page"}>
+          {!embedded && <TopBar />}
 
-          <section className="layout">
+          <section className={"layout" + (embedded ? " wb" : "")}>
             <aside className="side">
-              <div className="caption">03 · Job Profile</div>
+              <div className="caption">{embedded ? "A · Job Profile" : "03 · Job Profile"}</div>
+
               <h1>解析岗位的<br />理想能力花</h1>
               <p>上传岗位 JD，8 项胜任力维度将生长为这个岗位的理想能力花。花瓣越舒展代表该岗位越看重这项能力；JD 未提及时只开虚线小瓣，不记 0 分。</p>
 
