@@ -142,7 +142,7 @@ export default function ExportMenu({ fileBase, captureRef, buildDoc, disabled }:
       if (kind === "png") {
         const el = captureRef.current;
         if (!el) throw new Error("nothing to capture");
-        const canvas = await snapshot(el);
+        const { canvas } = await snapshot(el);
         const a = document.createElement("a");
         a.href = canvas.toDataURL("image/png");
         a.download = `${fileBase}.png`;
@@ -150,13 +150,13 @@ export default function ExportMenu({ fileBase, captureRef, buildDoc, disabled }:
       } else if (kind === "pdf") {
         const el = captureRef.current;
         if (!el) throw new Error("nothing to capture");
-        const canvas = await snapshot(el);
+        const { canvas, blocks } = await snapshot(el);
         const { jsPDF } = await import("jspdf");
         // A4 portrait in points; the canvas is scaled to the printable width.
         const pdf = new jsPDF({ orientation: "p", unit: "pt", format: "a4" });
         const pw = pdf.internal.pageSize.getWidth();
         const ph = pdf.internal.pageSize.getHeight();
-        const margin = 24;
+        const margin = 40;
         const innerW = pw - margin * 2;
         const innerH = ph - margin * 2;
         const ratio = innerW / canvas.width; // canvas px -> pt
@@ -165,7 +165,7 @@ export default function ExportMenu({ fileBase, captureRef, buildDoc, disabled }:
         let top = 0;
         let first = true;
         while (top < canvas.height) {
-          const bottom = breakPoint(canvas, top, pageSlice);
+          const bottom = breakPoint(canvas, top, pageSlice, blocks);
           const sliceH = Math.max(1, bottom - top);
           const slice = document.createElement("canvas");
           slice.width = canvas.width;
@@ -176,11 +176,14 @@ export default function ExportMenu({ fileBase, captureRef, buildDoc, disabled }:
           sctx.fillRect(0, 0, slice.width, slice.height);
           sctx.drawImage(canvas, 0, top, canvas.width, sliceH, 0, 0, canvas.width, sliceH);
           if (!first) pdf.addPage();
-          pdf.addImage(slice.toDataURL("image/jpeg", 0.92), "JPEG", margin, margin, innerW, sliceH * ratio);
+          const drawW = innerW;
+          const x = (pw - drawW) / 2; // centred on the page
+          pdf.addImage(slice.toDataURL("image/jpeg", 0.92), "JPEG", x, margin, drawW, sliceH * ratio);
           first = false;
           top = bottom;
         }
         pdf.save(`${fileBase}.pdf`);
+
       } else {
         const data = buildDoc();
         const { Document, Packer, Paragraph, HeadingLevel, TextRun } = await import("docx");
