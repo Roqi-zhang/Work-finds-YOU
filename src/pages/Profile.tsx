@@ -664,23 +664,18 @@ export default function Profile({
                     <b id="tipScore">{tip.score}</b>
                   </h5>
                   <div className="row">
-                    <div className="k">Evidence</div>
-                    <div className="v" id="tipEvi">
-                      {tip.evi}
-                    </div>
-                  </div>
-                  <div className="row">
-                    <div className="k">Why this score</div>
+                    <div className="k">Analysis</div>
                     <div className="v" id="tipWhy">
                       {tip.why}
                     </div>
                   </div>
                   <div className="row">
-                    <div className="k">Action</div>
-                    <div className="v" id="tipAct">
-                      {tip.act}
+                    <div className="k">Evidence</div>
+                    <div className="v" id="tipEvi">
+                      {tip.evi}
                     </div>
                   </div>
+
                 </div>
               </div>
 
