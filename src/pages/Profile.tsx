@@ -531,7 +531,7 @@ export default function Profile({
               <br />
               能力花
             </h1>
-            <p>上传简历，8 项胜任力维度将生长为这朵花的花瓣。花瓣越舒展代表该能力越突出；证据不足时只开虚线小瓣，不记 0 分。</p>
+            <p>把简历翻译成能力证据——哪些能力你写清楚了，哪些只是提了一句没有佐证，一眼就知道该补什么。</p>
 
             <div className="steps" hidden={embedded}>
               <div className={"step" + (state === "empty" ? " on" : "")} id="s1">
