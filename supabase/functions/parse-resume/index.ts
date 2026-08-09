@@ -332,20 +332,21 @@ Deno.serve(async (req) => {
     const { score, dimensions, scoringVersion } = computeScore(legacyDims);
 
     // `is_current` is now scoped to the target job, not global.
-    let currentQuery = admin
-      .from("user_profiles")
-      .update({ is_current: false })
-      .eq("user_id", user.id)
-      .eq("is_current", true);
+    let currentQuery = own(
+      admin
+        .from("user_profiles")
+        .update({ is_current: false }),
+    ).eq("is_current", true);
     currentQuery = targetJobId
       ? currentQuery.eq("target_job_profile_id", targetJobId)
       : currentQuery.is("target_job_profile_id", null);
     await currentQuery;
 
-    const { data: prev } = await admin
-      .from("user_profiles")
-      .select("version")
-      .eq("user_id", user.id)
+    const { data: prev } = await own(
+      admin
+        .from("user_profiles")
+        .select("version"),
+    )
       .order("version", { ascending: false })
       .limit(1)
       .maybeSingle();
@@ -353,7 +354,8 @@ Deno.serve(async (req) => {
     const { data: profile, error: pErr } = await admin
       .from("user_profiles")
       .insert({
-        user_id: user.id,
+        user_id: user?.id ?? null,
+        guest_key: user ? null : guestKey,
         resume_id: resume?.id ?? null,
         target_job_profile_id: targetJobId,
         version: (prev?.version ?? 0) + 1,
@@ -381,18 +383,24 @@ Deno.serve(async (req) => {
 
     // Only reports for this target job become stale — a resume aimed at another
     // JD must not invalidate unrelated history.
-    let staleQuery = admin.from("match_reports").update({ stale: true }).eq("user_id", user.id);
+    let staleQuery = own(admin.from("match_reports").update({ stale: true }));
     if (targetJobId) staleQuery = staleQuery.eq("job_profile_id", targetJobId);
     await staleQuery;
 
-    await logCall(admin, {
-      user_id: user.id,
-      task: "parse-resume",
-      model: MODEL,
-      prompt_tokens: promptTokens,
-      completion_tokens: completionTokens,
-      latency_ms: latency,
-    });
+    if (user) {
+      await consumeDaily(admin, user.id, "resume");
+      await logCall(admin, {
+        user_id: user.id,
+        task: "parse-resume",
+        model: MODEL,
+        prompt_tokens: promptTokens,
+        completion_tokens: completionTokens,
+        latency_ms: latency,
+      });
+    } else {
+      await consumeGuest(admin, guestKey, "resume");
+    }
+
 
     return json({
       profileId: profile.id,
