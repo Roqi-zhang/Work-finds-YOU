@@ -12,6 +12,7 @@ import {
   type EvidenceLink,
 } from "../_shared/schemas.ts";
 import { decisionFactorsToTrace, dimensionMatchesToDims } from "../_shared/adapter.ts";
+import { consumeMatchRun, getUsage } from "../_shared/quota.ts";
 
 const SYSTEM = `你是资深招聘官，对比候选人画像与岗位要求，输出一份可追溯的匹配分析。
 规则：
@@ -131,6 +132,20 @@ Deno.serve(async (req) => {
         .eq("status", "succeeded")
         .maybeSingle();
       if (cached) return json({ report: cached, cached: true, job });
+    }
+
+    /* ---------- free-tier gate : 3 complete match reports per account ----------
+       Checked server-side, after the cache lookup so re-reading a report is free. */
+    const quota = await getUsage(admin, user.id);
+    if (quota.remaining <= 0) {
+      return json(
+        {
+          error: `免费额度已用完（${quota.limit} 次完整匹配）。已生成的报告仍可随时查看，付费档位即将开放。`,
+          code: "QUOTA_EXCEEDED",
+          usage: { used: quota.used, limit: quota.limit, remaining: 0 },
+        },
+        402,
+      );
     }
 
     const resumeEvidence = (profile.evidence_items as EvidenceItem[] | null) ?? [];
@@ -296,11 +311,13 @@ Deno.serve(async (req) => {
       const { data: inserted, error: e2 } = await admin.from("match_reports").insert(payload).select("*").single();
       if (e2) throw e2;
       await logCall(admin, logRow);
-      return json({ report: inserted, cached: false, job });
+      await consumeMatchRun(admin, user.id);
+      return json({ report: inserted, cached: false, job, usage: { used: quota.used + 1, limit: quota.limit, remaining: quota.remaining - 1 } });
     }
 
     await logCall(admin, logRow);
-    return json({ report, cached: false, job });
+    await consumeMatchRun(admin, user.id);
+    return json({ report, cached: false, job, usage: { used: quota.used + 1, limit: quota.limit, remaining: quota.remaining - 1 } });
   } catch (e) {
     const err = e as { status?: number; message?: string };
     console.error("run-match failed", err);
