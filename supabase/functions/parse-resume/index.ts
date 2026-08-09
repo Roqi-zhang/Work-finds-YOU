@@ -1,5 +1,14 @@
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
-import { adminClient, fileToBlock, getUser, logCall } from "../_shared/req.ts";
+import { adminClient, bufferToBlock, decodeBase64, fileToBlock, getUser, logCall } from "../_shared/req.ts";
+import {
+  consumeDaily,
+  consumeGuest,
+  getDailyUsage,
+  getGuestTrial,
+  GUEST_LIMIT,
+  QUOTA_MESSAGE,
+  type GuestRow,
+} from "../_shared/quota.ts";
 import { callAIJson, MODEL, type ContentBlock } from "../_shared/ai.ts";
 import { DIMS, computeScore } from "../_shared/scoring.ts";
 import {
