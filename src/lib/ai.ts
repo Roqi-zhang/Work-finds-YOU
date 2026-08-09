@@ -158,7 +158,18 @@ export type MatchReport = {
     tags: string[];
     evidence: { mine: string; required: string; reasoning: string; impact: string };
   }[];
-  steps: { title: string; desc: string; why: string; effect: string; sample: string }[];
+  steps: {
+    kind?: "resume" | "interview" | "portfolio";
+    title: string;
+    desc: string;
+    applicable?: boolean;
+    items?: { point: string; suggestion: string; evidence: string }[];
+    mindset?: string;
+    why?: string;
+    effect?: string;
+    sample?: string;
+  }[];
+
   dimension_scores: DimScored[];
   sources: { label: string; at: string }[];
   reasoning_trace: string | null;
