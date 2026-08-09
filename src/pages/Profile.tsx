@@ -451,10 +451,11 @@ export default function Profile({
     setDialog({ title, body, okText, onConfirm: cb });
   }
 
-  // Going back never discards work — the resume and the flower are kept.
+  // Back follows the nav order instead of browser history.
   function onBack() {
-    history.back();
+    navigate("/");
   }
+
 
   function onRedo() {
     confirmDialog("Rebuild profile?", "重新建立画像将清空当前结果，需要重新上传简历，是否继续？", "确认重建", () => {
