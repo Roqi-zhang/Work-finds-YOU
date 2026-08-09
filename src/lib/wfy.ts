@@ -540,6 +540,8 @@ function makeResolver(links: BackendReport["evidence_links"]) {
 export function reportFromBackend(job: Job, r: BackendReport): MatchReport {
   const base = reportTemplate({ ...job, m: r.score });
   const d = r.decision || {};
+  const resolve = makeResolver(r.evidence_links);
+
 
   // Reasoning is rendered from real model output only — no mock fallback.
   let factors: { step: string; detail: string }[] = Array.isArray(r.decision_factors) ? r.decision_factors : [];
