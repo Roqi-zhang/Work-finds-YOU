@@ -319,18 +319,32 @@ export default function JobProfile({
     };
     redoBtn.addEventListener("click", onRedo);
 
-    function renderPetalAnalysis(result: any[]) {
+    function renderPetalAnalysis(result: any[], keyPoints?: { title: string; detail: string }[]) {
       const groups = [
         { title: "01 · Can do · 能不能做", idx: [0, 1, 2] },
         { title: "02 · Can deliver · 能不能做成", idx: [3, 4, 5] },
         { title: "03 · Long-term fit · 能不能长期适配", idx: [6, 7] },
       ];
       legend.innerHTML = "";
+      if (keyPoints && keyPoints.length) {
+        const kp = document.createElement("div");
+        kp.className = "g fade kp";
+        kp.innerHTML =
+          "<h4>00 · Key points · 这个岗位最看重的 3 项能力</h4>" +
+          keyPoints
+            .map(
+              (p, n) =>
+                `<div class="kp-i"><span class="k">${String(n + 1).padStart(2, "0")}</span><div><div class="kp-t">${p.title}</div><div class="kp-d">${p.detail}</div></div></div>`,
+            )
+            .join("");
+        legend.appendChild(kp);
+      }
       groups.forEach((g, i) => {
         const div = document.createElement("div");
         div.className = "g fade";
         div.style.animationDelay = (i * 0.12) + "s";
         div.innerHTML = "<h4>" + g.title + "</h4>" + g.idx.map((k) => {
+
           const d = result[k] || {};
           const s = d.score;
           const bar = Array.from({ length: 5 }, (_, n) => `<i class="${s != null && n < s ? "on" : ""}"></i>`).join("");
