@@ -1,0 +1,149 @@
+/* Native browser print → "Save as PDF". Renders the real page layout 1:1. */
+
+@page {
+  size: A4;
+  margin: 14mm;
+}
+
+@media print {
+  html,
+  body {
+    background: #ffffff !important;
+    width: auto !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  /* Only the captured report is printed. */
+  body * {
+    visibility: hidden !important;
+  }
+  .print-root,
+  .print-root * {
+    visibility: visible !important;
+  }
+  .print-root {
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* Chrome / UI furniture never belongs in the document. */
+  .topbar,
+  .progress,
+  .bg-dial,
+  .export-menu,
+  .cta-row,
+  .wb-foot,
+  .drop,
+  .dlg-mask,
+  .mask,
+  .merge,
+  .controls {
+    display: none !important;
+  }
+
+  /* Kill viewport-sized sections so pages flow by content. */
+  .page,
+  .content {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 auto !important;
+    padding: 0 !important;
+  }
+  .screen {
+    display: block !important;
+    min-height: 0 !important;
+    height: auto !important;
+    padding: 12px 0 !important;
+  }
+
+  /* Two-column layouts stack. */
+  .wb-grid,
+  .layout,
+  .layout.wb,
+  .prof-grid,
+  .jp-grid,
+  .stage {
+    display: block !important;
+    grid-template-columns: none !important;
+    gap: 0 !important;
+  }
+  .wb-col,
+  .col {
+    width: 100% !important;
+    max-width: 100% !important;
+    border-left: 0 !important;
+    padding-left: 0 !important;
+    margin: 0 0 18px 0 !important;
+  }
+
+  /* Everything folded open. */
+  .fold .fb,
+  .ev .ev-body,
+  .evi-body {
+    max-height: none !important;
+    overflow: visible !important;
+    opacity: 1 !important;
+  }
+  .fold .ft .car,
+  .ev-toggle .car {
+    display: none !important;
+  }
+
+  /* Flower stays whole and centred. */
+  .petal-stage {
+    zoom: 1 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    overflow: visible !important;
+    margin: 12px auto 20px !important;
+  }
+  .flower-svg {
+    opacity: 1 !important;
+    transform: none !important;
+    max-width: 100% !important;
+    display: block !important;
+  }
+  .moon-score {
+    display: flex !important;
+    justify-content: center !important;
+    margin: 16px auto !important;
+  }
+
+  /* Pagination hygiene. */
+  .petal-stage,
+  .moon-score,
+  .card,
+  .fold,
+  .ev,
+  .evi,
+  tr,
+  li {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  h1,
+  h2,
+  h3,
+  h4,
+  .caption,
+  .k {
+    break-after: avoid;
+    page-break-after: avoid;
+  }
+
+  * {
+    animation: none !important;
+    transition: none !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}
