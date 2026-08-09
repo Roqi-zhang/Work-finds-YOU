@@ -1,6 +1,7 @@
 import { NavLink, useNavigate } from "react-router-dom";
 import { useTheme } from "@/hooks/useTheme";
 import { useAuth } from "@/hooks/useAuth";
+import { useQuota } from "@/hooks/useQuota";
 
 
 const NAV = [
@@ -16,6 +17,7 @@ export default function TopBar({ date = "2026 · 07 · 12" }: { date?: string })
   const { toggle } = useTheme();
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
+  const { remaining, limit } = useQuota();
   return (
     <header className="topbar">
       <div className="logo">Work Finds You / 工作找你</div>
@@ -33,6 +35,11 @@ export default function TopBar({ date = "2026 · 07 · 12" }: { date?: string })
       </nav>
       <div className="right">
         <span className="caption">{date}</span>
+        {user && remaining != null && (
+          <span className="caption" title={`免费额度：${limit} 次完整匹配`}>
+            剩余 {remaining}/{limit}
+          </span>
+        )}
         {user ? (
           <button
             className="caption"
