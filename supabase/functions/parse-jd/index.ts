@@ -323,13 +323,16 @@ Deno.serve(async (req) => {
     };
     const rubricHash = await canonicalHash(rubric);
 
+    const keyPoints = (profileOut.key_points ?? []).slice(0, 3);
     const idealProfile: IdealCandidateProfile = {
       schemaVersion: SCHEMA_VERSION,
       rubricVersion: RUBRIC_VERSION,
       rubricHash,
       roleSummary: rubric.roleSummary,
+      keyPoints,
       dimensions: profileOut.ideal_dimensions ?? [],
     };
+
 
     /* ---------- Legacy UI contract via the adapter ---------- */
     const legacyDims = idealProfileToDims(idealProfile);
