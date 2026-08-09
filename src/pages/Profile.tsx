@@ -212,6 +212,7 @@ export default function Profile({
   const [blooming, setBlooming] = useState(false);
   const [bloomedClass, setBloomedClass] = useState(false);
   const [result, setResult] = useState<DimResult[] | null>(null);
+  const [keyPoints, setKeyPoints] = useState<KeyPointUI[]>([]);
   const [tip, setTip] = useState<TipState>(EMPTY_TIP);
   const [matching, setMatching] = useState(false);
   const [mergeGo, setMergeGo] = useState(false);
@@ -338,6 +339,7 @@ export default function Profile({
         setBloomedClass(true);
         setStateVal("bloomed");
         setResult(s.result);
+        setKeyPoints(s.keyPoints || []);
       } else if (s.state === "ready") {
         setStateVal("ready");
         // The picked file lives in IndexedDB, so a login round-trip keeps it.
@@ -363,8 +365,10 @@ export default function Profile({
         setBlooming(true);
         setBloomedClass(true);
         setResult(res);
+        const kp = (out as ResumeResult & { keyPoints?: KeyPointUI[] }).keyPoints || [];
+        setKeyPoints(kp);
         setStateVal("bloomed");
-        saveStore({ state: "bloomed", name: metaRef.current.name, meta: metaRef.current.meta, result: res });
+        saveStore({ state: "bloomed", name: metaRef.current.name, meta: metaRef.current.meta, result: res, keyPoints: kp });
         clearTask("resume");
       } else if (t.status === "error") {
         setStateVal("ready");
