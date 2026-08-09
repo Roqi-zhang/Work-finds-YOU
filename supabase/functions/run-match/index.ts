@@ -270,7 +270,8 @@ Deno.serve(async (req) => {
     ];
 
     const payload = {
-      user_id: user.id,
+      user_id: user?.id ?? null,
+      guest_key: user ? null : guestKey,
       user_profile_id: profileId,
       job_profile_id: job.id,
       status: "succeeded" as const,
@@ -301,26 +302,31 @@ Deno.serve(async (req) => {
       .select("*")
       .single();
 
-    const logRow = {
-      user_id: user.id,
-      task: "run-match",
-      model: model || MODEL,
-      prompt_tokens: usage.prompt_tokens,
-      completion_tokens: usage.completion_tokens,
-      latency_ms: latencyMs,
+    const finish = async () => {
+      if (user) {
+        await logCall(admin, {
+          user_id: user.id,
+          task: "run-match",
+          model: model || MODEL,
+          prompt_tokens: usage.prompt_tokens,
+          completion_tokens: usage.completion_tokens,
+          latency_ms: latencyMs,
+        });
+        await consumeDaily(admin, user.id, "match");
+      } else {
+        await consumeGuest(admin, guestKey, "match");
+      }
     };
 
     if (error) {
       // no unique constraint yet — fall back to plain insert
       const { data: inserted, error: e2 } = await admin.from("match_reports").insert(payload).select("*").single();
       if (e2) throw e2;
-      await logCall(admin, logRow);
-      await consumeMatchRun(admin, user.id);
+      await finish();
       return json({ report: inserted, cached: false, job, usage: { used: quota.used + 1, limit: quota.limit, remaining: quota.remaining - 1 } });
     }
 
-    await logCall(admin, logRow);
-    await consumeMatchRun(admin, user.id);
+    await finish();
     return json({ report, cached: false, job, usage: { used: quota.used + 1, limit: quota.limit, remaining: quota.remaining - 1 } });
   } catch (e) {
     const err = e as { status?: number; message?: string };
