@@ -359,11 +359,11 @@ export default function Match() {
                       },
                       {
                         heading: "02 · 三个关键判断",
-                        lines: R.judgements.map((j) => `[${j.kind}] ${j.title} — ${j.desc}`),
+                        lines: (R.judgements ?? []).map((j) => `[${j.kind}] ${j.title} — ${j.desc}`),
                       },
                       {
                         heading: "03 · 投前 3 步",
-                        lines: R.steps.map((st, i) => `${i + 1}. ${st.title} — ${st.desc}`),
+                        lines: (R.steps ?? []).map((st, i) => `${i + 1}. ${st.title} — ${st.desc}`),
                       },
                     ],
                   })}
@@ -394,7 +394,7 @@ export default function Match() {
               <Fold
                 srcId="d.verdict"
                 label="依据 · 整体推理链"
-                evidence={R.decision.evidence["d.verdict"]}
+                evidence={R.decision.evidence?.["d.verdict"]}
                 isOpen={isOpen("d.verdict")}
                 onToggle={toggleFold}
                 keepLabel
@@ -408,7 +408,7 @@ export default function Match() {
                     <Fold
                       srcId={f.srcId}
                       label="依据"
-                      evidence={R.decision.evidence[f.srcId]}
+                      evidence={R.decision.evidence?.[f.srcId]}
                       isOpen={isOpen(f.srcId)}
                       onToggle={toggleFold}
                     />
@@ -427,14 +427,14 @@ export default function Match() {
                 风险。
               </h2>
               <div className="risklist" style={{ marginTop: 32 }}>
-                {R.judgements.map((j) => (
+                {(R.judgements ?? []).map((j) => (
                   <div className="row" key={j.srcId}>
                     <span className={"k mark" + (j.mark ? " " + j.mark : "")}>{j.kind}</span>
                     <div>
                       <div className="t">{j.title}</div>
                       <div className="d">{j.desc}</div>
                       <div className="tags">
-                        {j.tags.map((tag) => (
+                        {(j.tags ?? []).map((tag) => (
                           <span key={tag}>{tag}</span>
                         ))}
                       </div>
@@ -460,7 +460,7 @@ export default function Match() {
           <section className="screen" id="s4">
             <div className="moon-score">
               <div className="m" style={{ background: gradient(66) }}>
-                <div className="lbl">Actions · {R.steps.length}</div>
+                <div className="lbl">Actions · {R.steps?.length ?? 0}</div>
               </div>
             </div>
             <div>
@@ -471,7 +471,7 @@ export default function Match() {
                 3 步。
               </h2>
               <div className="risklist" style={{ marginTop: 32 }}>
-                {R.steps.map((s, i) => {
+                {(R.steps ?? []).map((s, i) => {
                   const cap =
                     s.kind === "interview"
                       ? ["准备什么", "怎么准备", "为什么"]
@@ -485,7 +485,7 @@ export default function Match() {
                         <div className="t">{s.title}</div>
                         <div className="d">{s.desc}</div>
                         <div className="step-items">
-                          {s.items.map((it, n) => (
+                          {(s.items ?? []).map((it, n) => (
                             <div className="step-item" key={n}>
                               <div className="si-r">
                                 <span className="k">{cap[0]}</span>
@@ -544,8 +544,8 @@ export default function Match() {
                 <div className="ev-block">
                   <div className="k">资料来源</div>
                   <div className="srcs">
-                    {!R.sources.length && <div className="empty">本次分析未记录该环节</div>}
-                    {R.sources.map((s) => (
+                    {!R.sources?.length && <div className="empty">本次分析未记录该环节</div>}
+                    {(R.sources ?? []).map((s) => (
                       <a href="#" key={s.label}>
                         <span>{s.label}</span>
                         <span className="k">{s.at}</span>
@@ -557,8 +557,8 @@ export default function Match() {
                 <div className="ev-block">
                   <div className="k">分析步骤</div>
                   <div className="steps">
-                    {!R.pipeline.length && <div className="empty">本次分析未记录该环节</div>}
-                    {R.pipeline.map((p, i) => (
+                    {!R.pipeline?.length && <div className="empty">本次分析未记录该环节</div>}
+                    {(R.pipeline ?? []).map((p, i) => (
                       <div className="r" key={p.step}>
                         <span className="n">{String(i + 1).padStart(2, "0")}</span>
                         <span className="s">{p.step}</span>
@@ -571,7 +571,7 @@ export default function Match() {
                 <div className="ev-block">
                   <div className="k">分项评分</div>
                   <div className="bars">
-                    {R.dimensions.map((d) => (
+                    {(R.dimensions ?? []).map((d) => (
                       <div className="bar" key={d.name}>
                         <span className="n">{d.name}</span>
                         <span className="t" style={{ ["--v" as string]: d.score + "%" } as React.CSSProperties} />
