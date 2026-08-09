@@ -169,10 +169,64 @@ Deno.serve(async (req) => {
       maxTokens: 8000,
     });
 
-    const dimensionMatches = data.dimension_matches ?? [];
+    // Replace bare evidence ids (r1 / e10) with the real quote — users can't read the ids.
+    const quoteMap = new Map<string, string>();
+    for (const e of [...resumeEvidence, ...jdEvidence]) {
+      quoteMap.set(String(e.id).toLowerCase(), String(e.rawQuote ?? ""));
+    }
+    const humanise = (text?: string): string => {
+      if (!text) return "";
+      const re = /\b([re])\s?(\d{1,3})\b[、,，]?\s*/gi;
+      if (!re.test(text)) return text.trim();
+      re.lastIndex = 0;
+      const quotes: string[] = [];
+      const rest = text
+        .replace(re, (_m, p: string, n: string) => {
+          const q = quoteMap.get(`${p.toLowerCase()}${n}`);
+          if (q) {
+            const t = q.replace(/\s+/g, " ").trim();
+            quotes.push(`「${t.length > 40 ? t.slice(0, 40) + "…" : t}」`);
+          }
+          return "";
+        })
+        .replace(/^[：:；;、,，。.\s]+/, "")
+        .trim();
+      const joined = quotes.join("；");
+      if (joined && rest) return `${joined}；${rest}`;
+      return joined || rest;
+    };
+
+    const dimensionMatches = (data.dimension_matches ?? []).map((m) => ({
+      ...m,
+      evidence: humanise(m.evidence),
+      why: humanise(m.why),
+    }));
+    if (Array.isArray(data.judgements)) {
+      for (const j of data.judgements as Record<string, unknown>[]) {
+        const ev = j.evidence as Record<string, string> | undefined;
+        if (ev) {
+          ev.mine = humanise(ev.mine);
+          ev.required = humanise(ev.required);
+          ev.reasoning = humanise(ev.reasoning);
+          ev.impact = humanise(ev.impact);
+        }
+      }
+    }
+    if (Array.isArray(data.steps)) {
+      for (const s of data.steps as Record<string, unknown>[]) {
+        const items = s.items as Record<string, string>[] | undefined;
+        for (const it of items ?? []) {
+          it.point = humanise(it.point);
+          it.suggestion = humanise(it.suggestion);
+          it.evidence = humanise(it.evidence);
+        }
+      }
+    }
+
     const legacyDims = dimensionMatchesToDims(dimensionMatches);
     const { score, dimensions, missingCore, scoringVersion } = computeScore(legacyDims);
     const flag = decisionFlag(score);
+
 
     const usedIds = new Set(dimensionMatches.flatMap((m) => m.candidateEvidenceIds ?? []));
     const usedReqIds = new Set(dimensionMatches.flatMap((m) => m.requirementIds ?? []));
