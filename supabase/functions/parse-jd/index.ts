@@ -406,7 +406,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    return json({ job, salary: extract.salary || "待确认", dimensions, requirements });
+    return json({ job, salary: extract.salary || "待确认", dimensions, requirements, keyPoints });
   } catch (e) {
     const err = e as { status?: number; message?: string };
     console.error("parse-jd failed", err);
