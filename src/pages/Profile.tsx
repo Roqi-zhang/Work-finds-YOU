@@ -609,8 +609,8 @@ export default function Profile({
                         ],
                       };
                     }),
+                    ],
 
-                  })}
                 />
               ) : (
                 <span className="mode" id="stateTag">
