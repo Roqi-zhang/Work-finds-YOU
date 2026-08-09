@@ -92,3 +92,44 @@
   outline: 0.5px dashed var(--line); outline-offset: 6px;
 }
 .p-delivery .entry.editing [contenteditable]:focus { outline-color: var(--ink-strong); outline-style: solid; }
+
+/* toolbar: search + manual add */
+.p-delivery .top-tools .link-btn {
+  background: none; border: none; padding: 0 0 2px; font: inherit;
+  font-size: 11px; letter-spacing: 0.22em; text-transform: uppercase;
+  border-bottom: 0.5px solid var(--ink-strong); cursor: pointer; color: inherit;
+}
+.p-delivery .top-tools .search {
+  appearance: none; background: transparent; color: inherit;
+  border: 0.5px solid var(--line); border-radius: 0; padding: 8px 14px;
+  font: inherit; font-size: 12px; letter-spacing: 0.06em; width: 260px;
+  transition: border-color .3s var(--ease); text-transform: none;
+}
+.p-delivery .top-tools .search:focus { border-color: var(--ink-strong); outline: none; }
+
+/* manual entry dialog */
+.p-delivery .mask {
+  position: fixed; inset: 0; z-index: 40; display: none;
+  background: color-mix(in srgb, var(--paper) 72%, transparent);
+  backdrop-filter: blur(6px); align-items: center; justify-content: center;
+}
+.p-delivery .mask.on { display: flex; }
+.p-delivery .dlg { width: 460px; background: var(--paper); border: 0.5px solid var(--ink); padding: 30px; }
+.p-delivery .dlg h5 { font-size: 11px; letter-spacing: .24em; text-transform: uppercase; color: var(--ink-strong); }
+.p-delivery .dlg .fields { display: flex; flex-direction: column; gap: 14px; margin-top: 22px; }
+.p-delivery .dlg label { display: flex; flex-direction: column; gap: 6px; }
+.p-delivery .dlg label span {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase; opacity: .55;
+}
+.p-delivery .dlg input,
+.p-delivery .dlg select,
+.p-delivery .dlg textarea {
+  appearance: none; background: transparent; color: inherit; font: inherit; font-size: 13px;
+  border: 0.5px solid var(--line); border-radius: 0; padding: 8px 12px; resize: vertical;
+}
+.p-delivery .dlg input:focus,
+.p-delivery .dlg select:focus,
+.p-delivery .dlg textarea:focus { border-color: var(--ink-strong); outline: none; }
+.p-delivery .dlg .row { display: flex; justify-content: flex-end; gap: 12px; margin-top: 28px; }
+.p-delivery .dlg .btn { padding: 10px 20px; }

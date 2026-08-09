@@ -2,15 +2,16 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import TopBar from "@/components/swiss/TopBar";
 import {
+  createApplication,
   getApplications,
   refreshApplicationScores,
   setStatus,
   updateApplication,
   focusId,
-  setUI,
   STATUSES,
   type Application,
 } from "@/lib/wfy";
+
 import "@/styles/pages/delivery.css";
 
 const MON_NAMES = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
@@ -37,11 +38,21 @@ export default function Delivery() {
   const [apps, setApps] = useState<Application[]>(() => getApplications());
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showQuoteFor, setShowQuoteFor] = useState<string | null>(null);
+  const [query, setQuery] = useState("");
+  const [formOpen, setFormOpen] = useState(false);
+  const [form, setForm] = useState({
+    co: "",
+    title: "",
+    status: STATUSES[0],
+    appliedAt: new Date().toISOString().slice(0, 10),
+    body: "",
+  });
   const entriesRef = useRef<HTMLDivElement | null>(null);
   const h2Refs = useRef<Record<string, HTMLHeadingElement | null>>({});
   const pRefs = useRef<Record<string, HTMLParagraphElement | null>>({});
   const quoteRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const didFocus = useRef(false);
+
 
   const refresh = () => setApps(getApplications());
 
@@ -142,6 +153,33 @@ export default function Delivery() {
     }
   };
 
+  const visible = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return apps;
+    return apps.filter((a) =>
+      [a.co, a.title, a.body, a.quote].filter(Boolean).join(" ").toLowerCase().includes(q)
+    );
+  }, [apps, query]);
+
+  const closeForm = () => {
+    setFormOpen(false);
+    setForm({ co: "", title: "", status: STATUSES[0], appliedAt: new Date().toISOString().slice(0, 10), body: "" });
+  };
+
+  const handleCreate = () => {
+    if (!form.co.trim() || !form.title.trim()) return;
+    createApplication({
+      co: form.co.trim(),
+      title: form.title.trim(),
+      status: form.status,
+      appliedAt: form.appliedAt,
+      body: form.body.trim(),
+    });
+    closeForm();
+    refresh();
+  };
+
+
   return (
     <div className="p-delivery">
       <main className="page">
@@ -161,40 +199,32 @@ export default function Delivery() {
 
         <div className="top-tools">
           <div className="l">
-            <a href="#">+ 新增投递</a>
-            <span style={{ opacity: 0.5 }}>View · Journal</span>
-            <span style={{ opacity: 0.5 }}>Sort · Newest</span>
+            <button type="button" className="link-btn" onClick={() => setFormOpen(true)}>
+              + 新增投递
+            </button>
           </div>
           <div className="r">
-            <span className="caption" style={{ opacity: 0.5 }}>
-              Filter
-            </span>
-            <button className="icon-btn" title="filter">
-              <svg width="12" height="12" viewBox="0 0 12 12">
-                <circle cx="6" cy="6" r="5" fill="none" stroke="currentColor" strokeWidth="0.5" />
-                <line x1="3" y1="6" x2="9" y2="6" stroke="currentColor" strokeWidth="0.5" />
-              </svg>
-            </button>
-            <button className="icon-btn" title="more">
-              <svg width="12" height="12" viewBox="0 0 12 12">
-                <circle cx="3" cy="6" r="1" fill="currentColor" />
-                <circle cx="6" cy="6" r="1" fill="currentColor" />
-                <circle cx="9" cy="6" r="1" fill="currentColor" />
-              </svg>
-            </button>
+            <input
+              className="search"
+              type="search"
+              value={query}
+              placeholder="搜索公司 / 岗位 / 备注"
+              onChange={(e) => setQuery(e.target.value)}
+            />
           </div>
         </div>
 
+
         <section className="journal">
           <div className="entries" id="entries" ref={entriesRef}>
-            {!apps.length ? (
+            {!visible.length ? (
               <div className="entry">
                 <div className="date">
                   <span className="d">—</span>NO DATA
                 </div>
                 <div className="body">
-                  <h2>还没有投递记录</h2>
-                  <div className="sub">在匹配页点「直接投递」，或在对比池里选中岗位后点「投递」，记录会出现在这里。</div>
+                  <h2>{query ? "没有匹配的记录" : "还没有投递记录"}</h2>
+                  <div className="sub">在匹配页点「直接投递」，或在对比池里选中岗位后点「投递」，也可以点上方「+ 新增投递」手动记录。</div>
                   <div className="foot">
                     <a href="#" onClick={(e) => { e.preventDefault(); navigate("/compare"); }}>
                       去对比池 →
@@ -203,7 +233,8 @@ export default function Delivery() {
                 </div>
               </div>
             ) : (
-              apps.map((a) => {
+              visible.map((a) => {
+
                 const p = parts(a.appliedAt);
                 const editing = editingId === a.id;
                 const showQuote = !!a.quote || showQuoteFor === a.id;
@@ -235,7 +266,7 @@ export default function Delivery() {
                         </span>
                       </div>
 
-                      <div className="sub">匹配 {a.m}%</div>
+                      <div className="sub">{a.manual ? "手动录入" : `匹配 ${a.m}%`}</div>
                       <p ref={(el) => (pRefs.current[a.id] = el)} contentEditable={editing} suppressContentEditableWarning>
                         {a.body}
                       </p>
@@ -251,38 +282,42 @@ export default function Delivery() {
                       )}
 
                       <div className="foot">
-                        <a
-                          href={`/match?focus=${encodeURIComponent(a.id)}`}
-                          onClick={(e) => {
-                            e.preventDefault();
-                            navigate("/match?focus=" + encodeURIComponent(a.id));
-                          }}
-                        >
-                          查看匹配
-                        </a>
-                        <a
-                          href="/workbench"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            setUI("match", { jobId: a.id });
-                            navigate("/workbench");
-                          }}
-                        >
-                          岗位画像
-                        </a>
-                        <a
-                          href={`/workbench?job=${encodeURIComponent(a.id)}`}
-                          onClick={(e) => {
-                            e.preventDefault();
-                            navigate("/workbench?job=" + encodeURIComponent(a.id));
-                          }}
-                        >
-                          个人画像
-                        </a>
+                        {!a.manual && (
+                          <>
+                            <a
+                              href={`/match?focus=${encodeURIComponent(a.id)}`}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                navigate("/match?focus=" + encodeURIComponent(a.id));
+                              }}
+                            >
+                              查看匹配
+                            </a>
+                            <a
+                              href={`/snapshot?job=${encodeURIComponent(a.id)}&kind=job`}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                navigate("/snapshot?job=" + encodeURIComponent(a.id) + "&kind=job");
+                              }}
+                            >
+                              岗位画像
+                            </a>
+                            <a
+                              href={`/snapshot?job=${encodeURIComponent(a.id)}&kind=resume`}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                navigate("/snapshot?job=" + encodeURIComponent(a.id) + "&kind=resume");
+                              }}
+                            >
+                              个人画像
+                            </a>
+                          </>
+                        )}
                         <button type="button" onClick={() => handleEditToggle(a)}>
                           {editing ? "完成" : "编辑"}
                         </button>
                       </div>
+
                     </div>
                   </article>
                 );
@@ -324,7 +359,56 @@ export default function Delivery() {
             </div>
           </aside>
         </section>
+
+        {formOpen && (
+          <div className="mask on" onClick={(e) => e.target === e.currentTarget && closeForm()}>
+            <div className="dlg form-dlg">
+              <h5>新增投递记录</h5>
+              <div className="fields">
+                <label>
+                  <span>公司名称 *</span>
+                  <input value={form.co} onChange={(e) => setForm({ ...form, co: e.target.value })} />
+                </label>
+                <label>
+                  <span>岗位名称 *</span>
+                  <input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
+                </label>
+                <label>
+                  <span>投递状态</span>
+                  <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })}>
+                    {STATUSES.map((s) => (
+                      <option key={s} value={s}>
+                        {s}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  <span>投递日期</span>
+                  <input
+                    type="date"
+                    value={form.appliedAt}
+                    onChange={(e) => setForm({ ...form, appliedAt: e.target.value })}
+                  />
+                </label>
+                <label>
+                  <span>备注</span>
+                  <textarea rows={3} value={form.body} onChange={(e) => setForm({ ...form, body: e.target.value })} />
+                </label>
+              </div>
+              <div className="row">
+                <button className="btn ghost" type="button" onClick={closeForm}>
+                  取消
+                </button>
+                <button className="btn" type="button" onClick={handleCreate}>
+                  保存
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </main>
     </div>
+
   );
 }

@@ -28,7 +28,9 @@ export type Application = {
   body: string;
   quote: string;
   events: AppEvent[];
+  manual?: boolean;
 };
+
 
 export const KEYS = {
   pool: "wfy.pool",
@@ -196,11 +198,13 @@ function normalizeApp(a: RawApp): Application {
     updatedAt: a.updatedAt || at,
     body: a.body || "",
     quote: a.quote || "",
+    manual: !!a.manual,
     events: Array.isArray(a.events) && a.events.length
       ? a.events
       : [{ status: a.status || "待投递", at: a.updatedAt || at }],
   };
 }
+
 
 export function getApplications(): Application[] {
   let v = read<RawApp[] | null>(KEYS.apps, null);
@@ -250,10 +254,41 @@ export function setStatus(id: string, status: string) {
   saveApplications(list);
 }
 
+export function createApplication(input: {
+  co: string;
+  title: string;
+  status?: string;
+  appliedAt?: string;
+  body?: string;
+}) {
+  const today = new Date().toISOString().slice(0, 10);
+  const at = input.appliedAt || today;
+  const id = "manual-" + Date.now().toString(36);
+  const list = getApplications();
+  list.unshift(
+    normalizeApp({
+      id,
+      co: input.co,
+      title: input.title,
+      m: 0,
+      status: input.status || "待投递",
+      appliedAt: at,
+      updatedAt: at,
+      body: input.body || "",
+      quote: "",
+      manual: true,
+      events: [{ status: input.status || "待投递", at }],
+    })
+  );
+  saveApplications(list);
+  return id;
+}
+
 export function updateApplication(id: string, patch: Partial<Application>) {
   const list = getApplications().map((a) => (a.id === id ? Object.assign(a, patch) : a));
   saveApplications(list);
 }
+
 
 /* ---------- match reports ---------- */
 export function reportTemplate(job: Job) {

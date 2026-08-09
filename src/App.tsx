@@ -8,6 +8,8 @@ import Workbench from "./pages/Workbench.tsx";
 import Match from "./pages/Match.tsx";
 import Compare from "./pages/Compare.tsx";
 import Delivery from "./pages/Delivery.tsx";
+import Snapshot from "./pages/Snapshot.tsx";
+
 import Auth from "./pages/Auth.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import { AuthProvider } from "@/hooks/useAuth";
@@ -36,6 +38,8 @@ const App = () => (
             <Route path="/match" element={<Match />} />
             <Route path="/compare" element={<Compare />} />
             <Route path="/delivery" element={<Delivery />} />
+            <Route path="/snapshot" element={<Snapshot />} />
+
             <Route path="/auth" element={<Auth />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
