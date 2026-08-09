@@ -214,7 +214,7 @@ export default function Profile({
   const [mergeSvg, setMergeSvg] = useState("");
   const [mergeCap, setMergeCap] = useState("Overlaying two flowers · computing fit");
 
-  const [openEvi, setOpenEvi] = useState<Record<number, boolean>>({});
+  
   const [dialog, setDialog] = useState<{ title: string; body: string; okText: string; onConfirm: (() => void) | null } | null>(null);
 
   const stageRef = useRef<HTMLElement>(null);
@@ -267,9 +267,13 @@ export default function Profile({
       y: Math.max(0, y),
       name: ref.dim.label,
       score: d.evidence ? (d.score == null ? "证据不足" : d.score + "/5") : "—",
-      evi: d.evidence || "尚未建立画像",
+      evi:
+        (d.evidenceDetail ?? [])
+          .map((ev) => `${ev.claim || ev.label || "简历原文"}${ev.quotes?.length ? "「" + ev.quotes[0] + "」" : ""}`)
+          .join("；") || d.evidence || "尚未建立画像",
       why: d.why || "上传简历后生成",
-      act: d.action || "—",
+      act: "",
+
     });
   }
 
@@ -531,7 +535,7 @@ export default function Profile({
               <br />
               能力花
             </h1>
-            <p>上传简历，8 项胜任力维度将生长为这朵花的花瓣。花瓣越舒展代表该能力越突出；证据不足时只开虚线小瓣，不记 0 分。</p>
+            <p>把简历翻译成能力证据——哪些能力你写清楚了，哪些只是提了一句没有佐证，一眼就知道该补什么。</p>
 
             <div className="steps" hidden={embedded}>
               <div className={"step" + (state === "empty" ? " on" : "")} id="s1">
@@ -577,16 +581,23 @@ export default function Profile({
                     title: "候选人画像 · 8 维能力",
                     subtitle: `${rName} · ${rMeta}`,
                     sections: DIMS.map((dim, i) => {
-                      const d = (result[i] || {}) as DimResult & { evidence?: string; why?: string; evidenceDetail?: string[] };
+                      const d = (result[i] || {}) as DimResult;
+                      const evi = (d.evidenceDetail ?? []).map(
+                        (ev) =>
+                          `· ${[ev.label, ev.role].filter(Boolean).join(" · ") || "简历原文"}${ev.claim ? "：" + ev.claim : ""}${
+                            ev.quotes?.length ? " 「" + ev.quotes.join("」「") + "」" : ""
+                          }`,
+                      );
                       return {
                         heading: `${dim.label} · ${d.score == null ? "—" : d.score + "/5"}`,
                         lines: [
-                          `Evidence: ${d.evidence || "—"}`,
                           `Analysis: ${d.why || "—"}`,
-                          ...((d.evidenceDetail as string[] | undefined) ?? []),
+                          `Evidence:${evi.length ? "" : " " + (d.evidence || "简历中未见相关证据")}`,
+                          ...evi,
                         ],
                       };
                     }),
+
                   })}
                 />
               ) : (
@@ -664,23 +675,18 @@ export default function Profile({
                     <b id="tipScore">{tip.score}</b>
                   </h5>
                   <div className="row">
-                    <div className="k">Evidence</div>
-                    <div className="v" id="tipEvi">
-                      {tip.evi}
-                    </div>
-                  </div>
-                  <div className="row">
-                    <div className="k">Why this score</div>
+                    <div className="k">Analysis</div>
                     <div className="v" id="tipWhy">
                       {tip.why}
                     </div>
                   </div>
                   <div className="row">
-                    <div className="k">Action</div>
-                    <div className="v" id="tipAct">
-                      {tip.act}
+                    <div className="k">Evidence</div>
+                    <div className="v" id="tipEvi">
+                      {tip.evi}
                     </div>
                   </div>
+
                 </div>
               </div>
 
@@ -755,45 +761,33 @@ export default function Profile({
                             </div>
                             <dl>
                               <div className="r">
-                                <span className="k">Evidence</span>
-                                <span className="v">{d.evidence || "—"}</span>
-                              </div>
-                              {d.evidenceDetail && d.evidenceDetail.length > 0 && (
-                                <div className={"evi" + (openEvi[k] ? " open" : "")}>
-                                  <button
-                                    type="button"
-                                    className="evi-t"
-                                    onClick={() => setOpenEvi((o) => ({ ...o, [k]: !o[k] }))}
-                                  >
-                                    依据明细 · {d.evidenceDetail.length}
-                                    <span className="evi-a">↓</span>
-                                  </button>
-                                  <div className="evi-b">
-                                    {d.evidenceDetail.map((ev, n) => (
-                                      <div className="evi-i" key={ev.label + n}>
-                                        <div className="evi-m">
-                                          {[ev.label, ev.role].filter(Boolean).join(" · ") || "简历原文"}
-                                        </div>
-                                        {ev.claim && <div className="evi-r">{ev.claim}</div>}
-                                        {(ev.quotes || []).map((q, qi) => (
-                                          <div className="evi-q" key={qi}>「{q}」</div>
-                                        ))}
-                                      </div>
-                                    ))}
-                                  </div>
-
-                                </div>
-                              )}
-
-                              <div className="r">
-                                <span className="k">Why</span>
+                                <span className="k">Analysis</span>
                                 <span className="v">{d.why || "—"}</span>
                               </div>
                               <div className="r">
-                                <span className="k">Action</span>
-                                <span className="v">{d.action || "—"}</span>
+                                <span className="k">Evidence</span>
+                                <span className="v">
+                                  {d.evidenceDetail && d.evidenceDetail.length > 0 ? (
+                                    <span className="evi">
+                                      {d.evidenceDetail.map((ev, n) => (
+                                        <span className="evi-i" key={ev.label + n}>
+                                          <span className="evi-m">
+                                            {[ev.label, ev.role].filter(Boolean).join(" · ") || "简历原文"}
+                                          </span>
+                                          {ev.claim && <span className="evi-r">{ev.claim}</span>}
+                                          {(ev.quotes || []).map((q, qi) => (
+                                            <span className="evi-q" key={qi}>「{q}」</span>
+                                          ))}
+                                        </span>
+                                      ))}
+                                    </span>
+                                  ) : (
+                                    d.evidence || "简历中未见相关证据"
+                                  )}
+                                </span>
                               </div>
                             </dl>
+
                             <div className="str">[{(d.strength || "missing").toUpperCase()}]</div>
                           </div>
                         );
