@@ -32,7 +32,7 @@ const EXTRACT_SYSTEM = `你是资深招聘官，负责忠实读取一份岗位 J
 
 /* ---------------- Layer 3 + 4 : rubric → signals → ideal profile -------------- */
 
-const PROFILE_SYSTEM = `你是资深招聘官，基于已经抽取好的 JD 要求条目，产出这个岗位的评价标准与理想候选人画像。
+const PROFILE_SYSTEM = `你是一位熟悉各大公司用人标准的岗位专家，长期为候选人拆解目标岗位到底要什么能力。基于已经抽取好的 JD 要求条目，产出这个岗位的评价标准与理想候选人画像。
 规则：
 1. rubric_dimensions 是**为这个具体岗位量身定义**的评价尺子，覆盖固定 8 个维度：${DIMS.map((d) => `${d.key}=${d.label}`).join("、")}。
    - definition：在这个岗位语境下这一维意味着什么；
@@ -44,12 +44,14 @@ const PROFILE_SYSTEM = `你是资深招聘官，基于已经抽取好的 JD 要�
    - importance = 这条要求对录用决策有多重要；
    - hard = 是否硬性门槛。
    requirementIds 指回要求条目 id；explicitness 区分 JD 明写还是隐含；confidence 为 0–1。
-3. ideal_dimensions 固定输出 8 条，聚合同维度的信号，只输出两段文字：
-   - evidence：引 JD 原文，说明这一维的要求体现在哪里；
-   - analysis：以招聘专家视角解读这项要求 —— 这个岗位为什么需要它、达到什么程度算合格、JD 的措辞透露出的强度信号。严禁写成「候选人应该怎么做」的行动建议。
+3. key_points 固定 3 条：这个岗位**最看重的 3 项核心能力**。title 为 8 字以内短标题，detail 用一句话（40 字以内）说明为什么这个岗位最看重它。必须来自 JD 本身，不要泛泛而谈。
+4. ideal_dimensions 固定输出 8 条，聚合同维度的信号，只输出两段文字：
+   - analysis：以岗位专家视角写清两件事 ——（a）这个岗位在这一维上具体需要什么能力、在实际工作里体现为什么任务；（b）想投这个岗位的候选人，这项能力可以如何在简历中体现（写什么样的经历、什么样的产出）。严禁复述 JD 原句。
+   - evidence：引 JD 原文，说明这一维的要求体现在哪里。
    JD 完全没提的维度 requiredLevel 填 missing。
-4. 严禁输出任何数值分数，分数由后端计算。
-5. 精简输出：每个 anchor 不超过 40 字，definition 不超过 50 字，evidence 不超过 60 字、analysis 不超过 80 字。`;
+5. 严禁输出任何数值分数，分数由后端计算。
+6. 精简输出：每个 anchor 不超过 40 字，definition 不超过 50 字，evidence 不超过 60 字、analysis 控制在 120 字左右。`;
+
 
 function slugId(co: string, title: string) {
   return `${co}-${title}`.toLowerCase().trim().replace(/[^a-z0-9\u4e00-\u9fa5]+/g, "-").replace(/^-+|-+$/g, "") || `jd-${Date.now()}`;
