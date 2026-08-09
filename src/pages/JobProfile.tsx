@@ -11,12 +11,18 @@ import "@/styles/pages/jobprofile.css";
 
 const DIM_LABELS = ["专业技能", "业务理解", "问题分析", "执行交付", "沟通表达", "协作影响", "学习适应", "动机匹配"];
 
-export default function JobProfile() {
+export default function JobProfile({
+  embedded = false,
+  onStateChange,
+}: { embedded?: boolean; onStateChange?: (s: string) => void } = {}) {
   const navigate = useNavigate();
   const { user } = useAuth();
   const rootRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<HTMLElement>(null);
   const [exportData, setExportData] = useState<{ job: any; result: any[] } | null>(null);
+  const stateCbRef = useRef(onStateChange);
+  stateCbRef.current = onStateChange;
+
 
   useEffect(() => {
     const root = rootRef.current;
