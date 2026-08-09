@@ -111,6 +111,12 @@ export type ResumeResult = {
 
 /** `targetJobProfileId` binds the resulting candidate profile to a specific JD (JD-first flow). */
 export async function parseResume(file: File, targetJobProfileId?: string) {
+  const { data: auth } = await supabase.auth.getUser();
+  if (!auth.user) {
+    // Guests cannot write to storage — the file travels inline for the free trial run.
+    const fileData = await fileToBase64(file);
+    return invoke<ResumeResult>("parse-resume", { fileData, fileName: file.name, targetJobProfileId });
+  }
   const { path, fileName } = await uploadFile(file, "resume");
   return invoke<ResumeResult>("parse-resume", { filePath: path, fileName, targetJobProfileId });
 }
