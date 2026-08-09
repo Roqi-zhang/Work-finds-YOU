@@ -352,9 +352,10 @@ export default function JobProfile({
             <div class="ph"><span>${DIMS[k].label}<em>${DIMS[k].key}</em></span><b>${s == null ? "—" : s}/5</b></div>
             <div class="bar ${s == null ? "none" : ""}">${bar}</div>
             <dl>
-              <div class="r"><span class="k">Evidence</span><span class="v">${d.evidence || "—"}</span></div>
               <div class="r"><span class="k">Analysis</span><span class="v">${d.analysis || d.why || "—"}</span></div>
+              <div class="r"><span class="k">Evidence</span><span class="v">${d.evidence || "—"}</span></div>
             </dl>
+
             <div class="str">[${(d.strength || "missing").toUpperCase()}]</div>
           </div>`;
         }).join("");
