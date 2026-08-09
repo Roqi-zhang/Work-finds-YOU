@@ -12,7 +12,15 @@ import {
   type EvidenceLink,
 } from "../_shared/schemas.ts";
 import { decisionFactorsToTrace, dimensionMatchesToDims } from "../_shared/adapter.ts";
-import { consumeMatchRun, getUsage } from "../_shared/quota.ts";
+import {
+  consumeDaily,
+  consumeGuest,
+  DAILY_LIMIT,
+  getDailyUsage,
+  getGuestTrial,
+  GUEST_LIMIT,
+  QUOTA_MESSAGE,
+} from "../_shared/quota.ts";
 
 const SYSTEM = `你是资深招聘官，对比候选人画像与岗位要求，输出一份可追溯的匹配分析。
 规则：
