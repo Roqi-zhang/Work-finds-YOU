@@ -360,8 +360,10 @@ Deno.serve(async (req) => {
       version: profile.version,
       score,
       dimensions,
+      keyPoints,
       sections: b.data.sections,
     });
+
   } catch (e) {
     const err = e as { status?: number; message?: string };
     console.error("parse-resume failed", err);
