@@ -53,12 +53,13 @@ Lovable 与 GitHub 是**双向同步**，不是我在后台 push 代码。需要
 6. **AI 分析管线简述** — 证据层 → 记录层 → 信号层 → 画像层，后端确定性算分（说明为什么结果可复现）
 7. **本地开发** — clone / npm i / npm run dev / npm run test
 8. **额度与商业模式** — 访客可完整跑通一次；登录后每日 20 次分析；暂不收费
-9. **在线地址** — workfindsyou.cn
-10. **License / 说明** — 视你意愿，默认写「保留所有权利，仅供演示」
+9. **在线地址与源码** — <https://workfindsyou.cn> · <https://github.com/Roqi-zhang/Work-finds-YOU>
+10. **License / 说明** — 写「保留所有权利，仅供演示与作品集展示」
 
 同时会补一个 `.env.example`（只列变量名，不含真实值）说明需要哪些环境变量，以及 `docs/architecture.png` 架构图文件。
 
-## 四、需要你确认的两点
+## 四、双语与公开仓库处理
 
-- README 用中文为主（现在按中文写），需要中英双语的话我加英文版 `README.en.md`
-- 是否公开仓库；公开的话我会再检查一遍代码里没有任何密钥硬编码
+- **中英双语**：`README.md` 采用中英对照写法（每节标题 `中文 / English`，正文中文在上、英文在下），顶部保留 `English | 中文` 锚点跳转；不再单独拆分 `README.en.md`，避免两份文档不同步。
+- **公开仓库**：README 落地前我会全量检索代码，确认没有硬编码密钥（Supabase 只有 publishable key，属可公开；`.env` 不进仓库，用 `.env.example` 替代），并确认 Edge Function 里的服务端密钥全部走环境变量。
+
