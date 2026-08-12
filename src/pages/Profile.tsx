@@ -642,23 +642,6 @@ export default function Profile({
                 className={"visual" + (dragging ? " dragging" : "")}
                 id="visual"
                 ref={visualRef}
-                onDragEnter={(e) => {
-                  e.preventDefault();
-                  setDragging(true);
-                }}
-                onDragOver={(e) => {
-                  e.preventDefault();
-                  setDragging(true);
-                }}
-                onDragLeave={(e) => {
-                  e.preventDefault();
-                  setDragging(false);
-                }}
-                onDrop={(e) => {
-                  e.preventDefault();
-                  setDragging(false);
-                  handle(e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]);
-                }}
               >
                 <svg className="flower-svg" id="flowerSvg" viewBox="112 200 506 344">
                   <g id="backPetals" ref={backRootRef}></g>
