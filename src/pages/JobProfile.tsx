@@ -470,9 +470,9 @@ export default function JobProfile({
 
     return () => {
       input.removeEventListener("change", onInputChange);
-      ["dragenter", "dragover"].forEach((ev) => visual.removeEventListener(ev, dragOn as EventListener));
-      ["dragleave", "drop"].forEach((ev) => visual.removeEventListener(ev, dragOff as EventListener));
-      visual.removeEventListener("drop", onDrop as EventListener);
+      ["dragenter", "dragover"].forEach((ev) => zone.removeEventListener(ev, dragOn as EventListener));
+      ["dragleave", "drop"].forEach((ev) => zone.removeEventListener(ev, dragOff as EventListener));
+      zone.removeEventListener("drop", onDrop as EventListener);
       window.removeEventListener("dragover", winDragOver);
       window.removeEventListener("drop", winDrop);
       rcard.removeEventListener("click", onCardClick);
