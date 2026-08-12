@@ -56,7 +56,7 @@ Lovable 与 GitHub 是**双向同步**，不是我在后台 push 代码。需要
 9. **在线地址** — workfindsyou.cn
 10. **License / 说明** — 视你意愿，默认写「保留所有权利，仅供演示」
 
-同时会补一个 `.env.example`（只列变量名，不含真实值）说明需要哪些环境变量。
+同时会补一个 `.env.example`（只列变量名，不含真实值）说明需要哪些环境变量，以及 `docs/architecture.png` 架构图文件。
 
 ## 四、需要你确认的两点
 
