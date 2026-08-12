@@ -523,7 +523,7 @@ export default function Profile({
   }
 
   const map = STATE_MAP[state];
-  const hintLine = hintOverride ?? map.hint;
+  const hintLine = dragging ? "松开即上传 · RELEASE TO UPLOAD" : hintOverride ?? map.hint;
 
   const Shell = (embedded ? "div" : "main") as "main";
 
