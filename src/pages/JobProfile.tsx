@@ -263,8 +263,20 @@ export default function JobProfile({
 
     // The whole panel is a drop zone — upload button, JD card and empty state included.
     const zone = (root.querySelector(".layout") as HTMLElement) || visual;
-    const dragOn = (e: DragEvent) => { e.preventDefault(); zone.classList.add("dragging"); visual.classList.add("dragging"); };
-    const dragOff = (e: DragEvent) => { e.preventDefault(); zone.classList.remove("dragging"); visual.classList.remove("dragging"); };
+    let prevHint: string | null = null;
+    const dragOn = (e: DragEvent) => {
+      e.preventDefault();
+      if (prevHint === null) prevHint = hintLine.textContent;
+      hintLine.textContent = "松开即上传 · RELEASE TO UPLOAD";
+      zone.classList.add("dragging"); visual.classList.add("dragging");
+    };
+    const dragOff = (e: DragEvent) => {
+      e.preventDefault();
+      // A drop swaps in its own hint via handle() — only restore when nothing was dropped.
+      if (e.type !== "drop" && prevHint !== null) hintLine.textContent = prevHint;
+      prevHint = null;
+      zone.classList.remove("dragging"); visual.classList.remove("dragging");
+    };
     ["dragenter", "dragover"].forEach((ev) => zone.addEventListener(ev, dragOn as EventListener));
     ["dragleave", "drop"].forEach((ev) => zone.addEventListener(ev, dragOff as EventListener));
     const onDrop = (e: DragEvent) => { e.preventDefault(); e.stopPropagation(); handle(e.dataTransfer?.files?.[0]); };
