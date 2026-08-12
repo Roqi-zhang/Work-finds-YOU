@@ -3,10 +3,13 @@
 ## 一、先说清楚 GitHub 部分
 
 Lovable 与 GitHub 是**双向同步**，不是我在后台 push 代码。需要你在编辑器里操作一次：
-聊天输入框左下角 **+ → GitHub → Connect project** → 授权 → 选择账号/组织 → **Create Repository**。
+聊天输入框左下角 **+ → GitHub → Connect project** → 授权 → 选择账号/组织 → **Create Repository**（若已有仓库则选择连接）。
 
 之后仓库会自动持续同步，你在 Lovable 的每次改动都会推到 GitHub。
-我这边能做的是：把仓库里要给别人看的文档写好（README 等），你连接后自动带过去。
+我这边能做的是：把仓库里要给别人看的文档写好（README、架构图、.env.example），你连接后自动带过去。
+
+> 注：我在计划文件里没有看到你说的仓库链接，可能没保存上。你把链接发我，我会写进 README 的「在线地址 / 源码」一节。
+
 
 ## 二、现有项目架构（已核对代码）
 
