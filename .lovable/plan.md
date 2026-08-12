@@ -3,10 +3,13 @@
 ## 一、先说清楚 GitHub 部分
 
 Lovable 与 GitHub 是**双向同步**，不是我在后台 push 代码。需要你在编辑器里操作一次：
-聊天输入框左下角 **+ → GitHub → Connect project** → 授权 → 选择账号/组织 → **Create Repository**。
+聊天输入框左下角 **+ → GitHub → Connect project** → 授权 → 选择账号/组织 → **Create Repository**（若已有仓库则选择连接）。
 
 之后仓库会自动持续同步，你在 Lovable 的每次改动都会推到 GitHub。
-我这边能做的是：把仓库里要给别人看的文档写好（README 等），你连接后自动带过去。
+我这边能做的是：把仓库里要给别人看的文档写好（README、架构图、.env.example），你连接后自动带过去。
+
+> 注：我在计划文件里没有看到你说的仓库链接，可能没保存上。你把链接发我，我会写进 README 的「在线地址 / 源码」一节。
+
 
 ## 二、现有项目架构（已核对代码）
 
@@ -46,14 +49,14 @@ Lovable 与 GitHub 是**双向同步**，不是我在后台 push 代码。需要
    - 投递看板：状态流转与分析快照回看
    - 一键导出 PDF / DOCX
 4. **最快使用路径** — 粘贴 JD → 上传简历 → 生成匹配 → 加入比较池 → 记录投递
-5. **技术栈** — 前端 / 后端 / AI 三块，配上面那张架构图
+5. **技术架构** — 直接放你提供的《EVIDENCE-FIRST DUAL PROFILE ARCHITECTURE (JD FIRST)》架构图（存到 `docs/architecture.png`，README 中以图片引用），下面配一段前端 / 后端 / AI 三块的文字说明
 6. **AI 分析管线简述** — 证据层 → 记录层 → 信号层 → 画像层，后端确定性算分（说明为什么结果可复现）
 7. **本地开发** — clone / npm i / npm run dev / npm run test
 8. **额度与商业模式** — 访客可完整跑通一次；登录后每日 20 次分析；暂不收费
 9. **在线地址** — workfindsyou.cn
 10. **License / 说明** — 视你意愿，默认写「保留所有权利，仅供演示」
 
-同时会补一个 `.env.example`（只列变量名，不含真实值）说明需要哪些环境变量。
+同时会补一个 `.env.example`（只列变量名，不含真实值）说明需要哪些环境变量，以及 `docs/architecture.png` 架构图文件。
 
 ## 四、需要你确认的两点
 
