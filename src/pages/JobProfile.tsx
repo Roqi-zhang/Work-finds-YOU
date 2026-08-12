@@ -261,12 +261,14 @@ export default function JobProfile({
     const onInputChange = (e: Event) => handle((e.target as HTMLInputElement).files?.[0]);
     input.addEventListener("change", onInputChange);
 
-    const dragOn = (e: DragEvent) => { e.preventDefault(); visual.classList.add("dragging"); };
-    const dragOff = (e: DragEvent) => { e.preventDefault(); visual.classList.remove("dragging"); };
-    ["dragenter", "dragover"].forEach((ev) => visual.addEventListener(ev, dragOn as EventListener));
-    ["dragleave", "drop"].forEach((ev) => visual.addEventListener(ev, dragOff as EventListener));
-    const onDrop = (e: DragEvent) => handle(e.dataTransfer?.files?.[0]);
-    visual.addEventListener("drop", onDrop as EventListener);
+    // The whole panel is a drop zone — upload button, JD card and empty state included.
+    const zone = (root.querySelector(".layout") as HTMLElement) || visual;
+    const dragOn = (e: DragEvent) => { e.preventDefault(); zone.classList.add("dragging"); visual.classList.add("dragging"); };
+    const dragOff = (e: DragEvent) => { e.preventDefault(); zone.classList.remove("dragging"); visual.classList.remove("dragging"); };
+    ["dragenter", "dragover"].forEach((ev) => zone.addEventListener(ev, dragOn as EventListener));
+    ["dragleave", "drop"].forEach((ev) => zone.addEventListener(ev, dragOff as EventListener));
+    const onDrop = (e: DragEvent) => { e.preventDefault(); e.stopPropagation(); handle(e.dataTransfer?.files?.[0]); };
+    zone.addEventListener("drop", onDrop as EventListener);
     const winDragOver = (e: DragEvent) => e.preventDefault();
     const winDrop = (e: DragEvent) => {
       e.preventDefault();
