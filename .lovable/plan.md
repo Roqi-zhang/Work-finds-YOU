@@ -49,7 +49,7 @@ Lovable 与 GitHub 是**双向同步**，不是我在后台 push 代码。需要
    - 投递看板：状态流转与分析快照回看
    - 一键导出 PDF / DOCX
 4. **最快使用路径** — 粘贴 JD → 上传简历 → 生成匹配 → 加入比较池 → 记录投递
-5. **技术栈** — 前端 / 后端 / AI 三块，配上面那张架构图
+5. **技术架构** — 直接放你提供的《EVIDENCE-FIRST DUAL PROFILE ARCHITECTURE (JD FIRST)》架构图（存到 `docs/architecture.png`，README 中以图片引用），下面配一段前端 / 后端 / AI 三块的文字说明
 6. **AI 分析管线简述** — 证据层 → 记录层 → 信号层 → 画像层，后端确定性算分（说明为什么结果可复现）
 7. **本地开发** — clone / npm i / npm run dev / npm run test
 8. **额度与商业模式** — 访客可完整跑通一次；登录后每日 20 次分析；暂不收费
