@@ -261,12 +261,28 @@ export default function JobProfile({
     const onInputChange = (e: Event) => handle((e.target as HTMLInputElement).files?.[0]);
     input.addEventListener("change", onInputChange);
 
-    const dragOn = (e: DragEvent) => { e.preventDefault(); visual.classList.add("dragging"); };
-    const dragOff = (e: DragEvent) => { e.preventDefault(); visual.classList.remove("dragging"); };
-    ["dragenter", "dragover"].forEach((ev) => visual.addEventListener(ev, dragOn as EventListener));
-    ["dragleave", "drop"].forEach((ev) => visual.addEventListener(ev, dragOff as EventListener));
-    const onDrop = (e: DragEvent) => handle(e.dataTransfer?.files?.[0]);
-    visual.addEventListener("drop", onDrop as EventListener);
+    // The whole panel is a drop zone — upload button, JD card and empty state included.
+    const zone = (root.querySelector(".layout") as HTMLElement) || visual;
+    let prevHint: string | null = null;
+    const dragOn = (e: DragEvent) => {
+      e.preventDefault();
+      if (prevHint === null) prevHint = hintLine.textContent;
+      hintLine.textContent = "松开即上传 · RELEASE TO UPLOAD";
+      zone.classList.add("dragging"); visual.classList.add("dragging");
+    };
+    const dragOff = (e: DragEvent) => {
+      e.preventDefault();
+      // Ignore child-to-child hops so the highlight does not flicker.
+      if (e.type === "dragleave" && zone.contains(e.relatedTarget as Node | null)) return;
+      // A drop swaps in its own hint via handle() — only restore when nothing was dropped.
+      if (e.type !== "drop" && prevHint !== null) hintLine.textContent = prevHint;
+      prevHint = null;
+      zone.classList.remove("dragging"); visual.classList.remove("dragging");
+    };
+    ["dragenter", "dragover"].forEach((ev) => zone.addEventListener(ev, dragOn as EventListener));
+    ["dragleave", "drop"].forEach((ev) => zone.addEventListener(ev, dragOff as EventListener));
+    const onDrop = (e: DragEvent) => { e.preventDefault(); e.stopPropagation(); handle(e.dataTransfer?.files?.[0]); };
+    zone.addEventListener("drop", onDrop as EventListener);
     const winDragOver = (e: DragEvent) => e.preventDefault();
     const winDrop = (e: DragEvent) => {
       e.preventDefault();
@@ -468,9 +484,9 @@ export default function JobProfile({
 
     return () => {
       input.removeEventListener("change", onInputChange);
-      ["dragenter", "dragover"].forEach((ev) => visual.removeEventListener(ev, dragOn as EventListener));
-      ["dragleave", "drop"].forEach((ev) => visual.removeEventListener(ev, dragOff as EventListener));
-      visual.removeEventListener("drop", onDrop as EventListener);
+      ["dragenter", "dragover"].forEach((ev) => zone.removeEventListener(ev, dragOn as EventListener));
+      ["dragleave", "drop"].forEach((ev) => zone.removeEventListener(ev, dragOff as EventListener));
+      zone.removeEventListener("drop", onDrop as EventListener);
       window.removeEventListener("dragover", winDragOver);
       window.removeEventListener("drop", winDrop);
       rcard.removeEventListener("click", onCardClick);

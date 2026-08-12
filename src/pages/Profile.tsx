@@ -523,7 +523,7 @@ export default function Profile({
   }
 
   const map = STATE_MAP[state];
-  const hintLine = hintOverride ?? map.hint;
+  const hintLine = dragging ? "松开即上传 · RELEASE TO UPLOAD" : hintOverride ?? map.hint;
 
   const Shell = (embedded ? "div" : "main") as "main";
 
@@ -532,7 +532,22 @@ export default function Profile({
       <Shell className={embedded ? "wb-shell" : "page"}>
         {!embedded && <TopBar />}
 
-        <section className={"layout" + (embedded ? " wb" : "")}>
+        <section
+          className={"layout" + (embedded ? " wb" : "") + (dragging ? " dragging" : "")}
+          onDragEnter={(e) => { e.preventDefault(); setDragging(true); }}
+          onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
+          onDragLeave={(e) => {
+            e.preventDefault();
+            // Only clear when the pointer really leaves the panel, not on child hops.
+            if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setDragging(false);
+          }}
+          onDrop={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setDragging(false);
+            handle(e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]);
+          }}
+        >
           <aside className="side">
             <div className="caption">{embedded ? "B · Candidate Profile" : "02 · Candidate Profile"}</div>
             <h1>
@@ -627,23 +642,6 @@ export default function Profile({
                 className={"visual" + (dragging ? " dragging" : "")}
                 id="visual"
                 ref={visualRef}
-                onDragEnter={(e) => {
-                  e.preventDefault();
-                  setDragging(true);
-                }}
-                onDragOver={(e) => {
-                  e.preventDefault();
-                  setDragging(true);
-                }}
-                onDragLeave={(e) => {
-                  e.preventDefault();
-                  setDragging(false);
-                }}
-                onDrop={(e) => {
-                  e.preventDefault();
-                  setDragging(false);
-                  handle(e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]);
-                }}
               >
                 <svg className="flower-svg" id="flowerSvg" viewBox="112 200 506 344">
                   <g id="backPetals" ref={backRootRef}></g>

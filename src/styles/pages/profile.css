@@ -160,3 +160,7 @@
 .p-profile .legend .kp .k { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 10px; letter-spacing: .18em; opacity: .5; }
 .p-profile .legend .kp .kp-t { font-size: 13px; margin-bottom: 3px; }
 .p-profile .legend .kp .kp-d { font-size: 12px; line-height: 1.6; opacity: .7; }
+
+/* panel-wide drop zone: any spot in the profile card accepts a dragged file */
+.p-profile .layout { border: 0.5px dashed transparent; transition: border-color .3s var(--ease); }
+.p-profile .layout.dragging { border-color: var(--ink); border-style: solid; }
