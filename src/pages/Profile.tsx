@@ -532,7 +532,22 @@ export default function Profile({
       <Shell className={embedded ? "wb-shell" : "page"}>
         {!embedded && <TopBar />}
 
-        <section className={"layout" + (embedded ? " wb" : "")}>
+        <section
+          className={"layout" + (embedded ? " wb" : "") + (dragging ? " dragging" : "")}
+          onDragEnter={(e) => { e.preventDefault(); setDragging(true); }}
+          onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
+          onDragLeave={(e) => {
+            e.preventDefault();
+            // Only clear when the pointer really leaves the panel, not on child hops.
+            if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setDragging(false);
+          }}
+          onDrop={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setDragging(false);
+            handle(e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]);
+          }}
+        >
           <aside className="side">
             <div className="caption">{embedded ? "B · Candidate Profile" : "02 · Candidate Profile"}</div>
             <h1>
