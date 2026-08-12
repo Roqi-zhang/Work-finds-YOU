@@ -272,6 +272,8 @@ export default function JobProfile({
     };
     const dragOff = (e: DragEvent) => {
       e.preventDefault();
+      // Ignore child-to-child hops so the highlight does not flicker.
+      if (e.type === "dragleave" && zone.contains(e.relatedTarget as Node | null)) return;
       // A drop swaps in its own hint via handle() — only restore when nothing was dropped.
       if (e.type !== "drop" && prevHint !== null) hintLine.textContent = prevHint;
       prevHint = null;
