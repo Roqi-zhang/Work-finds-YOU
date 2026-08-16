@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { track, trackStep } from "@/lib/analytics";
 import { getGuestKey } from "@/lib/guest";
 
 export type Level = "strong" | "medium" | "weak" | "missing";
@@ -111,6 +112,11 @@ export type ResumeResult = {
 
 /** `targetJobProfileId` binds the resulting candidate profile to a specific JD (JD-first flow). */
 export async function parseResume(file: File, targetJobProfileId?: string) {
+  track("resume_upload_start", { fileType: file.type || "unknown", sizeKb: Math.round(file.size / 1024) });
+  return trackStep("resume_parse", () => parseResumeInner(file, targetJobProfileId));
+}
+
+async function parseResumeInner(file: File, targetJobProfileId?: string) {
   const { data: auth } = await supabase.auth.getUser();
   if (!auth.user) {
     // Guests cannot write to storage — the file travels inline for the free trial run.
@@ -133,7 +139,8 @@ export type JdResult = {
 
 
 export async function parseJdText(text: string) {
-  return invoke<JdResult>("parse-jd", { text });
+  track("jd_upload_start", { method: "text", chars: text.length });
+  return trackStep("jd_parse", () => invoke<JdResult>("parse-jd", { text }), { method: "text" });
 }
 
 /** Hash the raw bytes in the browser so the server can hit its cache before downloading. */
@@ -146,6 +153,11 @@ async function fileHashHex(file: File) {
 }
 
 export async function parseJdFile(file: File) {
+  track("jd_upload_start", { method: "file", fileType: file.type || "unknown", sizeKb: Math.round(file.size / 1024) });
+  return trackStep("jd_parse", () => parseJdFileInner(file), { method: "file" });
+}
+
+async function parseJdFileInner(file: File) {
   const fileHash = await fileHashHex(file).catch(() => undefined);
   const { data: auth } = await supabase.auth.getUser();
   if (!auth.user) {
@@ -187,6 +199,11 @@ export type MatchReport = {
 };
 
 export async function runMatch(jobProfileId: string, force = false, candidateProfileId?: string) {
+  track("match_start", { force });
+  return trackStep("match", () => runMatchInner(jobProfileId, force, candidateProfileId), { force });
+}
+
+async function runMatchInner(jobProfileId: string, force = false, candidateProfileId?: string) {
   const out = await invoke<{
     report: MatchReport;
     cached: boolean;
