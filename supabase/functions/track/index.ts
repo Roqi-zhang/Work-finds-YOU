@@ -42,7 +42,11 @@ Deno.serve(async (req) => {
     const rows = list.slice(0, MAX_BATCH).flatMap((e: Record<string, unknown>) => {
       const event = str(e?.event, 80);
       if (!event) return [];
-      const props = e?.props && typeof e.props === 'object' && !Array.isArray(e.props) ? e.props : {};
+      let props: Record<string, unknown> = {};
+      if (e?.props && typeof e.props === 'object' && !Array.isArray(e.props)) {
+        const encoded = JSON.stringify(e.props);
+        if (encoded.length <= 4000) props = e.props as Record<string, unknown>;
+      }
       return [{
         event,
         session_id: str(e?.session_id, 64),
@@ -54,7 +58,7 @@ Deno.serve(async (req) => {
         utm_medium: str(e?.utm_medium, 100),
         utm_campaign: str(e?.utm_campaign, 100),
         device: str(e?.device, 20),
-        props: JSON.parse(JSON.stringify(props).slice(0, 4000).replace(/[^}]*$/, '') || '{}'),
+        props,
         created_at: new Date().toISOString(),
       }];
     });
