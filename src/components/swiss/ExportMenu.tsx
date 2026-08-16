@@ -1,3 +1,4 @@
+import { track } from "@/lib/analytics";
 import { useEffect, useRef, useState } from "react";
 
 export type ExportSection = { heading: string; lines: string[] };
@@ -165,6 +166,7 @@ export default function ExportMenu({ fileBase, captureRef, buildDoc, disabled }:
         setOpen(false);
         try {
           await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+          track("export_pdf", { file: fileBase });
           window.print();
         } finally {
           el.classList.remove("print-root");
