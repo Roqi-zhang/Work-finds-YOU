@@ -1,3 +1,4 @@
+import { track } from "@/lib/analytics";
 /* =============================================================
    WFY data layer (TS port of public/previews/_data.js)
    The ONLY place that touches storage. Swap the bodies of the
@@ -127,6 +128,7 @@ export function getPool(): Job[] {
     .filter(Boolean) as Job[];
 }
 export function addToPool(job: Job) {
+  track("add_to_pool", { jobId: job?.id });
   putJob(job);
   const ids = getPoolIds();
   if (ids.indexOf(job.id) < 0) {
@@ -221,6 +223,7 @@ export function saveApplications(list: Application[]) {
 }
 
 export function applyToJob(job: Job) {
+  track("add_to_delivery", { jobId: job?.id });
   putJob(job);
   const list = getApplications();
   if (list.some((a) => a.id === job.id)) return job.id;

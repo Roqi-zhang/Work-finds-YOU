@@ -9,6 +9,8 @@ import Match from "./pages/Match.tsx";
 import Compare from "./pages/Compare.tsx";
 import Delivery from "./pages/Delivery.tsx";
 import Snapshot from "./pages/Snapshot.tsx";
+import Insights from "./pages/Insights.tsx";
+import Analytics from "@/components/Analytics";
 
 import Auth from "./pages/Auth.tsx";
 import NotFound from "./pages/NotFound.tsx";
@@ -29,6 +31,7 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
+          <Analytics />
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/home" element={<Home />} />
@@ -39,6 +42,7 @@ const App = () => (
             <Route path="/compare" element={<Compare />} />
             <Route path="/delivery" element={<Delivery />} />
             <Route path="/snapshot" element={<Snapshot />} />
+            <Route path="/insights" element={<Insights />} />
 
             <Route path="/auth" element={<Auth />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

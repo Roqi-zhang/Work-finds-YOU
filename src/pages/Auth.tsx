@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
 import { useAuth } from "@/hooks/useAuth";
+import { track } from "@/lib/analytics";
 
 const INK = "#0A0A0A";
 const BG = "#F1F1F1";
@@ -82,17 +83,19 @@ const Auth = () => {
         password,
         options: { emailRedirectTo: window.location.origin + next },
       });
-      if (err) setError(err.message);
+      if (err) { setError(err.message); track("signup_fail", { reason: err.message.slice(0, 120) }); }
       else if (!data.session) setMessage("注册成功，请查收邮件并点击确认链接后登录。");
     } else {
       const { error: err } = await supabase.auth.signInWithPassword({ email, password });
-      if (err) setError(err.message);
+      if (err) { setError(err.message); track("signin_fail", { reason: err.message.slice(0, 120) }); }
+      else track("signin_success", { method: "password" });
     }
     setBusy(false);
   };
 
   const google = async () => {
     setError(null);
+    track("signin_start", { method: "google" });
     const result = await lovable.auth.signInWithOAuth("google", {
       redirect_uri: window.location.origin + next,
     });
