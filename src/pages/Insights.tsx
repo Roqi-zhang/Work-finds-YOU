@@ -140,9 +140,9 @@ export default function Insights() {
 
           <section style={{ ...card, marginTop: 24 }}>
             <div style={cap}>每日趋势 · 访客 / 匹配</div>
-            <div style={{ display: "flex", alignItems: "flex-end", gap: 6, height: 140, marginTop: 16 }}>
+            <div style={{ display: "flex", alignItems: "flex-end", gap: 10, height: 140, marginTop: 16 }}>
               {data.trend.map((t) => (
-                <div key={t.day} style={{ flex: 1, textAlign: "center" }} title={`${t.day} · 访客 ${t.visitors} · 匹配 ${t.matches}`}>
+                <div key={t.day} style={{ flex: 1, maxWidth: 48, textAlign: "center" }} title={`${t.day} · 访客 ${t.visitors} · 匹配 ${t.matches}`}>
                   <div style={{ height: `${(t.visitors / trendMax) * 110}px`, background: "var(--ink, #0A0A0A)" }} />
                   <div style={{ height: `${(t.matches / trendMax) * 110}px`, background: "var(--muted, #888)" }} />
                   <div style={{ ...cap, fontSize: 9, marginTop: 6 }}>{t.day.slice(5)}</div>
