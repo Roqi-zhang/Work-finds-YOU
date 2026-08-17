@@ -1,0 +1,1 @@
+DELETE FROM public.analytics_events WHERE visitor_id = 'smoke-test';
