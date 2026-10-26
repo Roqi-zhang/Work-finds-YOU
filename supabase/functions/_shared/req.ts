@@ -22,9 +22,9 @@ export function adminClient(): SupabaseClient {
   );
 }
 
-/** Download a file from the private `resumes` bucket and turn it into a
- *  model content block. Images go multimodal; PDF/DOCX are text-extracted
- *  because the configured model does not accept documents inline. */
+/** Download a private file and turn it into a model content block.
+ * PDF/images go directly to the multimodal gateway. Never run PDF.js inside
+ * the edge worker: compressed PDFs can exhaust its CPU/memory budget. */
 export async function fileToBlock(admin: SupabaseClient, bucket: string, path: string, fileName: string) {
   // Storage occasionally answers 503 right after an upload — retry with backoff.
   let lastErr = "no data";
@@ -41,6 +41,16 @@ export async function fileToBlock(admin: SupabaseClient, bucket: string, path: s
 /** Same conversion for bytes that never hit storage (guest inline uploads). */
 export async function bufferToBlock(buf: Uint8Array, fileName: string) {
   const ext = (fileName.split(".").pop() || "").toLowerCase();
+
+  if (ext === "pdf") {
+    if (!buf.length || new TextDecoder().decode(buf.subarray(0, 5)) !== "%PDF-") {
+      throw new Error("UNREADABLE_PDF");
+    }
+    return {
+      type: "file",
+      file: { filename: fileName, file_data: `data:application/pdf;base64,${base64(buf)}` },
+    } as const;
+  }
 
   if (ext === "docx") {
     const mammoth = await import("npm:mammoth@1.8.0");
@@ -59,19 +69,7 @@ export async function bufferToBlock(buf: Uint8Array, fileName: string) {
     return { type: "image_url", image_url: { url: `data:image/${mime};base64,${base64(buf)}` } } as const;
   }
 
-  // Default / PDF: extract the text layer.
-  const { extractText, getDocumentProxy } = await import("npm:unpdf@0.12.1");
-  let text = "";
-  try {
-    const pdf = await getDocumentProxy(buf);
-    const out = await extractText(pdf, { mergePages: true });
-    text = (Array.isArray(out.text) ? out.text.join("\n") : out.text) || "";
-  } catch (e) {
-    console.error("pdf extract failed", e);
-    throw new Error("UNREADABLE_PDF");
-  }
-  if (text.replace(/\s/g, "").length < 30) throw new Error("UNREADABLE_PDF");
-  return { type: "text", text: text.slice(0, 60000) } as const;
+  throw new Error("不支持的文件格式，请上传 PDF、DOCX 或图片");
 }
 
 export function decodeBase64(b64: string): Uint8Array {

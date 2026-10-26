@@ -203,7 +203,7 @@ Deno.serve(async (req) => {
 
     // File uploads are keyed by their raw bytes so the browser can pre-compute the same key.
     const contentHash = fileHash ??
-      (await sha256Hex(block.type === "text" ? block.text : JSON.stringify(block).slice(0, 200000)));
+      (await sha256Hex(block.type === "text" ? block.text : JSON.stringify(block)));
 
     /* ---------- Cache short-circuit : same document → zero model calls ---------- */
     {
