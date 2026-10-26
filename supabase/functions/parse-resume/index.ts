@@ -165,7 +165,7 @@ Deno.serve(async (req) => {
     }
 
     const contentHash = await sha256Hex(
-      block.type === "text" ? block.text : JSON.stringify(block).slice(0, 200000),
+      block.type === "text" ? block.text : JSON.stringify(block),
     );
     const extractFp = await extractionFingerprint({
       contentHash,
