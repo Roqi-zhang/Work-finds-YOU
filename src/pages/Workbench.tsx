@@ -115,7 +115,7 @@ export default function Workbench() {
             )}
           </button>
           <span className="wb-hint">
-            {hint || (ready ? "两朵花已就绪 · 可以开始匹配" : "先建立岗位画像与个人画像")}
+            {hint || (ready ? "" : "先建立岗位画像与个人画像")}
           </span>
         </div>
       </main>
