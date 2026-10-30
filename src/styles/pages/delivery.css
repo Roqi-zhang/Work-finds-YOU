@@ -3,7 +3,7 @@
 .p-delivery .head p { max-width: 36ch; opacity: .8; font-size: 14px; }
 .p-delivery .top-tools {
   display: flex; align-items: center; justify-content: space-between;
-  padding: 16px 0; border-top: 0.5px solid var(--line); border-bottom: 0.5px solid var(--line);
+  padding: 16px 0;
   margin-bottom: 48px; font-size: 11px; letter-spacing: 0.22em; text-transform: uppercase;
 }
 .p-delivery .top-tools .l { display: flex; gap: 28px; align-items: center; }
@@ -14,7 +14,7 @@
 .p-delivery .journal { display: grid; grid-template-columns: 1fr 320px; gap: 64px; align-items: start; }
 .p-delivery .entries { display: flex; flex-direction: column; }
 .p-delivery .entry {
-  padding: 40px 0; border-top: 0.5px solid var(--line);
+  padding: 40px 0;
   display: grid; grid-template-columns: 96px 1fr; gap: 32px;
 }
 .p-delivery .entry .date {
