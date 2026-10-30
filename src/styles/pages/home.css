@@ -110,7 +110,8 @@
 .hand-title .hl.wiggle { animation: hlWiggle .7s ease-in-out; }
 @keyframes hlWiggle { 0%,100%{transform:rotate(0)} 20%{transform:rotate(-12deg)} 40%{transform:rotate(10deg)} 60%{transform:rotate(-6deg)} 80%{transform:rotate(3deg)} }
 .hand-date { margin-top: 28px; text-align: center; font-size: 36px; line-height: 1.3; letter-spacing: .04em; color: var(--ink-strong); }
-.hand-date sup { font-size: .5em; vertical-align: .9em; margin-left: 1px; }
+.hand-date sup { font-size: .5em; vertical-align: top; line-height: 1; position: relative; top: .25em; margin: 0 2px 0 1px; }
+.hand-date > div { line-height: 1.35; }
 .hand-flower { margin-top: 36px; width: min(300px, 60vw); height: auto; user-select: none; }
 :root[data-theme="dark"] .hand-flower, :root[data-theme="dark"] .hand-title .hl, .dark .hand-flower, .dark .hand-title .hl { filter: invert(1); }
 .hand-cta { margin-top: 32px; font-size: 26px; letter-spacing: .12em; padding: 6px 30px; border: 1.2px solid var(--ink-strong); border-radius: 999px 900px 999px 880px; color: var(--ink-strong); transition: transform .3s; }
