@@ -292,6 +292,7 @@ Deno.serve(async (req) => {
           score: cachedScore,
           dimensions: hit.dimensions,
           sections: hit.sections,
+          keyPoints: hitKeyPoints,
           cached: true,
         });
       }
