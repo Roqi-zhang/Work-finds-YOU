@@ -75,6 +75,8 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
   font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--ink);
   opacity: .55;
 }
+/* workbench column headers: 3x size */
+.wb-shell .caption { font-size: 30px; letter-spacing: 0.14em; }
 
 /* huge display */
 .display {
