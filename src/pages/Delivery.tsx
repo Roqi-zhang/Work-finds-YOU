@@ -13,6 +13,7 @@ import {
 } from "@/lib/wfy";
 
 import "@/styles/pages/delivery.css";
+import { importExtensionJobs } from "@/lib/extensionSync";
 
 const MON_NAMES = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
 const pad = (n: number) => String(n).padStart(2, "0");
@@ -57,6 +58,10 @@ export default function Delivery() {
   const refresh = () => setApps(getApplications());
 
   // Scores live in the match reports — pull the latest ones in on every visit.
+  useEffect(() => {
+    importExtensionJobs().then((c) => c && setApps(getApplications())).catch(() => undefined);
+  }, []);
+
   useEffect(() => {
     let alive = true;
     refreshApplicationScores()
