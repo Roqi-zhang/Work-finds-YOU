@@ -10,6 +10,7 @@ import Compare from "./pages/Compare.tsx";
 import Delivery from "./pages/Delivery.tsx";
 import Snapshot from "./pages/Snapshot.tsx";
 import Insights from "./pages/Insights.tsx";
+import ExtensionConnect from "./pages/ExtensionConnect";
 import Analytics from "@/components/Analytics";
 
 import Auth from "./pages/Auth.tsx";
@@ -43,6 +44,7 @@ const App = () => (
             <Route path="/delivery" element={<Delivery />} />
             <Route path="/snapshot" element={<Snapshot />} />
             <Route path="/insights" element={<Insights />} />
+            <Route path="/extension/connect" element={<ExtensionConnect />} />
 
             <Route path="/auth" element={<Auth />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
