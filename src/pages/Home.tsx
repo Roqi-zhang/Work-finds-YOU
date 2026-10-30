@@ -32,7 +32,7 @@ export default function Home() {
     if (!wrap) return;
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const groups = Array.from(wrap.querySelectorAll<SVGGElement>(".fl"));
-    const cur = groups.map(() => (reduce ? 0.7 : 0.22));
+    const cur: number[] = groups.map(() => (reduce ? 0.7 : 0.22));
     const tgt = cur.slice();
     groups.forEach((g, i) => g.style.setProperty("--b", String(cur[i])));
     if (reduce) return;
