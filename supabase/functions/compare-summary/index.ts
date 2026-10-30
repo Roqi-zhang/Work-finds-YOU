@@ -27,18 +27,18 @@ Deno.serve(async (req) => {
       .join("\n\n");
 
     const { text } = await callAIText({
-      maxTokens: 300,
+      maxTokens: 600,
       timeoutMs: 40000,
       messages: [
         {
           role: "system",
           content:
-            "你是资深招聘专家。参考大公司评估候选人的通用维度（专业能力深度、经验年限与层级、业务领域、协作与影响范围、成长潜力），用一句不超过 60 字的中文概括所选岗位的核心区别。用「公司名」指代岗位，只输出这一句话，不要编号、引号或解释。",
+            "你是资深招聘专家。参考大公司评估候选人的通用维度（专业能力深度、经验年限与层级、业务领域、协作与影响范围、成长潜力），用一句不超过 140 字的中文概括所选岗位的核心区别。每次提到岗位都必须写「公司名·岗位全称」（岗位名称与输入完全一致，不得缩写或省略，例如「影石Insta360·AI软件产品经理-2027校招」），每个岗位只提一次，只输出这一句话，不要编号、引号或解释。",
         },
         { role: "user", content: lines },
       ],
     });
-    const summary = text.replace(/^["“「]|["”」]$/g, "").split("\n")[0].trim().slice(0, 120);
+    const summary = text.replace(/^["“「]|["”」]$/g, "").split("\n")[0].trim().slice(0, 300);
     if (!summary) return json({ error: "AI 未返回内容，请稍后重试" }, 502);
     return json({ summary });
   } catch (e) {
