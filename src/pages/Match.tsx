@@ -148,6 +148,21 @@ export default function Match() {
     if (report) setUI("match", { jobId: report.jobId });
   }, [report]);
 
+  // Always land on 01 Overview: reset scroll when the page mounts and when a
+  // report first appears (the loading screen is shorter, so the restored
+  // scroll position would otherwise drop the user mid-page, e.g. 投前 3 步).
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
+  const landedRef = useRef(false);
+  useEffect(() => {
+    if (report && !landedRef.current) {
+      landedRef.current = true;
+      window.scrollTo(0, 0);
+    }
+  }, [report]);
+
 
   const toggleFold = (id: string) => {
     setFolds((prev) => {
