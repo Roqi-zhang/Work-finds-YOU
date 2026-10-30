@@ -32,7 +32,7 @@ export default function Home() {
     if (!wrap) return;
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const groups = Array.from(wrap.querySelectorAll<SVGGElement>(".fl"));
-    const cur = groups.map(() => (reduce ? 0.7 : 0.08));
+    const cur = groups.map(() => (reduce ? 0.7 : 0.22));
     const tgt = cur.slice();
     groups.forEach((g, i) => g.style.setProperty("--b", String(cur[i])));
     if (reduce) return;
@@ -41,7 +41,7 @@ export default function Home() {
       groups.forEach((g, i) => {
         const r = g.getBoundingClientRect();
         const d = Math.hypot(e.clientX - (r.left + r.width / 2), e.clientY - (r.top + r.height / 2));
-        tgt[i] = Math.max(0.08, Math.min(1, 1 - (d - 60) / 320));
+        tgt[i] = Math.max(0.22, Math.min(1, 1 - (d - 60) / 320));
       });
     };
     const tick = () => {

@@ -78,12 +78,12 @@
 @keyframes slide { to { transform: translateX(-50%); } }
 /* ===== hand-drawn bloom home ===== */
 .p-home-bloom { position: relative; min-height: 100vh; overflow: hidden; }
-.p-home-bloom .page { position: relative; z-index: 2; }
+.p-home-bloom .page { position: relative; z-index: 2; min-height: 0; padding-bottom: 0; }
 .bloom-bg { position: absolute; inset: 0; z-index: 0; pointer-events: none; }
 .fl-svg { position: absolute; transform: translate(-50%, -30%); overflow: visible; }
 .fl { --b: 0.08; fill: none; stroke: var(--ink-strong); stroke-linecap: round; stroke-linejoin: round; }
 .fl .stem, .fl .leaf { stroke-width: 1.1; opacity: .55; stroke-dasharray: 1; stroke-dashoffset: calc(1 - min(1, var(--b) * 2.2)); }
-.fl .petal { stroke-width: 1.2; stroke-dasharray: 1; stroke-dashoffset: clamp(0, calc(1 - (var(--b) - var(--d) * 0.35) * 1.8), 1); transform: scale(calc(0.35 + var(--b) * 0.65)); transform-box: view-box; transform-origin: 0 0; }
+.fl .petal { stroke-width: 1.2; stroke-dasharray: 1; stroke-dashoffset: clamp(0, calc(1 - (var(--b) - var(--d) * 0.35) * 1.8), 1); transform: scale(calc(0.55 + var(--b) * 0.45)); transform-box: view-box; transform-origin: 0 0; }
 .fl .core { stroke-width: 1; fill: var(--paper); }
 .fl .core-scribble { stroke-width: .8; opacity: .7; }
 
