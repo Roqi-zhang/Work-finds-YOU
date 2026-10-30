@@ -14,6 +14,7 @@ import {
   getUI,
   setUI,
   addToPool,
+  getPoolMeta,
   applyToJob,
   type MatchReport,
 } from "@/lib/wfy";
@@ -287,7 +288,21 @@ export default function Match() {
   const job = R.job;
 
   const onAddPool = () => {
-    addToPool(job);
+    const m = getPoolMeta(job.id);
+    setLaterReason(m.reason || "");
+    setLaterLink(m.link || "");
+    setLaterErr("");
+    setLaterOpen(true);
+  };
+  const onSaveLater = () => {
+    const link = laterLink.trim();
+    if (link && !/^https?:\/\/\S+$/i.test(link)) {
+      setLaterErr("请粘贴以 http:// 或 https:// 开头的链接");
+      return;
+    }
+    addToPool(job, { reason: laterReason.trim().slice(0, 200), link });
+    setLaterOpen(false);
+    toast("已放入比较池");
     navigate("/compare?focus=" + encodeURIComponent(job.id));
   };
   const onApply = () => {
@@ -336,7 +351,7 @@ export default function Match() {
               <p>一句话：{R.overview}</p>
               <div className="cta-row" style={{ marginTop: 32 }}>
                 <button className="btn" id="addPoolBtn" type="button" onClick={onAddPool}>
-                  加入对比 →
+                  稍后考虑 →
                 </button>
                 <button className="btn" id="applyBtn" type="button" onClick={onApply}>
                   直接投递 →
