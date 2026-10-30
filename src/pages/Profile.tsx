@@ -550,11 +550,13 @@ export default function Profile({
         >
           <aside className="side">
             <div className="caption">{embedded ? "B · Candidate Profile" : "02 · Candidate Profile"}</div>
-            <h1>
-              创建属于你的
-              <br />
-              能力花
-            </h1>
+            {!embedded && (
+              <h1>
+                创建属于你的
+                <br />
+                能力花
+              </h1>
+            )}
             <p>把简历翻译成能力证据——哪些能力你写清楚了，哪些只是提了一句没有佐证，一眼就知道该补什么。</p>
 
             <div className="steps" hidden={embedded}>
