@@ -135,18 +135,11 @@ export default function Compare() {
               the pool.
             </h1>
           </div>
-          <p className="caption">
-            这里是你「稍后考虑」的岗位。越靠近中心，匹配度越高。悬停查看概要，点选多个岗位即可并排对比。
-          </p>
         </div>
 
         <div className="pool-bar">
           <span className="caption">
-            {jobs.length === 0
-              ? "比较池为空 · 在匹配页点击「稍后考虑」添加岗位"
-              : selected.length === 0
-                ? "点选岗位进行对比"
-                : `已选 ${selected.length} 个${selected.length < 2 ? " · 再选 1 个即可对比" : ""}`}
+            这里是你「稍后考虑」的岗位。越靠近中心，匹配度越高。悬停查看概要，点选多个岗位即可并排对比。
           </span>
           <div className="pool-actions">
             {selected.length > 0 && (
