@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import TopBar from "@/components/swiss/TopBar";
 import ExportMenu from "@/components/swiss/ExportMenu";
+import LaterDialog from "@/components/swiss/LaterDialog";
 import {
   getMatchReport,
   putMatchReport,
@@ -14,7 +15,6 @@ import {
   getUI,
   setUI,
   addToPool,
-  getPoolMeta,
   applyToJob,
   type MatchReport,
 } from "@/lib/wfy";
@@ -81,6 +81,7 @@ export default function Match() {
   );
   const [report, setReport] = useState<MatchReport | null>(localReport);
   const [loading, setLoading] = useState(false);
+  const [laterOpen, setLaterOpen] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -287,24 +288,7 @@ export default function Match() {
   const R = report;
   const job = R.job;
 
-  const onAddPool = () => {
-    const m = getPoolMeta(job.id);
-    setLaterReason(m.reason || "");
-    setLaterLink(m.link || "");
-    setLaterErr("");
-    setLaterOpen(true);
-  };
-  const onSaveLater = () => {
-    const link = laterLink.trim();
-    if (link && !/^https?:\/\/\S+$/i.test(link)) {
-      setLaterErr("请粘贴以 http:// 或 https:// 开头的链接");
-      return;
-    }
-    addToPool(job, { reason: laterReason.trim().slice(0, 200), link });
-    setLaterOpen(false);
-    toast("已放入比较池");
-    navigate("/compare?focus=" + encodeURIComponent(job.id));
-  };
+  const onAddPool = () => setLaterOpen(true);
   const onApply = () => {
     applyToJob(job);
     navigate("/delivery?focus=" + encodeURIComponent(job.id));
@@ -602,6 +586,12 @@ export default function Match() {
             </div>
           </section>
         </main>
+        <LaterDialog
+          job={job}
+          open={laterOpen}
+          onClose={() => setLaterOpen(false)}
+          onSaved={() => navigate("/compare?focus=" + encodeURIComponent(job.id))}
+        />
       </>
     </div>
   );
