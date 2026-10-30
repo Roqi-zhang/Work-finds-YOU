@@ -194,7 +194,6 @@ export default function Delivery() {
               Job Journal.
             </h1>
           </div>
-          <p>一份倒序阅读的求职日志。每一次投递、拒信、面试都是一段带小标题的段落；右侧竖轨记录状态变化的时间打点。</p>
         </div>
 
         <div className="top-tools">
