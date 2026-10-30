@@ -60,6 +60,7 @@ export default function Compare() {
   const [hover, setHover] = useState<{ id: string; x: number; y: number } | null>(null);
   const [summary, setSummary] = useState<{ state: "idle" | "loading" | "ok" | "err"; text: string }>({ state: "idle", text: "" });
   const [, bump] = useState(0);
+  const [editReason, setEditReason] = useState<{ id: string; value: string } | null>(null);
   const [editLink, setEditLink] = useState<{ id: string; value: string } | null>(null);
   const [confirm, setConfirm] = useState<Job | null>(null);
   const tableRef = useRef<HTMLDivElement | null>(null);
