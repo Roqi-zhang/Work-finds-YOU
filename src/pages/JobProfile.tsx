@@ -514,7 +514,7 @@ export default function JobProfile({
             <aside className="side">
               <div className="caption">{embedded ? "A · Job Profile" : "03 · Job Profile"}</div>
 
-              <h1>解析岗位的<br />理想能力花</h1>
+              {!embedded && <h1>解析岗位的<br />理想能力花</h1>}
               <p>把一份 JD 变成一张能力地图——哪几项是硬门槛、哪几项只是加分，一眼就能分辨，投递前不再靠猜。</p>
 
               <div className="steps" hidden={embedded}>
