@@ -268,7 +268,10 @@ Deno.serve(async (req) => {
         ? q.eq("target_job_profile_id", targetJobId)
         : q.is("target_job_profile_id", null);
       const { data: hit } = await q.maybeSingle();
-      if (hit) {
+      const hitKeyPoints =
+        ((hit?.sections as { keyPoints?: { title: string; detail: string }[] } | null)?.keyPoints) ?? [];
+      // Results saved before key points existed are re-analysed so the summary is filled in.
+      if (hit && hitKeyPoints.length > 0) {
         if (resume) await admin.from("resumes").update({ status: "succeeded" }).eq("id", resume.id);
         let clear = own(
           admin
