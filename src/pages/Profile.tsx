@@ -706,7 +706,7 @@ export default function Profile({
               <div className="stage-actions">
                 <div className="btnrow">
                   <button className="btn ghost" id="redoBtn" hidden={state !== "bloomed"} onClick={onRedo}>
-                    重新建立画像
+                    重新建立候选人画像
                   </button>
                   <button
                     className={"btn" + (state === "analysing" ? " loading" : "")}

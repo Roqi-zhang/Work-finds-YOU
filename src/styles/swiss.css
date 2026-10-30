@@ -19,7 +19,7 @@
 html, body {
   background: var(--paper);
   color: var(--ink);
-  font-family: "Neue Haas Grotesk Display Pro", "Inter Tight", "HarmonyOS Sans", -apple-system, sans-serif;
+  font-family: var(--hand);
   font-size: 14px;
   line-height: 1.7;
   font-feature-settings: "ss01","cv11";
@@ -139,3 +139,6 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
   display: block; padding: 8px 12px; font-size: 10px; line-height: 1.5;
   color: var(--ink); opacity: .55; letter-spacing: .04em;
 }
+
+:root { --hand: "Patrick Hand", "ZCOOL KuaiLe", cursive; }
+body *:not(svg):not(path) { font-family: var(--hand) !important; }

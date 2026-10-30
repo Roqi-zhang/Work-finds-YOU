@@ -60,6 +60,7 @@ export default function Compare() {
   const [hover, setHover] = useState<{ id: string; x: number; y: number } | null>(null);
   const [summary, setSummary] = useState<{ state: "idle" | "loading" | "ok" | "err"; text: string }>({ state: "idle", text: "" });
   const [, bump] = useState(0);
+  const [editReason, setEditReason] = useState<{ id: string; value: string } | null>(null);
   const [editLink, setEditLink] = useState<{ id: string; value: string } | null>(null);
   const [confirm, setConfirm] = useState<Job | null>(null);
   const tableRef = useRef<HTMLDivElement | null>(null);
@@ -168,15 +169,6 @@ export default function Compare() {
               <circle className="center" r="52" />
               <text className="center-label" y="-2">YOU</text>
               <text className="center-sub" y="16">Match core</text>
-              {chosen.map((j) => {
-                const p = pos[j.id];
-                if (!p) return null;
-                const cx = p.x * 0.35;
-                const cy = p.y * 0.35 - 60 * Math.sign(p.y || 1);
-                return (
-                  <path key={"l" + j.id} className="bezier on" d={`M 0 0 C ${cx} ${cy}, ${p.x - cx} ${p.y - cy}, ${p.x} ${p.y}`} />
-                );
-              })}
               {jobs.map((j) => {
                 const p = pos[j.id];
                 const on = selected.includes(j.id);
@@ -267,7 +259,23 @@ export default function Compare() {
 
               <div className="cmp-rl">我的犹豫</div>
               {chosen.map((j) => (
-                <div key={"w" + j.id} className="cmp-cell">{getPoolMeta(j.id).reason || <span className="muted">未填写</span>}</div>
+                <div key={"w" + j.id} className="cmp-cell">
+                  {editReason?.id === j.id ? (
+                    <>
+                      <textarea className="cmp-input" autoFocus rows={3} maxLength={200} placeholder="写下你的犹豫原因" value={editReason.value}
+                        onChange={(e) => setEditReason({ id: j.id, value: e.target.value })}
+                        onKeyDown={(e) => {
+                          if (e.key === "Escape") setEditReason(null);
+                          if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); setPoolMeta(j.id, { reason: editReason.value.trim() }); setEditReason(null); bump((n) => n + 1); }
+                        }} />
+                      <span className="muted">回车保存 · Esc 取消</span>
+                    </>
+                  ) : (
+                    <button type="button" className={"link" + (getPoolMeta(j.id).reason ? "" : " muted")} style={{ textAlign: "left" }} onClick={() => setEditReason({ id: j.id, value: getPoolMeta(j.id).reason || "" })}>
+                      {getPoolMeta(j.id).reason || "未填写 · 补充"}
+                    </button>
+                  )}
+                </div>
               ))}
 
               <div className="cmp-rl">投递链接</div>
@@ -299,7 +307,7 @@ export default function Compare() {
                 return (
                   <div key={"k" + j.id} className="cmp-cell">
                     {link ? (
-                      <a href={link} target="_blank" rel="noopener noreferrer" className="link">打开投递页 ↗</a>
+                      <span style={{ display: "inline-flex", gap: 14 }}><a href={link} target="_blank" rel="noopener noreferrer" className="link">打开投递页 ↗</a><button type="button" className="link muted" onClick={() => setEditLink({ id: j.id, value: link })}>修改</button></span>
                     ) : (
                       <button type="button" className="link muted" onClick={() => setEditLink({ id: j.id, value: "" })}>
                         未填写 · 补充
