@@ -350,6 +350,36 @@ export type Database = {
         }
         Relationships: []
       }
+      extension_tokens: {
+        Row: {
+          created_at: string
+          id: string
+          last_used_at: string | null
+          name: string
+          revoked: boolean
+          token_hash: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          last_used_at?: string | null
+          name?: string
+          revoked?: boolean
+          token_hash: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          last_used_at?: string | null
+          name?: string
+          revoked?: boolean
+          token_hash?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       guest_trials: {
         Row: {
           created_at: string
@@ -625,6 +655,60 @@ export type Database = {
           size_bytes?: number | null
           status?: Database["public"]["Enums"]["analysis_status"]
           updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      saved_jobs: {
+        Row: {
+          company: string | null
+          created_at: string
+          id: string
+          imported_at: string | null
+          jd_text: string | null
+          job_profile_id: string | null
+          location: string | null
+          note: string | null
+          salary: string | null
+          source_site: string | null
+          status: string
+          title: string
+          updated_at: string
+          url: string
+          user_id: string
+        }
+        Insert: {
+          company?: string | null
+          created_at?: string
+          id?: string
+          imported_at?: string | null
+          jd_text?: string | null
+          job_profile_id?: string | null
+          location?: string | null
+          note?: string | null
+          salary?: string | null
+          source_site?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+          url: string
+          user_id: string
+        }
+        Update: {
+          company?: string | null
+          created_at?: string
+          id?: string
+          imported_at?: string | null
+          jd_text?: string | null
+          job_profile_id?: string | null
+          location?: string | null
+          note?: string | null
+          salary?: string | null
+          source_site?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+          url?: string
           user_id?: string
         }
         Relationships: []
