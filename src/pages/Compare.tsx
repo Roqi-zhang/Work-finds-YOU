@@ -205,10 +205,7 @@ export default function Compare() {
               <div>
                 <div className="caption">Compare / Deep comparison</div>
                 <div className="cmp-crumb">
-                  <button type="button" className="link" onClick={() => { setComparing(false); window.scrollTo({ top: 0, behavior: "smooth" }); }}>
-                    ← 返回轨道
-                  </button>
-                  <span> / {chosen.map((j) => j.co).join(" 与 ")}</span>
+                  <span>{chosen.map((j) => j.co).join(" 与 ")}</span>
                 </div>
               </div>
             </div>
