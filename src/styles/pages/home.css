@@ -76,3 +76,27 @@
 .p-home .marquee span { display: inline-block; padding-right: 64px; animation: slide 22s linear infinite; }
 
 @keyframes slide { to { transform: translateX(-50%); } }
+/* ===== hand-drawn bloom home ===== */
+.p-home-bloom { position: relative; min-height: 100vh; overflow: hidden; }
+.p-home-bloom .page { position: relative; z-index: 2; min-height: 0; padding-bottom: 0; }
+.bloom-bg { position: absolute; inset: 0; z-index: 0; pointer-events: none; }
+.fl-svg { position: absolute; transform: translate(-50%, -30%); overflow: visible; }
+.fl { --b: 0.08; fill: none; stroke: var(--ink-strong); stroke-linecap: round; stroke-linejoin: round; }
+.fl .stem, .fl .leaf { stroke-width: 1.1; opacity: .55; stroke-dasharray: 1; stroke-dashoffset: calc(1 - min(1, var(--b) * 2.2)); }
+.fl .petal { stroke-width: 1.2; stroke-dasharray: 1; stroke-dashoffset: clamp(0, calc(1 - (var(--b) - var(--d) * 0.35) * 1.8), 1); transform: scale(calc(0.55 + var(--b) * 0.45)); transform-box: view-box; transform-origin: 0 0; }
+.fl .core { stroke-width: 1; fill: var(--paper); }
+.fl .core-scribble { stroke-width: .8; opacity: .7; }
+
+.bloom-hero { position: relative; z-index: 2; min-height: calc(100vh - 120px); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 48px; text-align: center; padding: 0 24px; }
+.bloom-title { font-family: 'Gochi Hand', 'Caveat', cursive; font-weight: 400; font-size: clamp(48px, 9vw, 128px); line-height: 1; letter-spacing: 0.02em; color: var(--ink-strong); text-transform: uppercase; }
+.bloom-cta { position: relative; display: inline-grid; place-items: center; width: 220px; height: 110px; color: var(--ink-strong); text-decoration: none; }
+.bloom-cta span { font-family: 'Gochi Hand', 'Caveat', cursive; font-size: 40px; letter-spacing: .12em; transition: transform 300ms var(--ease); }
+.bloom-ring { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; fill: none; stroke: var(--ink-strong); stroke-width: 1.3; stroke-linecap: round; }
+.bloom-ring path { stroke-dasharray: 1; stroke-dashoffset: 0; animation: ringDraw 1.4s var(--ease) both; }
+.bloom-cta:hover .bloom-ring path, .bloom-cta:focus-visible .bloom-ring path { animation: ringDraw 0.9s var(--ease), ringWobble 1.2s ease-in-out .9s infinite; }
+.bloom-cta:hover span { transform: rotate(-2deg) scale(1.04); }
+.bloom-cta:focus-visible { outline: none; }
+.bloom-sub { font-size: 12px; letter-spacing: .14em; opacity: .55; }
+@keyframes ringDraw { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+@keyframes ringWobble { 0%,100% { transform: rotate(0); } 50% { transform: rotate(-1.5deg) translateY(-1px); } }
+@media (prefers-reduced-motion: reduce) { .bloom-ring path { animation: none !important; } }

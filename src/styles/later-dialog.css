@@ -1,0 +1,28 @@
+.later-mask {
+  position: fixed; inset: 0; z-index: 80;
+  display: grid; place-items: center;
+  background: color-mix(in srgb, var(--paper) 55%, transparent);
+  backdrop-filter: blur(10px);
+  animation: laterIn 240ms var(--ease, ease);
+}
+.later-dlg {
+  width: min(480px, calc(100vw - 32px));
+  background: var(--paper); color: var(--ink);
+  border: 0.5px solid var(--ink-strong);
+  padding: 32px; display: flex; flex-direction: column; gap: 18px;
+}
+.later-k { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; letter-spacing: .16em; text-transform: uppercase; opacity: .6; }
+.later-dlg h5 { font-size: 28px; font-weight: 500; letter-spacing: -0.02em; color: var(--ink-strong); margin: 0; }
+.later-hint { font-size: 13px; opacity: .7; margin: -8px 0 0; }
+.later-field { display: flex; flex-direction: column; gap: 8px; position: relative; }
+.later-field span { font-size: 11px; letter-spacing: .14em; text-transform: uppercase; opacity: .7; }
+.later-field textarea, .later-field input {
+  font: inherit; font-size: 14px; color: var(--ink-strong);
+  background: transparent; border: 0; border-bottom: 0.5px solid var(--line);
+  padding: 8px 0; outline: none; resize: none; transition: border-color var(--dur) var(--ease);
+}
+.later-field textarea:focus, .later-field input:focus { border-bottom-color: var(--ink-strong); }
+.later-field em { font-style: normal; font-size: 11px; opacity: .5; align-self: flex-end; }
+.later-field em.later-err { opacity: 1; align-self: flex-start; color: var(--ink-strong); text-decoration: underline; text-underline-offset: 3px; }
+.later-row { display: flex; justify-content: flex-end; gap: 12px; margin-top: 8px; }
+@keyframes laterIn { from { opacity: 0; } to { opacity: 1; } }

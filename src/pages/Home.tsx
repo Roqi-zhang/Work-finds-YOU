@@ -1,133 +1,110 @@
+import { useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import TopBar from "@/components/swiss/TopBar";
 import "@/styles/pages/home.css";
 
-const MARQUEE =
-  "平均决策时间 ↓ 62%   ·   匹配维度 24   ·   已聚合岗位 12,480   ·   月相 loading 已就绪   ·   Swiss Grid v0.1   ·   ";
+/* Hand-drawn single-line flowers. Each petal is a slightly wobbly loop; bloom (0..1) draws them in. */
+type Flower = { x: number; y: number; s: number; petals: number; rot: number; stem: string };
 
-const TRIO = [
-  { num: "01", h: "建立你的画像", p: "上传简历或手动填写，10 花瓣能力模型即刻成形，作为后续所有匹配的坐标系。" },
-  { num: "02", h: "匹配一份岗位", p: "贝塞尔连线直观呈现候选人与岗位之间的匹配点、风险点、可迁移能力。" },
-  { num: "03", h: "对比、投递、复盘", p: "轨道池横向对比、时间线日志式追踪投递状态，形成可复用的决策闭环。" },
+const FLOWERS: Flower[] = [
+  { x: 12, y: 26, s: 1.1, petals: 6, rot: 10, stem: "c -6 40 8 80 -4 140" },
+  { x: 86, y: 20, s: 0.8, petals: 5, rot: -20, stem: "c 8 30 -10 70 4 120" },
+  { x: 8, y: 78, s: 0.9, petals: 7, rot: 30, stem: "c 4 30 -6 50 2 80" },
+  { x: 90, y: 72, s: 1.25, petals: 6, rot: 0, stem: "c -8 40 6 70 -2 110" },
+  { x: 30, y: 88, s: 0.6, petals: 5, rot: 45, stem: "c 3 20 -4 30 0 50" },
+  { x: 70, y: 90, s: 0.7, petals: 8, rot: 15, stem: "c -3 20 5 30 0 50" },
+  { x: 62, y: 12, s: 0.55, petals: 5, rot: -10, stem: "c 4 20 -4 40 2 60" },
 ];
 
-const TICKS = [
-  { num: "01", label: "HOME / 首页", angle: 0 },
-  { num: "02", label: "WORKBENCH", angle: -40 },
-  { num: "03", label: "MATCH", angle: 40 },
-  { num: "04", label: "COMPARE", angle: -80 },
-  { num: "05", label: "DELIVERY", angle: 80 },
-];
+function petalPath(i: number, n: number, r: number) {
+  const a = (Math.PI * 2 * i) / n;
+  const w = (Math.PI / n) * 0.9;
+  const j = 1 + ((i * 37) % 7) / 40; // per-petal wobble
+  const p = (ang: number, rad: number) => `${(Math.cos(ang) * rad).toFixed(1)} ${(Math.sin(ang) * rad).toFixed(1)}`;
+  return `M ${p(a - w * 0.2, 6)} C ${p(a - w, r * 0.7 * j)} ${p(a - w * 0.4, r * j)} ${p(a, r * 1.02 * j)} C ${p(a + w * 0.5, r * 0.98)} ${p(a + w * 1.05, r * 0.6)} ${p(a + w * 0.15, 5)}`;
+}
 
 export default function Home() {
+  const wrapRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const wrap = wrapRef.current;
+    if (!wrap) return;
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const groups = Array.from(wrap.querySelectorAll<SVGGElement>(".fl"));
+    const cur: number[] = groups.map(() => (reduce ? 0.7 : 0.22));
+    const tgt = cur.slice();
+    groups.forEach((g, i) => g.style.setProperty("--b", String(cur[i])));
+    if (reduce) return;
+    let raf = 0;
+    const onMove = (e: PointerEvent) => {
+      groups.forEach((g, i) => {
+        const r = g.getBoundingClientRect();
+        const d = Math.hypot(e.clientX - (r.left + r.width / 2), e.clientY - (r.top + r.height / 2));
+        tgt[i] = Math.max(0.22, Math.min(1, 1 - (d - 60) / 320));
+      });
+    };
+    const tick = () => {
+      groups.forEach((g, i) => {
+        const k = tgt[i] > cur[i] ? 0.08 : 0.025; // open quickly, close slowly
+        cur[i] += (tgt[i] - cur[i]) * k;
+        g.style.setProperty("--b", cur[i].toFixed(3));
+      });
+      raf = requestAnimationFrame(tick);
+    };
+    window.addEventListener("pointermove", onMove);
+    raf = requestAnimationFrame(tick);
+    return () => {
+      window.removeEventListener("pointermove", onMove);
+      cancelAnimationFrame(raf);
+    };
+  }, []);
+
   return (
-    <div className="p-home">
+    <div className="p-home p-home-bloom">
       <main className="page">
         <TopBar />
-
-        <section className="hero">
-          <div className="l">
-            <div>
-              <div className="caption">01 · AI 求职决策工作台</div>
-              <h1 style={{ marginTop: 24 }}>
-                Work
-                <br />
-                Finds You.
-              </h1>
-              <div className="zh">选对方向，工作找你。</div>
-              <div className="en-sub">Choose the direction, let the work come to you.</div>
-              <p className="slogan">
-                策略、选择有时比努力更重要，助力求职者在有限的投递机会中高效做出一个个明智的选择。
-                <span className="en">
-                  Strategy and choice sometimes matter more than effort — helping job seekers make smart decisions
-                  within limited chances.
-                </span>
-              </p>
-            </div>
-            <div className="meta">
-              <div>
-                <div className="caption">Loading</div>
-                <div className="moon" style={{ marginTop: 10 }}>
-                  <i />
-                  <i />
-                  <i />
-                  <i />
-                  <i />
-                </div>
-              </div>
-              <div style={{ textAlign: "right" }}>
-                <div className="caption">Version</div>
-                <div
-                  style={{
-                    fontFamily: "'JetBrains Mono', ui-monospace, monospace",
-                    fontSize: 12,
-                    marginTop: 6,
-                  }}
-                >
-                  v0.1 · SWISS
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="dial-wrap">
-            <div className="dial">
-              <svg viewBox="0 0 560 560">
-                <g className="dial-rotor">
-                  <circle className="ring" cx="280" cy="280" r="256" />
-                  <circle className="ring" cx="280" cy="280" r="200" />
-                  <circle className="ring" cx="280" cy="280" r="140" />
-                </g>
-
-                {TICKS.map((t) => (
-                  <g className="tick-group" key={t.num} transform={`rotate(${t.angle} 280 280)`}>
-                    <line className="tickline" x1="280" y1="24" x2="280" y2="80" />
-                    <text
-                      className="tick-label"
-                      x="280"
-                      y="18"
-                      textAnchor="middle"
-                      transform={`rotate(${-t.angle} 280 18)`}
-                    >
-                      {t.num}
-                    </text>
-                    <circle className="tick-node" cx="280" cy="80" r="8" />
-                    <text
-                      className="tick-title"
-                      x="280"
-                      y="112"
-                      textAnchor="middle"
-                      transform={`rotate(${-t.angle} 280 112)`}
-                    >
-                      {t.label}
-                    </text>
-                  </g>
-                ))}
-              </svg>
-
-              <Link className="cta" to="/workbench">
-                <span className="t">开始分析</span>
-                <span className="k">Start →</span>
-              </Link>
-            </div>
-          </div>
-        </section>
-
-        <div className="marquee">
-          <span>{MARQUEE}</span>
-          <span>{MARQUEE}</span>
-        </div>
-
-        <section className="trio">
-          {TRIO.map((t) => (
-            <div key={t.num}>
-              <span className="num">{t.num}</span>
-              <h3>{t.h}</h3>
-              <p>{t.p}</p>
-            </div>
-          ))}
-        </section>
       </main>
+
+      <div className="bloom-bg" ref={wrapRef} aria-hidden="true">
+        {FLOWERS.map((f, fi) => (
+          <svg
+            key={fi}
+            className="fl-svg"
+            style={{ left: `${f.x}%`, top: `${f.y}%`, width: 220 * f.s, height: 360 * f.s }}
+            viewBox="-110 -110 220 360"
+          >
+            <g className="fl">
+              <path className="stem" d={`M 0 8 ${f.stem}`} pathLength={1} />
+              <path className="leaf" d="M 0 70 c 18 -14 36 -10 42 -2 c -14 10 -30 12 -42 2" pathLength={1} />
+              <g transform={`rotate(${f.rot})`}>
+                {Array.from({ length: f.petals }).map((_, i) => (
+                  <path
+                    key={i}
+                    className="petal"
+                    d={petalPath(i, f.petals, 70)}
+                    pathLength={1}
+                    style={{ ["--d" as string]: i / f.petals }}
+                  />
+                ))}
+              </g>
+              <circle className="core" r="7" />
+              <path className="core-scribble" d="M -4 -2 c 3 -4 7 0 4 3 c -3 3 -6 -1 -2 -3" />
+            </g>
+          </svg>
+        ))}
+      </div>
+
+      <section className="bloom-hero">
+        <h1 className="bloom-title">let yourself bloom!</h1>
+        <Link className="bloom-cta" to="/workbench" aria-label="Start · 开始分析">
+          <svg className="bloom-ring" viewBox="0 0 220 110" aria-hidden="true">
+            <path d="M 30 58 C 28 20 190 12 196 52 C 202 92 40 104 22 66 C 12 44 60 26 120 24" pathLength={1} />
+          </svg>
+          <span>START</span>
+        </Link>
+        <div className="bloom-sub">选对方向，工作找你 · Choose the direction, let the work come to you.</div>
+      </section>
     </div>
   );
 }

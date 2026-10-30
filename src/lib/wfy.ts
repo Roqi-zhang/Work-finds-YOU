@@ -127,9 +127,23 @@ export function getPool(): Job[] {
     .map(getJob)
     .filter(Boolean) as Job[];
 }
-export function addToPool(job: Job) {
+export type PoolMeta = { reason?: string; link?: string; addedAt?: string };
+const POOL_META_KEY = "wfy.poolMeta";
+export function getPoolMeta(id: string): PoolMeta {
+  return read<Record<string, PoolMeta>>(POOL_META_KEY, {})[id] || {};
+}
+export function setPoolMeta(id: string, meta: PoolMeta) {
+  const all = read<Record<string, PoolMeta>>(POOL_META_KEY, {});
+  all[id] = { ...all[id], ...meta, addedAt: all[id]?.addedAt || new Date().toISOString() };
+  write(POOL_META_KEY, all);
+}
+export function isInPool(id: string) {
+  return getPoolIds().includes(id);
+}
+export function addToPool(job: Job, meta?: PoolMeta) {
   track("add_to_pool", { jobId: job?.id });
   putJob(job);
+  if (meta) setPoolMeta(job.id, meta);
   const ids = getPoolIds();
   if (ids.indexOf(job.id) < 0) {
     ids.push(job.id);

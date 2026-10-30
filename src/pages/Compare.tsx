@@ -1,223 +1,129 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import TopBar from "@/components/swiss/TopBar";
-import { applyToJob, focusId, getPool, getUI, removeFromPool, setUI, type Job } from "@/lib/wfy";
+import {
+  applyToJob,
+  focusId,
+  getMatchReport,
+  getPool,
+  getPoolMeta,
+  removeFromPool,
+  setPoolMeta,
+  setUI,
+  type Job,
+} from "@/lib/wfy";
+import { compareSummary, aiMessage } from "@/lib/ai";
 import "@/styles/pages/compare.css";
 
-type PosJob = Job & { r?: number; a?: number };
-
 const RINGS = [140, 220, 290];
-function ringOf(m: number) {
-  return m >= 85 ? 0 : m >= 70 ? 1 : 2;
-}
+const ringOf = (m: number) => (m >= 85 ? 0 : m >= 70 ? 1 : 2);
 
-function layout(jobs: PosJob[]) {
-  const buckets: PosJob[][] = [[], [], []];
+function layout(jobs: Job[]) {
+  const out: Record<string, { x: number; y: number }> = {};
+  const buckets: Job[][] = [[], [], []];
   jobs.forEach((j) => buckets[ringOf(j.m)].push(j));
   buckets.forEach((list, ri) => {
-    list.sort((a, b) => b.m - a.m);
-    const n = list.length;
-    list.forEach((j, i) => {
-      j.r = RINGS[ri];
-      j.a = n ? -90 + (360 / n) * i : 0;
-    });
+    [...list]
+      .sort((a, b) => b.m - a.m)
+      .forEach((j, i, arr) => {
+        const a = ((-90 + (360 / arr.length) * i) * Math.PI) / 180;
+        out[j.id] = { x: Math.cos(a) * RINGS[ri], y: Math.sin(a) * RINGS[ri] };
+      });
   });
+  return out;
 }
 
-function pos(j: PosJob) {
-  const rad = ((j.a || 0) * Math.PI) / 180;
-  return { x: Math.cos(rad) * (j.r || 0), y: Math.sin(rad) * (j.r || 0) };
+function requirementsOf(j: Job): string[] {
+  const r = getMatchReport(j.id);
+  const reqs = (r?.judgements || [])
+    .map((x) => (x.evidence as Record<string, string> | undefined)?.["岗位要求"])
+    .filter((x): x is string => !!x && x !== "—");
+  const uniq = Array.from(new Set(reqs)).slice(0, 3);
+  return uniq.length ? uniq : [j.yes, j.no].filter(Boolean);
 }
 
-type Detail = {
-  k: string;
-  title: string;
-  company: string;
-  loc: string;
-  match: string;
-  salary: string;
-  yes: string;
-  no: string;
-};
-
-const EMPTY_DETAIL: Detail = {
-  k: "00 / 00 · Empty pool",
-  title: "对比池为空",
-  company: "—",
-  loc: "—",
-  match: "—",
-  salary: "—",
-  yes: "—",
-  no: "—",
+const SUMMARY_KEY = "wfy.compareSummaries";
+const readCache = (): Record<string, string> => {
+  try {
+    return JSON.parse(localStorage.getItem(SUMMARY_KEY) || "{}");
+  } catch {
+    return {};
+  }
 };
 
 export default function Compare() {
   const navigate = useNavigate();
   const location = useLocation();
+  const [jobs, setJobs] = useState<Job[]>(getPool());
+  const [selected, setSelected] = useState<string[]>([]);
+  const [comparing, setComparing] = useState(false);
+  const [hover, setHover] = useState<{ id: string; x: number; y: number } | null>(null);
+  const [summary, setSummary] = useState<{ state: "idle" | "loading" | "ok" | "err"; text: string }>({ state: "idle", text: "" });
+  const [, bump] = useState(0);
+  const [editLink, setEditLink] = useState<{ id: string; value: string } | null>(null);
+  const [confirm, setConfirm] = useState<Job | null>(null);
+  const tableRef = useRef<HTMLDivElement | null>(null);
+  const reqSeq = useRef(0);
 
-  const jobsRef = useRef<PosJob[]>(getPool());
-  const nodesRef = useRef<SVGGElement | null>(null);
-  const lineRef = useRef<SVGPathElement | null>(null);
-
-  const [selectedId, setSelectedId] = useState<string | null>(
-    (getUI<{ selectedId?: string | null }>("compare").selectedId as string) || null
-  );
-  const [detail, setDetail] = useState<Detail>(EMPTY_DETAIL);
-  const [disabled, setDisabled] = useState(true);
-  const [lineOn, setLineOn] = useState(false);
-
-  const [dlgOpen, setDlgOpen] = useState(false);
-  const [dlgTitle, setDlgTitle] = useState("");
-  const [dlgBody, setDlgBody] = useState("");
-  const [dlgOkText, setDlgOkText] = useState("");
-  const onConfirmRef = useRef<null | (() => void)>(null);
-
-  function confirmDialog(title: string, body: string, okText: string, cb: () => void) {
-    setDlgTitle(title);
-    setDlgBody(body);
-    setDlgOkText(okText);
-    onConfirmRef.current = cb;
-    setDlgOpen(true);
-  }
-  function closeDialog() {
-    setDlgOpen(false);
-    onConfirmRef.current = null;
-  }
+  const pos = useMemo(() => layout(jobs), [jobs]);
+  const chosen = selected.map((id) => jobs.find((j) => j.id === id)).filter(Boolean) as Job[];
 
   useEffect(() => {
-    if (!dlgOpen) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") closeDialog();
-    };
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, [dlgOpen]);
-
-  function emptyState() {
-    setSelectedId(null);
-    setUI("compare", { selectedId: null });
-    setLineOn(false);
-    setDetail(EMPTY_DETAIL);
-    setDisabled(true);
-  }
-
-  function activate(id: string) {
-    const jobs = jobsRef.current;
-    const i = jobs.findIndex((j) => j.id === id);
-    if (i < 0) {
-      emptyState();
-      return;
-    }
-    setSelectedId(id);
-    setUI("compare", { selectedId: id });
-    if (nodesRef.current) {
-      nodesRef.current.querySelectorAll(".node").forEach((n) => {
-        n.classList.toggle("active", (n as SVGElement).dataset.id === id);
-      });
-    }
-    const j = jobs[i];
-    const { x, y } = pos(j);
-    const cx = x * 0.35;
-    const cy = y * 0.35 - 60 * Math.sign(y || 1);
-    if (lineRef.current) {
-      lineRef.current.setAttribute("d", `M 0 0 C ${cx} ${cy}, ${x - cx} ${y - cy}, ${x} ${y}`);
-    }
-    setLineOn(true);
-    setDetail({
-      k: `${String(i + 1).padStart(2, "0")} / ${jobs.length} · Selected`,
-      title: j.title,
-      company: j.co,
-      loc: j.loc,
-      match: j.m + "%",
-      salary: j.s,
-      yes: j.yes,
-      no: j.no,
-    });
-    setDisabled(false);
-  }
-
-  function render() {
-    const jobs = jobsRef.current;
-    layout(jobs);
-    const nodesEl = nodesRef.current;
-    if (!nodesEl) return;
-    nodesEl.innerHTML = "";
-    jobs.forEach((j) => {
-      const { x, y } = pos(j);
-      const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
-      g.setAttribute("transform", `translate(${x} ${y})`);
-      const c = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-      c.setAttribute("class", "node" + (j.id === selectedId ? " active" : ""));
-      c.setAttribute("r", "8");
-      c.dataset.id = j.id;
-      g.appendChild(c);
-      const t = document.createElementNS("http://www.w3.org/2000/svg", "text");
-      t.setAttribute("class", "node-label");
-      t.setAttribute("x", "14");
-      t.setAttribute("y", "0");
-      t.textContent = j.co.toUpperCase();
-      g.appendChild(t);
-      const t2 = document.createElementNS("http://www.w3.org/2000/svg", "text");
-      t2.setAttribute("class", "node-label sub");
-      t2.setAttribute("x", "14");
-      t2.setAttribute("y", "13");
-      t2.textContent = (j.title || "").length > 14 ? j.title.slice(0, 14) + "…" : j.title || "";
-      g.appendChild(t2);
-      nodesEl.appendChild(g);
-      c.addEventListener("mouseenter", () => activate(j.id));
-      c.addEventListener("click", () => activate(j.id));
-    });
-  }
-
-  useEffect(() => {
-    render();
-    const focus = focusId(location.search);
-    let sel = selectedId;
-    if (focus && jobsRef.current.some((j) => j.id === focus)) sel = focus;
-    if (!jobsRef.current.length) emptyState();
-    else activate(jobsRef.current.some((j) => j.id === sel) ? (sel as string) : jobsRef.current[0].id);
+    const f = focusId(location.search);
+    if (f && jobs.some((j) => j.id === f)) setSelected([f]);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  function handleRemove() {
-    const jobs = jobsRef.current;
-    const j = jobs.find((x) => x.id === selectedId);
-    if (!j) return;
-    confirmDialog("Remove from pool?", `将 ${j.co} · ${j.title} 从对比池中移出，是否继续？`, "确认移出", () => {
-      const idx = jobs.findIndex((x) => x.id === j.id);
-      removeFromPool(j.id);
-      jobsRef.current = getPool();
-      if (!jobsRef.current.length) {
-        render();
-        emptyState();
-        return;
-      }
-      const next = jobsRef.current[Math.min(idx, jobsRef.current.length - 1)];
-      render();
-      activate(next.id);
-    });
+  const toggle = (id: string) =>
+    setSelected((s) => (s.includes(id) ? s.filter((x) => x !== id) : s.length >= 6 ? s : [...s, id]));
+
+  async function loadSummary(list: Job[]) {
+    if (list.length < 2) return setSummary({ state: "idle", text: "" });
+    const key = list.map((j) => j.id).sort().join("|");
+    const cached = readCache()[key];
+    if (cached) return setSummary({ state: "ok", text: cached });
+    const seq = ++reqSeq.current;
+    setSummary({ state: "loading", text: "" });
+    try {
+      const { summary: text } = await compareSummary(
+        list.map((j) => ({ title: j.title, company: j.co, match: j.m, requirements: requirementsOf(j) }))
+      );
+      if (seq !== reqSeq.current) return;
+      localStorage.setItem(SUMMARY_KEY, JSON.stringify({ ...readCache(), [key]: text }));
+      setSummary({ state: "ok", text });
+    } catch (e) {
+      if (seq !== reqSeq.current) return;
+      setSummary({ state: "err", text: aiMessage(e) });
+    }
   }
 
-  function handleViewMatch() {
-    const j = jobsRef.current.find((x) => x.id === selectedId);
-    if (!j) return;
-    setUI("match", { jobId: j.id });
-    navigate("/match?job=" + encodeURIComponent(j.id));
+  function startCompare() {
+    setComparing(true);
+    loadSummary(chosen);
+    setTimeout(() => tableRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
   }
 
-  function handleApply() {
-    const jobs = jobsRef.current;
-    const j = jobs.find((x) => x.id === selectedId);
-    if (!j) return;
-    applyToJob(j);
-    navigate("/delivery?focus=" + encodeURIComponent(j.id));
+  useEffect(() => {
+    if (comparing) {
+      if (chosen.length === 0) setComparing(false);
+      else loadSummary(chosen);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selected.join("|")]);
+
+  function doRemove(j: Job) {
+    removeFromPool(j.id);
+    setJobs(getPool());
+    setSelected((s) => s.filter((x) => x !== j.id));
+    setConfirm(null);
   }
 
+  const hovered = hover ? jobs.find((j) => j.id === hover.id) : null;
 
   return (
     <div className="p-compare">
       <main className="page">
-        <TopBar date="Pool · 12 jobs" />
+        <TopBar date={`Pool · ${jobs.length} jobs`} />
 
         <div className="head-row">
           <div>
@@ -229,108 +135,205 @@ export default function Compare() {
             </h1>
           </div>
           <p className="caption">
-            岗位比较池将所有你不确定是否应该投递的岗位进行系统整理，外圈是匹配度较低的岗位，内圈是匹配度较高的岗位，在这里你可以有针对性的权衡利弊。
+            这里是你「稍后考虑」的岗位。越靠近中心，匹配度越高。悬停查看概要，点选多个岗位即可并排对比。
           </p>
-
         </div>
 
-        <section className="stage">
-          <div className="pool">
+        <div className="pool-bar">
+          <span className="caption">
+            {jobs.length === 0
+              ? "比较池为空 · 在匹配页点击「稍后考虑」添加岗位"
+              : selected.length === 0
+                ? "点选岗位进行对比"
+                : `已选 ${selected.length} 个${selected.length < 2 ? " · 再选 1 个即可对比" : ""}`}
+          </span>
+          <div className="pool-actions">
+            {selected.length > 0 && (
+              <button className="btn ghost" type="button" onClick={() => setSelected([])}>
+                清空选择
+              </button>
+            )}
+            <button className="btn" type="button" disabled={selected.length < 1} onClick={startCompare}>
+              {selected.length >= 2 ? `对比所选 (${selected.length}) →` : "查看所选 →"}
+            </button>
+          </div>
+        </div>
+
+        <section className="stage-center">
+          <div className="pool" onMouseLeave={() => setHover(null)}>
             <svg viewBox="-400 -320 800 640" id="orbit">
-              <circle className="ring" r="140" />
-              <circle className="ring" r="220" />
-              <circle className="ring" r="290" />
-
+              {RINGS.map((r) => (
+                <circle key={r} className="ring" r={r} />
+              ))}
               <circle className="center" r="52" />
-              <text className="center-label" y="-2">
-                YOU · L. HAN
-              </text>
-              <text className="center-sub" y="16">
-                Match core
-              </text>
-
-              <path ref={lineRef} id="line" className={"bezier" + (lineOn ? " on" : "")} d="M0,0 C0,0 0,0 0,0" />
-
-              <g id="nodes" ref={nodesRef}></g>
+              <text className="center-label" y="-2">YOU</text>
+              <text className="center-sub" y="16">Match core</text>
+              {chosen.map((j) => {
+                const p = pos[j.id];
+                if (!p) return null;
+                const cx = p.x * 0.35;
+                const cy = p.y * 0.35 - 60 * Math.sign(p.y || 1);
+                return (
+                  <path key={"l" + j.id} className="bezier on" d={`M 0 0 C ${cx} ${cy}, ${p.x - cx} ${p.y - cy}, ${p.x} ${p.y}`} />
+                );
+              })}
+              {jobs.map((j) => {
+                const p = pos[j.id];
+                const on = selected.includes(j.id);
+                return (
+                  <g key={j.id} transform={`translate(${p.x} ${p.y})`}>
+                    <circle
+                      className={"node" + (on ? " active" : "")}
+                      r="8"
+                      role="checkbox"
+                      aria-checked={on}
+                      aria-label={`${j.co} ${j.title}`}
+                      tabIndex={0}
+                      onClick={() => toggle(j.id)}
+                      onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && toggle(j.id)}
+                      onMouseMove={(e) => setHover({ id: j.id, x: e.clientX, y: e.clientY })}
+                      onMouseLeave={() => setHover(null)}
+                    />
+                    <text className="node-label" x="14" y="0">{j.co.toUpperCase()}</text>
+                    <text className="node-label sub" x="14" y="13">
+                      {j.title.length > 14 ? j.title.slice(0, 14) + "…" : j.title}
+                    </text>
+                  </g>
+                );
+              })}
             </svg>
           </div>
-
-          <aside className="detail" id="detail">
-            <div className="k">{detail.k}</div>
-            <div>
-              <h3 id="d-title">{detail.title}</h3>
-              <div className="meta">
-                <span id="d-company">{detail.company}</span>
-                <span>·</span>
-                <span id="d-loc">{detail.loc}</span>
-              </div>
-            </div>
-            <div className="row">
-              <span>Match</span>
-              <span id="d-match">{detail.match}</span>
-            </div>
-            <div className="row">
-              <span>Salary</span>
-              <span id="d-salary">{detail.salary}</span>
-            </div>
-            <div className="row">
-              <span>Why Yes</span>
-              <span id="d-yes">{detail.yes}</span>
-            </div>
-            <div className="row">
-              <span>Why No</span>
-              <span id="d-no">{detail.no}</span>
-            </div>
-            <div className="actions">
-              <button className="btn ghost" id="viewMatchBtn" type="button" disabled={disabled} onClick={handleViewMatch}>
-                查看匹配
-              </button>
-              <button className="btn" id="applyBtn" type="button" disabled={disabled} onClick={handleApply}>
-                投递 →
-              </button>
-              <button className="btn ghost" id="removeBtn" type="button" disabled={disabled} onClick={handleRemove}>
-                移出对比
-              </button>
-            </div>
-
-
-            <div style={{ marginTop: "auto", paddingTop: 16, borderTop: "0.5px solid var(--line)" }}>
-              <div className="k" style={{ marginBottom: 8 }}>
-                Pool loading
-              </div>
-              <div className="moon">
-                <i></i>
-                <i></i>
-                <i></i>
-                <i></i>
-                <i></i>
-              </div>
-            </div>
-          </aside>
         </section>
 
+        {hovered && hover && (
+          <div className="hover-card" style={{ left: hover.x + 18, top: hover.y - 12 }}>
+            <div className="hc-t">{hovered.co} · {hovered.title}</div>
+            <div className="hc-r"><span>Match</span><span>{hovered.m}%</span></div>
+            <div className="hc-r"><span>Salary</span><span>{hovered.s || "—"}</span></div>
+            <div className="hc-k">{selected.includes(hovered.id) ? "点击取消选择" : "点击选中"}</div>
+          </div>
+        )}
 
+        {comparing && chosen.length > 0 && (
+          <section className="cmp" ref={tableRef}>
+            <div className="cmp-head">
+              <div>
+                <div className="caption">Compare / Deep comparison</div>
+                <div className="cmp-crumb">
+                  <button type="button" className="link" onClick={() => { setComparing(false); window.scrollTo({ top: 0, behavior: "smooth" }); }}>
+                    ← 返回轨道
+                  </button>
+                  <span> / {chosen.map((j) => j.co).join(" 与 ")}</span>
+                </div>
+              </div>
+            </div>
 
+            {chosen.length >= 2 && (
+              <div className="cmp-ai">
+                <div className="caption">AI · 关键差异</div>
+                {summary.state === "loading" && (
+                  <div className="moon" style={{ marginTop: 12 }}><i /><i /><i /><i /><i /></div>
+                )}
+                {summary.state === "ok" && <p>{summary.text}</p>}
+                {summary.state === "err" && (
+                  <p className="cmp-err">
+                    {summary.text}{" "}
+                    <button type="button" className="link" onClick={() => loadSummary(chosen)}>重试</button>
+                  </p>
+                )}
+              </div>
+            )}
 
-        <div className={"mask" + (dlgOpen ? " on" : "")} id="mask" onClick={(e) => e.target === e.currentTarget && closeDialog()}>
+            <div className="cmp-grid" style={{ gridTemplateColumns: `120px repeat(${chosen.length}, minmax(200px, 1fr))` }}>
+              <div />
+              {chosen.map((j) => (
+                <div key={"h" + j.id} className="cmp-col-h">
+                  <strong>{j.co}</strong>
+                  <span>{j.title}</span>
+                </div>
+              ))}
+
+              <div className="cmp-rl">岗位要求</div>
+              {chosen.map((j) => (
+                <div key={"r" + j.id} className="cmp-cell">
+                  <ul>{requirementsOf(j).map((r, i) => <li key={i}>{r}</li>)}</ul>
+                </div>
+              ))}
+
+              <div className="cmp-rl">匹配度</div>
+              {chosen.map((j) => (
+                <div key={"m" + j.id} className="cmp-cell cmp-score">{j.m}%</div>
+              ))}
+
+              <div className="cmp-rl">我的犹豫</div>
+              {chosen.map((j) => (
+                <div key={"w" + j.id} className="cmp-cell">{getPoolMeta(j.id).reason || <span className="muted">未填写</span>}</div>
+              ))}
+
+              <div className="cmp-rl">投递链接</div>
+              {chosen.map((j) => {
+                const link = getPoolMeta(j.id).link;
+                if (editLink?.id === j.id) {
+                  const ok = !editLink.value.trim() || /^https?:\/\/\S+$/i.test(editLink.value.trim());
+                  return (
+                    <div key={"k" + j.id} className="cmp-cell">
+                      <input
+                        className="cmp-input"
+                        autoFocus
+                        placeholder="粘贴投递链接"
+                        value={editLink.value}
+                        onChange={(e) => setEditLink({ id: j.id, value: e.target.value })}
+                        onKeyDown={(e) => {
+                          if (e.key === "Escape") setEditLink(null);
+                          if (e.key === "Enter" && ok) {
+                            setPoolMeta(j.id, { link: editLink.value.trim() });
+                            setEditLink(null);
+                            bump((n) => n + 1);
+                          }
+                        }}
+                      />
+                      <span className="muted">{ok ? "回车保存 · Esc 取消" : "需以 http(s):// 开头"}</span>
+                    </div>
+                  );
+                }
+                return (
+                  <div key={"k" + j.id} className="cmp-cell">
+                    {link ? (
+                      <a href={link} target="_blank" rel="noopener noreferrer" className="link">打开投递页 ↗</a>
+                    ) : (
+                      <button type="button" className="link muted" onClick={() => setEditLink({ id: j.id, value: "" })}>
+                        未填写 · 补充
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
+
+              <div />
+              {chosen.map((j) => (
+                <div key={"a" + j.id} className="cmp-cell cmp-actions">
+                  <button className="btn ghost" type="button" onClick={() => { setUI("match", { jobId: j.id }); navigate("/match?job=" + encodeURIComponent(j.id)); }}>
+                    查看匹配
+                  </button>
+                  <button className="btn" type="button" onClick={() => { applyToJob(j); navigate("/delivery?focus=" + encodeURIComponent(j.id)); }}>
+                    投递 →
+                  </button>
+                  <button className="btn ghost" type="button" onClick={() => setConfirm(j)}>
+                    移出比较池
+                  </button>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        <div className={"mask" + (confirm ? " on" : "")} onClick={(e) => e.target === e.currentTarget && setConfirm(null)}>
           <div className="dlg">
-            <h5 id="dlgTitle">{dlgTitle}</h5>
-            <p id="dlgBody">{dlgBody}</p>
+            <h5>Remove from pool?</h5>
+            <p>{confirm ? `将 ${confirm.co} · ${confirm.title} 从比较池中移出，是否继续？` : ""}</p>
             <div className="row">
-              <button className="btn ghost" id="dlgCancel" onClick={closeDialog}>
-                取消
-              </button>
-              <button
-                className="btn"
-                id="dlgOk"
-                onClick={() => {
-                  const cb = onConfirmRef.current;
-                  closeDialog();
-                  if (cb) cb();
-                }}
-              >
-                {dlgOkText}
-              </button>
+              <button className="btn ghost" onClick={() => setConfirm(null)}>取消</button>
+              <button className="btn" onClick={() => confirm && doRemove(confirm)}>确认移出</button>
             </div>
           </div>
         </div>

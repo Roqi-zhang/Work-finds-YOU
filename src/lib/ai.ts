@@ -214,3 +214,7 @@ async function runMatchInner(jobProfileId: string, force = false, candidateProfi
   if (out?.usage) window.dispatchEvent(new Event("wfy:usage"));
   return out;
 }
+
+export async function compareSummary(jobs: { title: string; company: string; requirements: string[]; match: number }[]) {
+  return invoke<{ summary: string }>("compare-summary", { jobs });
+}
