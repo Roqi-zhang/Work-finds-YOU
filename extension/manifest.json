@@ -1,0 +1,15 @@
+{
+  "manifest_version": 3,
+  "name": "Work Find You · Save Job",
+  "version": "1.0.0",
+  "description": "一键把招聘网站上的职位保存到 Work Find You 投递管理",
+  "permissions": ["activeTab", "scripting", "storage", "contextMenus"],
+  "host_permissions": ["https://itrhtuoavezgwfdcqlty.supabase.co/*"],
+  "action": { "default_popup": "popup.html", "default_icon": "icon.png" },
+  "background": { "service_worker": "background.js" },
+  "content_scripts": [{
+    "matches": ["https://workfindsyou.cn/*", "https://www.workfindsyou.cn/*", "https://swiss-job-zen.lovable.app/*", "https://*.lovable.app/*"],
+    "js": ["connect.js"]
+  }],
+  "icons": { "48": "icon.png", "128": "icon.png" }
+}

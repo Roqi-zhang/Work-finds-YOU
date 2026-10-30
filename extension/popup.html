@@ -1,0 +1,23 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="popup.css"></head>
+<body>
+  <header><b>WORK FIND YOU</b><span id="who"></span></header>
+  <section id="connect" hidden>
+    <p>先连接你的 Work Find You 账号。</p>
+    <button id="openConnect">打开连接页面</button>
+    <label>或粘贴连接码<input id="code" placeholder="wfy_..."></label>
+    <button id="saveCode">保存连接码</button>
+  </section>
+  <form id="form" hidden>
+    <p id="dup" class="hint" hidden>此职位已在投递管理中，保存将更新。</p>
+    <label>岗位<input name="title" required></label>
+    <label>公司<input name="company"></label>
+    <div class="row"><label>地点<input name="location"></label><label>薪资<input name="salary"></label></div>
+    <label>状态<select name="status"><option>待投递</option><option>已投递</option><option>面试中</option><option>结束</option></select></label>
+    <label>JD<textarea name="jd_text" rows="5"></textarea></label>
+    <label>备注<input name="note" maxlength="500"></label>
+    <button type="submit" id="save">保存到投递管理</button>
+    <p id="msg" class="hint"></p>
+    <a href="#" id="logout" class="hint">断开连接</a>
+  </form>
+  <script src="popup.js"></script>
+</body></html>

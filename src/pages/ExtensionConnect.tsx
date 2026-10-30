@@ -53,7 +53,7 @@ export default function ExtensionConnect() {
             <button className="btn" onClick={revoke}>断开所有连接</button>
           </>
         ) : (
-          <p>请先 <Link to="/auth?redirect=/extension/connect">登录</Link>。</p>
+          <p>请先 <Link to="/auth?next=/extension/connect">登录</Link>。</p>
         )}
         {msg && <p>{msg}</p>}
         {token && <textarea readOnly value={token} style={{ width: "100%", fontFamily: "monospace", fontSize: 12 }} rows={2} onFocus={(e) => e.target.select()} />}
