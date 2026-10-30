@@ -365,7 +365,8 @@ export default function Profile({
         setBlooming(true);
         setBloomedClass(true);
         setResult(res);
-        const kp = (out as ResumeResult & { keyPoints?: KeyPointUI[] }).keyPoints || [];
+        const o = out as ResumeResult & { keyPoints?: KeyPointUI[]; sections?: { keyPoints?: KeyPointUI[] } };
+        const kp = o.keyPoints || o.sections?.keyPoints || [];
         setKeyPoints(kp);
         setStateVal("bloomed");
         saveStore({ state: "bloomed", name: metaRef.current.name, meta: metaRef.current.meta, result: res, keyPoints: kp });
