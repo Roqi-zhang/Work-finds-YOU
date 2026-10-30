@@ -77,6 +77,7 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
 }
 /* workbench column headers: 3x size */
 .wb-shell .caption { font-size: 30px; letter-spacing: 0.14em; }
+.wb-shell .stage-head .caption { font-size: 10px; letter-spacing: 0.22em; }
 
 /* huge display */
 .display {
