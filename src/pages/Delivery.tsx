@@ -14,6 +14,10 @@ import {
 
 import "@/styles/pages/delivery.css";
 import { importExtensionJobs } from "@/lib/extensionSync";
+import { supabase } from "@/integrations/supabase/client";
+import { aiMessage } from "@/lib/ai";
+import { loadInterviewSearches, searchInterviews, type InterviewRecord } from "@/lib/interviewSearch";
+import InterviewLinks from "@/components/swiss/InterviewLinks";
 
 const MON_NAMES = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
 const pad = (n: number) => String(n).padStart(2, "0");
@@ -56,6 +60,24 @@ export default function Delivery() {
 
 
   const refresh = () => setApps(getApplications());
+
+  const [ivRecords, setIvRecords] = useState<Record<string, InterviewRecord>>({});
+  const [ivOpen, setIvOpen] = useState<Application | null>(null);
+  const [ivLoading, setIvLoading] = useState<string | null>(null);
+  const [ivError, setIvError] = useState<string | null>(null);
+  useEffect(() => { loadInterviewSearches().then(setIvRecords).catch(() => undefined); }, []);
+
+  const runInterviewSearch = async (a: Application) => {
+    const { data } = await supabase.auth.getSession();
+    if (!data.session) { navigate("/auth"); return; }
+    setIvOpen(a); setIvError(null); setIvLoading(a.id);
+    try {
+      const rec = await searchInterviews(a.id, a.title, a.co);
+      setIvRecords((m) => ({ ...m, [a.id]: rec }));
+    } catch (e) { setIvError(aiMessage(e)); }
+    finally { setIvLoading(null); }
+  };
+  const openInterviews = (a: Application) => (ivRecords[a.id] ? (setIvError(null), setIvOpen(a)) : runInterviewSearch(a));
 
   // Scores live in the match reports — pull the latest ones in on every visit.
   useEffect(() => {
@@ -316,6 +338,11 @@ export default function Delivery() {
                               个人画像
                             </a>
                           </>
+                        )}
+                        {a.status !== "结束" && (
+                          <button type="button" onClick={() => openInterviews(a)}>
+                            {ivRecords[a.id] ? "面经" : ivLoading === a.id ? "搜索中…" : "一键搜面经"}
+                          </button>
                         )}
                         <button type="button" onClick={() => handleEditToggle(a)}>
                           {editing ? "完成" : "编辑"}
