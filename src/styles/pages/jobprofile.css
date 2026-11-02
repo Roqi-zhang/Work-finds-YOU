@@ -153,3 +153,15 @@
 /* panel-wide drop zone: any spot in the job card accepts a dragged file */
 .p-jobprofile .layout { border: 0.5px dashed transparent; transition: border-color .3s var(--ease); }
 .p-jobprofile .layout.dragging { border-color: var(--ink); border-style: solid; }
+
+/* Fused role knowledge: inline footnotes + trailing source list */
+.p-jobprofile .legend .kf { display: block; margin-top: 6px; }
+.p-jobprofile .legend .kf .kb { opacity: .55; margin-right: 4px; }
+.p-jobprofile sup.fn a, .p-jobprofile .sources sup a { font-size: 9px; margin-left: 2px; text-decoration: none; color: inherit; opacity: .7; }
+.p-jobprofile .sources { margin-top: 32px; }
+.p-jobprofile .sources h4 { margin-bottom: 12px; }
+.p-jobprofile .sources ol { list-style: none; padding: 0; margin: 0; }
+.p-jobprofile .sources li { display: grid; grid-template-columns: 28px 1fr; gap: 8px; font-size: 12px; line-height: 1.6; padding: 6px 0; scroll-margin-top: 80px; }
+.p-jobprofile .sources li:target { background: hsl(var(--muted)); }
+.p-jobprofile .sources .meta { opacity: .6; }
+.p-jobprofile .sources .note { font-size: 11px; opacity: .55; margin-top: 10px; }

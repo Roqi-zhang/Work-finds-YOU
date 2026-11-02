@@ -368,7 +368,7 @@ export default function JobProfile({
           const d = result[k] || {};
           const s = d.score;
           const bar = Array.from({ length: 5 }, (_, n) => `<i class="${s != null && n < s ? "on" : ""}"></i>`).join("");
-          return `<div class="p">
+          return `<div class="p" data-dim="${DIMS[k].key}">
             <div class="ph"><span>${DIMS[k].label}<em>${DIMS[k].key}</em></span><b>${s == null ? "—" : s}/5</b></div>
             <div class="bar ${s == null ? "none" : ""}">${bar}</div>
             <dl>
