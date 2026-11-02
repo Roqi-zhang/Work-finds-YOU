@@ -439,6 +439,20 @@ export default function Delivery() {
           </div>
         )}
       </main>
+      {ivOpen && (
+        <InterviewLinks
+          open={!!ivOpen}
+          onOpenChange={(v) => !v && setIvOpen(null)}
+          appKey={ivOpen.id}
+          title={ivOpen.title}
+          company={ivOpen.co}
+          record={ivRecords[ivOpen.id]}
+          loading={ivLoading === ivOpen.id}
+          error={ivError}
+          onResearch={() => runInterviewSearch(ivOpen)}
+          onRecord={(r) => setIvRecords((m) => ({ ...m, [r.app_key]: r }))}
+        />
+      )}
     </div>
 
   );

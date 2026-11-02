@@ -133,3 +133,24 @@
 .p-delivery .dlg textarea:focus { border-color: var(--ink-strong); outline: none; }
 .p-delivery .dlg .row { display: flex; justify-content: flex-end; gap: 12px; margin-top: 28px; }
 .p-delivery .dlg .btn { padding: 10px 20px; }
+
+/* interview links dialog */
+.iv-dialog { background: var(--paper); color: var(--ink); padding: 32px; }
+.iv-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; padding-right: 24px; }
+.iv-title { font-size: 20px; font-weight: 400; line-height: 1.3; }
+.iv-meta { font-size: 11px; letter-spacing: 0.16em; opacity: .55; margin-top: 6px; }
+.iv-icon { background: none; border: 0.5px solid var(--line); padding: 7px; cursor: pointer; color: inherit; }
+.iv-icon:hover { border-color: var(--ink-strong); }
+.iv-empty { font-size: 14px; opacity: .65; margin: 18px 0; }
+.iv-list { list-style: none; padding: 0; margin: 22px 0 0; display: flex; flex-direction: column; gap: 14px; }
+.iv-list li { display: flex; gap: 14px; }
+.iv-n { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 10px; opacity: .45; padding-top: 4px; }
+.iv-list a { font-size: 15px; line-height: 1.4; border-bottom: 0.5px solid var(--line); }
+.iv-list a:hover { color: var(--ink-strong); border-color: var(--ink-strong); }
+.iv-sub { display: block; font-size: 11px; opacity: .5; margin-top: 3px; letter-spacing: 0.06em; }
+.iv-sum { margin-top: 24px; }
+.iv-sum pre { white-space: pre-wrap; font: inherit; font-size: 14px; line-height: 1.7; }
+.iv-btn { background: none; border: 0.5px solid var(--ink); padding: 8px 16px; font: inherit; font-size: 12px; letter-spacing: 0.12em; cursor: pointer; color: inherit; }
+.iv-btn:hover { background: var(--ink-strong); color: var(--paper); }
+.iv-more { margin-top: 26px; font-size: 11px; opacity: .6; display: flex; flex-wrap: wrap; gap: 6px 12px; }
+.iv-more a { border-bottom: 0.5px solid var(--line); }
