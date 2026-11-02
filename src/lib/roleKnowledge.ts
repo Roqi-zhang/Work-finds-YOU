@@ -1,8 +1,8 @@
 import { supabase } from "@/integrations/supabase/client";
 import { getGuestKey } from "@/lib/guest";
-export type RoleSource = { id: string; tier: string; title: string; publisher: string; url: string; publishedAt: string | null; retrievedAt: string; excerpt: string; locator: string; contentHash: string };
+export type RoleSource = { id: string; tier: string; platform?: string; title: string; publisher: string; url: string; publishedAt: string | null; retrievedAt: string; excerpt: string; locator: string; contentHash: string };
 export type RoleEntry = { dimensionKey: string; title: string; explanation: string; behaviors: string[]; validEvidence: string[]; sourceIds: string[]; requirementIds: string[]; basis: string; strong: string; medium: string; weak: string };
-export type RoleKnowledge = { snapshotId: string; version: string; summary: string; sources: RoleSource[]; entries: RoleEntry[]; retrievedAt: string; packStatus: string; packVersion: string | null; disclaimer: string; attribution: string };
+export type RoleKnowledge = { snapshotId: string; version: string; summary: string; sources: RoleSource[]; entries: RoleEntry[]; retrievedAt: string; packStatus: string; packVersion: string | null; disclaimer: string; attribution: string; missingPlatforms?: string[] };
 export class RoleResearchError extends Error { constructor(message: string, public status: number) { super(message); } }
 
 export async function researchRole(jobProfileId: string, onProgress: (s: string) => void): Promise<RoleKnowledge> {
