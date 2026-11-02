@@ -92,7 +92,7 @@ Deno.serve(async req => {
           const rubric = enrichRubric(job.evaluation_rubric as EvaluationRubric, entries, (job.requirement_signals || []) as RequirementSignal[], fingerprint);
           let packVersionId = published?.id || null;
           if (family && !published) {
-            const content = { family, entries: entries.filter(e => e.basis !== "interview_reference").map(({ requirementIds: _private, ...e }) => ({ ...e, requirementIds: [] })), sources: standards, attribution: "This service uses the ESCO classification of the European Commission.", mapping: "内部职业映射及行为分级，非机构认证；需要审核。" };
+            const content = { family, entries: [], sources: standards, attribution: "This service uses the ESCO classification of the European Commission.", mapping: "外部职业资料种子，未含私有JD；能力映射及职级行为标准需要审核补充。" };
             // Drafts contain no private JD text and are never reused as reviewed packs.
             const contentHash = await canonicalHash(content);
             const { data: draft, error: draftError } = await admin.from("role_pack_versions").upsert({ pack_key: family, version: contentHash, content, content_hash: contentHash }, { onConflict: "pack_key,version", ignoreDuplicates: true }).select("id").maybeSingle();
