@@ -9,7 +9,7 @@ export type KnowledgeEntry = {
   strong: string; medium: string; weak: string;
   basis: "jd_supported_enrichment" | "general_reference" | "interview_reference";
 };
-export const ROLE_KNOWLEDGE_VERSION = "role-knowledge-v3";
+export const ROLE_KNOWLEDGE_VERSION = "role-knowledge-v4";
 export const ROLE_KEYS = ["skill", "business", "analysis", "delivery", "comm", "collab", "learning", "motive"];
 
 export function publicUrl(value: string): string | null {

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Loader2, RefreshCw, Check } from "lucide-react";
+import { Loader2, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { researchRole, adoptRole, type RoleKnowledge as Knowledge } from "@/lib/roleKnowledge";
 
@@ -35,8 +35,7 @@ function fuse(data: Knowledge, order: string[]) {
     const rows = legend.querySelectorAll(`.p[data-dim="${e.dimensionKey}"] dl .r .v`);
     if (rows.length < 2) continue;
     const a = document.createElement("span"); a.className = "kf";
-    const b = document.createElement("span"); b.className = "kb"; b.textContent = `${basis[e.basis] || "补全"} · ${e.title}`;
-    a.append(b, document.createTextNode(e.explanation), sup(e.sourceIds, order));
+    a.append(document.createTextNode(e.explanation), sup(e.sourceIds, order));
     rows[0].appendChild(a);
     if (e.validEvidence.length) {
       const v = document.createElement("span"); v.className = "kf";
@@ -59,7 +58,7 @@ export default function RoleKnowledge({ jobId, initial, onResult, onAdopt }: { j
     catch (e) { setError(e instanceof Error ? e.message : "资料整合暂不可用"); }
     finally { setBusy(false); setProgress(""); }
   };
-  useEffect(() => { if (requested.current === jobId) return; requested.current = jobId; setData(initial || null); if (!initial || !initial.version?.endsWith("v3")) void load(); }, [jobId]);
+  useEffect(() => { if (requested.current === jobId) return; requested.current = jobId; setData(initial || null); if (!initial || !initial.version?.endsWith("v4")) void load(); }, [jobId]);
   const order = useMemo(() => (data ? footnoteOrder(data) : []), [data]);
   useEffect(() => {
     if (!data) return;
@@ -87,9 +86,6 @@ export default function RoleKnowledge({ jobId, initial, onResult, onAdopt }: { j
       </li>; })}</ol>
       {!!data.missingPlatforms?.length && <p className="note">未取得公开内容：{data.missingPlatforms.join("、")}</p>}
       <p className="note">JD 为首要依据；补全只帮助理解，不改变评分；面经仅作参考，不是录用标准。{data.attribution}</p>
-      <Button variant="outline" className="mt-4" disabled={busy || !data.entries.some(e => e.basis === "jd_supported_enrichment")} onClick={async () => {
-        setBusy(true); setError(""); try { callbacks.current.onAdopt(await adoptRole(jobId, data.snapshotId)); } catch(e) { setError(e instanceof Error ? e.message : "采用失败"); } finally { setBusy(false); }
-      }}><Check />采用补全标准，重新建立候选人画像</Button>
     </>}
   </section>;
 }
