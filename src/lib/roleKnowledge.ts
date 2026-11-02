@@ -3,6 +3,7 @@ import { getGuestKey } from "@/lib/guest";
 export type RoleSource = { id: string; tier: string; title: string; publisher: string; url: string; publishedAt: string | null; retrievedAt: string; excerpt: string; locator: string; contentHash: string };
 export type RoleEntry = { dimensionKey: string; title: string; explanation: string; behaviors: string[]; validEvidence: string[]; sourceIds: string[]; requirementIds: string[]; basis: string; strong: string; medium: string; weak: string };
 export type RoleKnowledge = { snapshotId: string; version: string; summary: string; sources: RoleSource[]; entries: RoleEntry[]; retrievedAt: string; packStatus: string; packVersion: string | null; disclaimer: string; attribution: string };
+export class RoleResearchError extends Error { constructor(message: string, public status: number) { super(message); } }
 
 export async function researchRole(jobProfileId: string, onProgress: (s: string) => void): Promise<RoleKnowledge> {
   const { data: auth } = await supabase.auth.getSession();
@@ -11,7 +12,7 @@ export async function researchRole(jobProfileId: string, onProgress: (s: string)
       Authorization: `Bearer ${auth.session?.access_token || import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` },
     body: JSON.stringify({ jobProfileId, guestKey: getGuestKey() }),
   });
-  if (!response.ok) { const body = await response.json(); throw new Error(body.error || "资料补全暂不可用"); }
+  if (!response.ok) { const body = await response.json(); throw new RoleResearchError(body.error || "资料补全暂不可用", response.status); }
   if (!response.headers.get("content-type")?.includes("ndjson")) return response.json();
   const reader = response.body?.getReader();
   if (!reader) throw new Error("未收到资料补全结果");
@@ -24,7 +25,7 @@ export async function researchRole(jobProfileId: string, onProgress: (s: string)
     for (const line of lines) {
       if (!line.trim()) continue;
       const item = JSON.parse(line);
-      if (item.error) throw new Error(item.error);
+      if (item.error) throw new RoleResearchError(item.error, item.status || 500);
       if (item.progress) onProgress(item.progress);
       if (item.result) result = item.result;
     }

@@ -9,7 +9,7 @@ export type KnowledgeEntry = {
   strong: string; medium: string; weak: string;
   basis: "jd_supported_enrichment" | "general_reference" | "interview_reference";
 };
-export const ROLE_KNOWLEDGE_VERSION = "role-knowledge-v1";
+export const ROLE_KNOWLEDGE_VERSION = "role-knowledge-v2";
 export const ROLE_KEYS = ["skill", "business", "analysis", "delivery", "comm", "collab", "learning", "motive"];
 
 export function publicUrl(value: string): string | null {
@@ -44,7 +44,7 @@ export function validateEntries(entries: KnowledgeEntry[], sources: KnowledgeSou
     const sourceIds = [...new Set(e.sourceIds)].filter(id => bySource.has(id));
     if (!sourceIds.length) return [];
     const requirementIds = [...new Set(e.requirementIds)].filter(id => ids.has(id));
-    const interviewOnly = sourceIds.every(id => bySource.get(id)?.tier === "interview_reference");
+    const interviewOnly = sourceIds.some(id => bySource.get(id)?.tier === "interview_reference");
     return [{ ...e, sourceIds, requirementIds: interviewOnly ? [] : requirementIds,
       basis: interviewOnly ? "interview_reference" : requirementIds.length ? "jd_supported_enrichment" : "general_reference" } as KnowledgeEntry];
   }).slice(0, 12);

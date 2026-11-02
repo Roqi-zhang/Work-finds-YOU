@@ -629,6 +629,8 @@ export default function JobProfile({
                     const saved = getUI<any>("jobprofile");
                     setUI("jobprofile", { ...saved, job: { ...saved.job, id }, roleKnowledge: knowledge });
                     setUI("match", { jobId: id });
+                    const previousProfile = getUI<any>("profile");
+                    setUI("profile", { state: "ready", name: previousProfile?.name, meta: previousProfile?.meta });
                     // Remount both panels so candidate binding follows the explicitly adopted version.
                     window.location.assign("/workbench?job=" + encodeURIComponent(id));
                   }} />}
