@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import TopBar from "@/components/swiss/TopBar";
 import ExportMenu from "@/components/swiss/ExportMenu";
+import RoleKnowledge from "@/components/swiss/RoleKnowledge";
+import type { RoleKnowledge as Knowledge } from "@/lib/roleKnowledge";
 import { getUI, setUI, putJob } from "@/lib/wfy";
 import { parseJdFile, aiMessage, type JdResult } from "@/lib/ai";
 import { clearTask, getTask, startTask, subscribeTask } from "@/lib/tasks";
@@ -20,6 +22,7 @@ export default function JobProfile({
   const rootRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<HTMLElement>(null);
   const [exportData, setExportData] = useState<{ job: any; result: any[]; keyPoints?: { title: string; detail: string }[] } | null>(null);
+  const [knowledge, setKnowledge] = useState<Knowledge | null>(null);
   const stateCbRef = useRef(onStateChange);
   stateCbRef.current = onStateChange;
 
@@ -305,6 +308,7 @@ export default function JobProfile({
       input.value = "";
       paint(DIMS.map((_, i) => ({ score: 2.5, seed: i })), false);
       setExportData(null);
+      setKnowledge(null);
       setState("empty");
       saveStore(null);
     }
@@ -403,6 +407,7 @@ export default function JobProfile({
       setState("bloomed");
       stageEl.classList.add("bloomed");
       const keyPoints = out.keyPoints ?? [];
+      setKnowledge(null);
       renderPetalAnalysis(result, keyPoints);
       saveStore({ state: "bloomed", name: rName.textContent, meta: rMeta.textContent, result, keyPoints, job: parsedJob });
       setExportData({ job: parsedJob, result, keyPoints });
@@ -450,6 +455,7 @@ export default function JobProfile({
       if (!saved) { setState("empty"); return; }
       if (saved.name) { rName.textContent = saved.name; rMeta.textContent = saved.meta || ""; }
       if (saved.state === "bloomed" && saved.result) {
+        setKnowledge(saved.roleKnowledge || null);
         setExportData({ job: saved.job || null, result: saved.result, keyPoints: saved.keyPoints || [] });
         paint(saved.result, false);
         stageEl.classList.add("bloomed");
@@ -561,6 +567,7 @@ export default function JobProfile({
                             lines: [`Analysis: ${d.analysis || d.why || "—"}`, `Evidence: ${d.evidence || "—"}`],
                           };
                         }),
+                        ...(knowledge ? [{ heading: "岗位能力依据 · " + knowledge.version, lines: [knowledge.summary, ...knowledge.entries.map(e => `${e.title}：${e.explanation}；有效证据：${e.validEvidence.join("；")}`), ...knowledge.sources.map(s => `${s.title} · ${s.url} · 发布：${s.publishedAt || "未知"} · 采集：${s.retrievedAt} · ${s.locator}`), knowledge.disclaimer, knowledge.attribution] }] : []),
                       ],
 
                     })}
@@ -616,6 +623,15 @@ export default function JobProfile({
                 </div>
 
                 <div className="legend" id="legend"></div>
+                {exportData?.job?.id && <RoleKnowledge key={exportData.job.id} jobId={exportData.job.id} initial={knowledge}
+                  onResult={out => { setKnowledge(out); const saved = getUI<any>("jobprofile"); setUI("jobprofile", { ...saved, roleKnowledge: out }); }}
+                  onAdopt={id => {
+                    const saved = getUI<any>("jobprofile");
+                    setUI("jobprofile", { ...saved, job: { ...saved.job, id }, roleKnowledge: knowledge });
+                    setUI("match", { jobId: id });
+                    // Remount both panels so candidate binding follows the explicitly adopted version.
+                    window.location.assign("/workbench?job=" + encodeURIComponent(id));
+                  }} />}
               </div>
             </section>
           </section>

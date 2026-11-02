@@ -410,6 +410,64 @@ export type Database = {
         }
         Relationships: []
       }
+      job_knowledge_snapshots: {
+        Row: {
+          applied_job_profile_id: string | null
+          created_at: string
+          fingerprint: string
+          guest_key: string | null
+          id: string
+          job_profile_id: string
+          pack_version_id: string | null
+          payload: Json
+          user_id: string | null
+        }
+        Insert: {
+          applied_job_profile_id?: string | null
+          created_at?: string
+          fingerprint: string
+          guest_key?: string | null
+          id?: string
+          job_profile_id: string
+          pack_version_id?: string | null
+          payload?: Json
+          user_id?: string | null
+        }
+        Update: {
+          applied_job_profile_id?: string | null
+          created_at?: string
+          fingerprint?: string
+          guest_key?: string | null
+          id?: string
+          job_profile_id?: string
+          pack_version_id?: string | null
+          payload?: Json
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_knowledge_snapshots_applied_job_profile_id_fkey"
+            columns: ["applied_job_profile_id"]
+            isOneToOne: false
+            referencedRelation: "job_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_knowledge_snapshots_job_profile_id_fkey"
+            columns: ["job_profile_id"]
+            isOneToOne: false
+            referencedRelation: "job_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_knowledge_snapshots_pack_version_id_fkey"
+            columns: ["pack_version_id"]
+            isOneToOne: false
+            referencedRelation: "role_pack_versions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       job_profiles: {
         Row: {
           company: string | null
@@ -656,6 +714,42 @@ export type Database = {
           status?: Database["public"]["Enums"]["analysis_status"]
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      role_pack_versions: {
+        Row: {
+          content: Json
+          content_hash: string
+          created_at: string
+          id: string
+          pack_key: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          version: string
+        }
+        Insert: {
+          content?: Json
+          content_hash: string
+          created_at?: string
+          id?: string
+          pack_key: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          version: string
+        }
+        Update: {
+          content?: Json
+          content_hash?: string
+          created_at?: string
+          id?: string
+          pack_key?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          version?: string
         }
         Relationships: []
       }
