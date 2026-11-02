@@ -78,6 +78,9 @@ Deno.serve(async req => {
           send({ progress: "检索岗位标准与公开资料" });
           const [standards, web] = await Promise.all([standardSources(family), firecrawlSearch(researchQuery(job.title, job.company || "", family))]);
           const sources = [...standards, ...web];
+          if (published?.content?.sources) {
+            for (const s of published.content.sources) if (!sources.some(x => x.contentHash === s.contentHash)) sources.push({ ...s, id: `pack-${s.id}` });
+          }
           if (!sources.length) throw Object.assign(new Error("暂未取得可靠正文资料，保留 JD 基础画像"), { status: 503 });
           const apiKey = Deno.env.get("LOVABLE_API_KEY");
           if (!apiKey) throw Object.assign(new Error("AI 配置不可用"), { status: 503 });
@@ -102,12 +105,16 @@ Deno.serve(async req => {
             if (draftError) throw draftError;
             packVersionId = draft?.id || null;
           }
-          const payload = { version: ROLE_KNOWLEDGE_VERSION, summary: checked.summary, entries, sources, rubric, family, packStatus: published ? "published" : "draft", packVersionId, packVersion: published?.version || null, retrievedAt: new Date().toISOString(), attribution: "This service uses the ESCO classification of the European Commission.", disclaimer: "内部映射及行为分级，非机构认证；面经仅作参考；未确认的通用能力不是招聘硬门槛。" };
+          const payload = { version: ROLE_KNOWLEDGE_VERSION, jdHash: job.content_hash, baseRubricHash: job.rubric_hash, summary: checked.summary, entries, sources, rubric, family, packStatus: published ? "published" : "draft", packVersionId, packVersion: published?.version || null, retrievedAt: new Date().toISOString(), attribution: "This service uses the ESCO classification of the European Commission.", disclaimer: "内部映射及行为分级，非机构认证；面经仅作参考；未确认的通用能力不是招聘硬门槛。" };
           const { data: saved, error: saveError } = await admin.from("job_knowledge_snapshots").upsert({ job_profile_id: job.id, user_id: user?.id || null, guest_key: user ? null : guestKey, fingerprint, pack_version_id: packVersionId, payload }, { onConflict: "job_profile_id,fingerprint", ignoreDuplicates: true }).select("id").maybeSingle();
           if (saveError) throw saveError;
           send({ result: { ...payload, snapshotId: saved?.id, cached: false } });
         } catch (e) {
           const err = e as { status?: number; statusCode?: number; message?: string };
+          const status = err.status || err.statusCode || 500;
+          if (status === 402 || status === 403) {
+            await admin.from("job_knowledge_snapshots").insert({ job_profile_id: job.id, user_id: user?.id || null, guest_key: user ? null : guestKey, fingerprint: await canonicalHash({ paused: job.id, message: err.message }), payload: { paused: true, error: err.message, status } });
+          }
           send({ error: err.message || "资料补全失败，基础画像仍可使用", status: err.status || err.statusCode || 500 });
         } finally { clearInterval(heartbeat); controller.close(); }
       },
