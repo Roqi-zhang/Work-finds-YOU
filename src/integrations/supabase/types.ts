@@ -410,6 +410,42 @@ export type Database = {
         }
         Relationships: []
       }
+      interview_searches: {
+        Row: {
+          app_key: string
+          company: string | null
+          created_at: string
+          id: string
+          results: Json
+          searched_at: string
+          summary: string | null
+          title: string
+          user_id: string
+        }
+        Insert: {
+          app_key: string
+          company?: string | null
+          created_at?: string
+          id?: string
+          results?: Json
+          searched_at?: string
+          summary?: string | null
+          title: string
+          user_id: string
+        }
+        Update: {
+          app_key?: string
+          company?: string | null
+          created_at?: string
+          id?: string
+          results?: Json
+          searched_at?: string
+          summary?: string | null
+          title?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       job_knowledge_snapshots: {
         Row: {
           applied_job_profile_id: string | null
