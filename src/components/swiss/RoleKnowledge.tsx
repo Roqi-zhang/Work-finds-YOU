@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Loader2, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { researchRole, adoptRole, type RoleKnowledge as Knowledge } from "@/lib/roleKnowledge";
+import { researchRole, type RoleKnowledge as Knowledge } from "@/lib/roleKnowledge";
 
 const tier: Record<string, string> = { occupational_standard: "通用标准", company_official: "公司官方", interview_reference: "社区 / 面经参考" };
 
@@ -57,7 +57,7 @@ export default function RoleKnowledge({ jobId, initial, onResult, onAdopt }: { j
     catch (e) { setError(e instanceof Error ? e.message : "资料整合暂不可用"); }
     finally { setBusy(false); setProgress(""); }
   };
-  useEffect(() => { if (requested.current === jobId) return; requested.current = jobId; setData(initial || null); if (!initial || !initial.version?.endsWith("v4")) void load(); }, [jobId]);
+  useEffect(() => { if (requested.current === jobId) return; requested.current = jobId; const current = initial?.version === "role-knowledge-v5"; setData(current ? initial : null); if (!current) void load(); }, [jobId]);
   const order = useMemo(() => (data ? footnoteOrder(data) : []), [data]);
   useEffect(() => {
     if (!data) return;
@@ -78,12 +78,11 @@ export default function RoleKnowledge({ jobId, initial, onResult, onAdopt }: { j
         <h4>Sources · 资料溯源</h4>
         <Button variant="ghost" size="sm" disabled={busy} onClick={load} aria-label="重新核对岗位资料"><RefreshCw />核对资料</Button>
       </div>
-      <ol>{order.map((id, i) => { const s = data.sources.find(x => x.id === id)!; return <li key={id} id={`src-${i + 1}`}>
+      <ol>{order.map((id, i) => { const s = data.sources.find(x => x.id === id); if (!s) return null; return <li key={id} id={`src-${i + 1}`}>
         <span>[{i + 1}]</span>
         <div><a href={s.url} target="_blank" rel="noopener noreferrer" className="underline break-words">{s.title}</a>
           <div className="meta">{s.platform || s.publisher} · {tier[s.tier] || s.tier} · 发布 {s.publishedAt ? s.publishedAt.slice(0, 10) : "日期未知"} · 采集 {new Date(s.retrievedAt).toLocaleDateString()}</div></div>
       </li>; })}</ol>
-      {!!data.missingPlatforms?.length && <p className="note">未取得公开内容：{data.missingPlatforms.join("、")}</p>}
       <p className="note">JD 为首要依据；补全只帮助理解，不改变评分；面经仅作参考，不是录用标准。{data.attribution}</p>
     </>}
   </section>;

@@ -9,7 +9,31 @@ export type KnowledgeEntry = {
   strong: string; medium: string; weak: string;
   basis: "jd_supported_enrichment" | "general_reference" | "interview_reference";
 };
-export const ROLE_KNOWLEDGE_VERSION = "role-knowledge-v4";
+export const ROLE_KNOWLEDGE_VERSION = "role-knowledge-v5";
+export type SourceAssessment = {
+  sourceId: string; relevant: boolean; credible: boolean; addsValue: boolean;
+  reason: string; quote: string;
+};
+
+/** A model assessment is required, with a traceable passage, before using a source. */
+export function usefulSources(sources: KnowledgeSource[], assessments: SourceAssessment[]): KnowledgeSource[] {
+  const normalize = (value: string) => value.replace(/\s+/g, "").toLowerCase();
+  return sources.filter(source => assessments.some(a => a.sourceId === source.id &&
+    a.relevant && a.credible && a.addsValue && a.reason.trim().length > 0 &&
+    normalize(a.quote).length >= 20 && normalize(source.excerpt).includes(normalize(a.quote))));
+}
+
+export type EntryValue = { sourceIds: string[]; addedValue: string };
+export function valuableEntries<T extends KnowledgeEntry & EntryValue>(entries: T[], sources: KnowledgeSource[], requirements: { id: string }[]): KnowledgeEntry[] {
+  const ids = new Set(sources.map(s => s.id));
+  const seen = new Set<string>();
+  return validateEntries(entries.filter(e => {
+    const key = e.explanation.replace(/\s+/g, "");
+    if (!e.addedValue.trim() || !key || seen.has(key) || !e.sourceIds.length || e.sourceIds.some(id => !ids.has(id))) return false;
+    seen.add(key);
+    return true;
+  }), sources, requirements);
+}
 export const ROLE_KEYS = ["skill", "business", "analysis", "delivery", "comm", "collab", "learning", "motive"];
 
 export function publicUrl(value: string): string | null {
