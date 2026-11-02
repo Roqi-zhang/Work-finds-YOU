@@ -76,7 +76,7 @@ Deno.serve(async req => {
         const heartbeat = setInterval(() => send({ progress: "正在核对来源与能力依据" }), 10000);
         try {
           send({ progress: "检索岗位标准与公开资料" });
-          const [standards, web] = await Promise.all([standardSources(family), firecrawlSearch(researchQuery(job.title, job.company || "", family))]);
+          const [standards, web] = await Promise.all([standardSources(family).catch(e => { console.error("ESCO source read failed", String(e)); return []; }), firecrawlSearch(researchQuery(job.title, job.company || "", family))]);
           const sources = [...standards, ...web];
           if (published?.content?.sources) {
             for (const s of published.content.sources) if (!sources.some(x => x.contentHash === s.contentHash)) sources.push({ ...s, id: `pack-${s.id}` });
@@ -110,6 +110,7 @@ Deno.serve(async req => {
           if (saveError) throw saveError;
           send({ result: { ...payload, snapshotId: saved?.id, cached: false } });
         } catch (e) {
+          console.error("role-knowledge failed", e);
           const err = e as { status?: number; statusCode?: number; message?: string };
           const status = err.status || err.statusCode || 500;
           if (status === 402 || status === 403) {
