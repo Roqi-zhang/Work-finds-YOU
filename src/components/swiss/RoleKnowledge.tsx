@@ -3,7 +3,6 @@ import { Loader2, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { researchRole, adoptRole, type RoleKnowledge as Knowledge } from "@/lib/roleKnowledge";
 
-const basis: Record<string, string> = { jd_supported_enrichment: "职责补全", general_reference: "通用参考", interview_reference: "面经参考" };
 const tier: Record<string, string> = { occupational_standard: "通用标准", company_official: "公司官方", interview_reference: "社区 / 面经参考" };
 
 /** Numbers sources by first citation so footnotes read 1, 2, 3 down the profile. */
