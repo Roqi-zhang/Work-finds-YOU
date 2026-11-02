@@ -1,5 +1,6 @@
 import { canonicalHash, sha256Hex } from "./hash.ts";
 import { publicUrl, type KnowledgeSource } from "./role-policy.ts";
+import pinnedEsco from "./esco-snapshot.json" with { type: "json" };
 
 const ESCO_PRODUCT = "http://data.europa.eu/esco/occupation/a79170ad-0b7b-4697-864f-1748359aa10a";
 const ESCO_UI = "http://data.europa.eu/esco/occupation/96e20037-0a25-4bf6-a25e-808d1605d890";
@@ -24,15 +25,16 @@ export async function firecrawlSearch(query: string): Promise<KnowledgeSource[]>
   const sources: KnowledgeSource[] = [];
   for (const row of rows) {
     const url = publicUrl(row.url || "");
-    const excerpt = String(row.markdown || "").slice(0, 6500);
+    const fullText = String(row.markdown || "");
+    const excerpt = fullText.slice(0, 6500);
     if (!url || excerpt.length < 100 || sources.some(s => s.url === url)) continue;
     const host = new URL(url).hostname;
-    const official = /(^|\.)(onetonline\.org|onetcenter\.org|europa\.eu)$/.test(host);
+    const official = host === "www.onetonline.org" && /^\/link\/summary\/\d{2}-\d{4}\.\d{2}$/.test(new URL(url).pathname);
     // Unknown web publishers stay contextual. AI cannot relabel them as official.
     sources.push({ id: `web-${sources.length + 1}`, tier: official ? "occupational_standard" : "interview_reference",
       title: String(row.title || host), publisher: host, url, excerpt,
       publishedAt: typeof row.metadata?.publishedTime === "string" ? row.metadata.publishedTime : null,
-      retrievedAt: now, contentHash: await sha256Hex(excerpt), locator: "公开网页正文" });
+      retrievedAt: now, contentHash: await sha256Hex(fullText), locator: "公开网页正文 · 摘录前6500字符，哈希覆盖获取正文" });
   }
   return sources;
 }
@@ -42,13 +44,12 @@ export async function standardSources(family: string | null): Promise<KnowledgeS
   const design = family.includes("design");
   const uri = design ? ESCO_UI : ESCO_PRODUCT;
   const url = `https://ec.europa.eu/esco/api/resource/occupation?uri=${encodeURIComponent(uri)}&language=en&selectedVersion=v1.2.1`;
-  const response = await fetch(url);
-  if (!response.ok) return [];
-  const data = await response.json();
+  const snapshot = design ? pinnedEsco.design : pinnedEsco.product;
+  const data = snapshot.data;
   const excerpt = JSON.stringify({ title: data.title, description: data.description, preferredLabel: data.preferredLabel,
     skills: data._links?.hasEssentialSkill, optionalSkills: data._links?.hasOptionalSkill }).slice(0, 14000);
   if (excerpt.length < 100) return [];
   return [{ id: "esco-occupation", tier: "occupational_standard", title: design ? "ESCO · User interface designer" : "ESCO · ICT product manager",
-    publisher: "European Commission · ESCO", url, publishedAt: null, retrievedAt: new Date().toISOString(),
+    publisher: "European Commission · ESCO", url, publishedAt: null, retrievedAt: snapshot.retrievedAt,
     contentHash: await canonicalHash(data), excerpt, locator: `${uri} · selectedVersion=v1.2.1` }];
 }

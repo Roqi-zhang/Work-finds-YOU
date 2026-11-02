@@ -8,6 +8,7 @@ describe("JD-first role knowledge rules", () => {
   it("JD未支持的通用能力不改变评价标准", () => { const validated = validateEntries([{ ...entry, requirementIds: ["unknown"] }], [source("occupational_standard")], [{ id: "r1" }]); expect(validated[0].basis).toBe("general_reference"); expect(enrichRubric(base, validated, [], "v2")).toEqual(base); });
   it("补全仅解释已有JD职责并保留历史标准", () => { const result = enrichRubric(base, [entry], [{ dimensionKey: "skill", requirementIds: ["r1"] }], "snapshot-v2"); expect(result.dimensions.skill.anchors.strong).toBe("独立验证"); expect(result.benchmark_ref).toBe("snapshot-v2"); expect(base.dimensions.skill.anchors.strong).toBe("原强"); });
   it("虚构引用被丢弃", () => { expect(validateEntries([{ ...entry, sourceIds: ["fake"] }], [source("occupational_standard")], [{ id: "r1" }])).toEqual([]); });
+  it("混入面经的能力不进入正式评级", () => { expect(validateEntries([{ ...entry, sourceIds: ["s1", "s2"] }], [source("occupational_standard"), { ...source("interview_reference"), id: "s2" }], [{ id: "r1" }])[0].basis).toBe("interview_reference"); });
   it("搜索不发送联系方式", () => { expect(researchQuery("产品经理 test@example.org", "13800138000", "product")).not.toMatch(/test@example|13800138000/); });
   it("外部来源不能访问本地地址", () => { expect(publicUrl("http://127.0.0.1/a")).toBeNull(); expect(publicUrl("javascript:alert(1)")).toBeNull(); });
 });
