@@ -24,15 +24,16 @@ export async function firecrawlSearch(query: string): Promise<KnowledgeSource[]>
   const sources: KnowledgeSource[] = [];
   for (const row of rows) {
     const url = publicUrl(row.url || "");
-    const excerpt = String(row.markdown || "").slice(0, 6500);
+    const fullText = String(row.markdown || "");
+    const excerpt = fullText.slice(0, 6500);
     if (!url || excerpt.length < 100 || sources.some(s => s.url === url)) continue;
     const host = new URL(url).hostname;
-    const official = /(^|\.)(onetonline\.org|onetcenter\.org|europa\.eu)$/.test(host);
+    const official = host === "www.onetonline.org" && /^\/link\/summary\/\d{2}-\d{4}\.\d{2}$/.test(new URL(url).pathname);
     // Unknown web publishers stay contextual. AI cannot relabel them as official.
     sources.push({ id: `web-${sources.length + 1}`, tier: official ? "occupational_standard" : "interview_reference",
       title: String(row.title || host), publisher: host, url, excerpt,
       publishedAt: typeof row.metadata?.publishedTime === "string" ? row.metadata.publishedTime : null,
-      retrievedAt: now, contentHash: await sha256Hex(excerpt), locator: "公开网页正文" });
+      retrievedAt: now, contentHash: await sha256Hex(fullText), locator: "公开网页正文 · 摘录前6500字符，哈希覆盖获取正文" });
   }
   return sources;
 }

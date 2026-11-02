@@ -25,7 +25,7 @@ Deno.serve(async req => {
     if (!parsed.success) return json({ error: "请选择有效的岗位画像" }, 400);
     const { jobProfileId, guestKey, action, snapshotId, packVersionId } = parsed.data;
     const user = await getUser(req);
-    if (!user && !guestKey) return json({ error: "请先建立岗位画像或登录" }, 401);
+    if (!user && (!guestKey || !/^[0-9a-f]{32}$/.test(guestKey))) return json({ error: "请先建立岗位画像或登录" }, 401);
     const admin = adminClient();
     const { data: job, error } = await admin.from("job_profiles").select("*").eq("id", jobProfileId).maybeSingle();
     if (error) throw error;
@@ -41,9 +41,10 @@ Deno.serve(async req => {
     if (action === "adopt") {
       if (!snapshotId) return json({ error: "请选择补全版本" }, 400);
       const { data: snapshot } = await admin.from("job_knowledge_snapshots").select("*").eq("id", snapshotId).eq("job_profile_id", jobProfileId).single();
-      if (!snapshot) return json({ error: "补全版本不存在" }, 404);
+      if (!snapshot || (user ? snapshot.user_id !== user.id && job.user_id !== user.id : snapshot.user_id !== null || snapshot.guest_key !== guestKey)) return json({ error: "补全版本不存在" }, 404);
       if (snapshot.applied_job_profile_id) return json({ jobId: snapshot.applied_job_profile_id });
       const context = snapshot.payload as any;
+      if (context.error || !context.rubric) return json({ error: "该补全版本不可采用" }, 409);
       const rubric = context.rubric as EvaluationRubric;
       const hash = await canonicalHash(rubric);
       const base = job.ideal_profile as IdealCandidateProfile;
@@ -63,19 +64,21 @@ Deno.serve(async req => {
       if (linkError) throw linkError;
       return json({ jobId: adoptedId });
     }
+    const family = roleFamily(job.title);
+    const { data: published } = family ? await admin.from("role_pack_versions").select("*").eq("pack_key", family).eq("status", "published").order("created_at", { ascending: false }).limit(1).maybeSingle() : { data: null };
     const { data: cache } = await admin.from("job_knowledge_snapshots").select("id,payload,created_at").eq("job_profile_id", jobProfileId).order("created_at", { ascending: false }).limit(1).maybeSingle();
-    if (cache && Date.now() - new Date(cache.created_at).getTime() < 7 * 86400000) return json({ ...cache.payload, snapshotId: cache.id, cached: true });
+    const cachedPayload = cache?.payload as any;
+    if (cachedPayload?.paused) return json({ error: cachedPayload.error, paused: true }, cachedPayload.status || 403);
+    if (cache && cachedPayload.version === ROLE_KNOWLEDGE_VERSION && cachedPayload.jdHash === job.content_hash && cachedPayload.baseRubricHash === job.rubric_hash && cachedPayload.packVersion === (published?.version || null) && Date.now() - new Date(cache.created_at).getTime() < 7 * 86400000) return json({ ...cachedPayload, snapshotId: cache.id, cached: true });
     const stream = new ReadableStream({
       async start(controller) {
         const send = (data: unknown) => controller.enqueue(new TextEncoder().encode(JSON.stringify(data) + "\n"));
         const heartbeat = setInterval(() => send({ progress: "正在核对来源与能力依据" }), 10000);
         try {
           send({ progress: "检索岗位标准与公开资料" });
-          const family = roleFamily(job.title);
           const [standards, web] = await Promise.all([standardSources(family), firecrawlSearch(researchQuery(job.title, job.company || "", family))]);
           const sources = [...standards, ...web];
           if (!sources.length) throw Object.assign(new Error("暂未取得可靠正文资料，保留 JD 基础画像"), { status: 503 });
-          const { data: published } = family ? await admin.from("role_pack_versions").select("*").eq("pack_key", family).eq("status", "published").order("created_at", { ascending: false }).limit(1).maybeSingle() : { data: null };
           const apiKey = Deno.env.get("LOVABLE_API_KEY");
           if (!apiKey) throw Object.assign(new Error("AI 配置不可用"), { status: 503 });
           send({ progress: "以 JD 为核心综合能力画像" });
