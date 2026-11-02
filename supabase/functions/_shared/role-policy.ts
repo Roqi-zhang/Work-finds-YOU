@@ -55,7 +55,7 @@ export function validateEntries(entries: KnowledgeEntry[], sources: KnowledgeSou
     const interviewOnly = sourceIds.some(id => bySource.get(id)?.tier === "interview_reference");
     return [{ ...e, sourceIds, requirementIds: interviewOnly ? [] : requirementIds,
       basis: interviewOnly ? "interview_reference" : requirementIds.length ? "jd_supported_enrichment" : "general_reference" } as KnowledgeEntry];
-  }).slice(0, 12);
+  }).slice(0, 16);
 }
 
 /** Changes explanations/anchors only where the JD already requires a dimension. */

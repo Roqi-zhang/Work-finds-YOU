@@ -22,9 +22,10 @@ export const SOURCE_GROUPS = [
   { platform: "O*NET", sites: ["onetonline.org"], lang: "en" },
 ] as const;
 
+const NAMES: Record<string, string> = { "xiaohongshu.com": "小红书", "zhihu.com": "知乎", "nowcoder.com": "牛客网", "kanzhun.com": "看准网", "maimai.cn": "脉脉", "zhipin.com": "BOSS直聘", "lagou.com": "拉勾", "liepin.com": "猎聘", "glassdoor.com": "Glassdoor", "levels.fyi": "Levels.fyi", "reddit.com": "Reddit", "teamblind.com": "Blind", "linkedin.com": "LinkedIn", "onetonline.org": "O*NET", "baidu.com": "百度" };
 export function platformOf(host: string): string {
-  for (const g of SOURCE_GROUPS) if (g.sites.some(d => host === d || host.endsWith("." + d))) return g.platform.split(" / ").find((_, i) => host.includes(g.sites[i]?.split(".")[0] ?? "")) || g.platform;
-  return host;
+  const hit = Object.keys(NAMES).find(d => host === d || host.endsWith("." + d));
+  return hit ? NAMES[hit] : host.replace(/^www\./, "");
 }
 
 export function groupQueries(zh: string, en: string) {
