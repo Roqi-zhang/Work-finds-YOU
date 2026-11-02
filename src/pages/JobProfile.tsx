@@ -368,7 +368,7 @@ export default function JobProfile({
           const d = result[k] || {};
           const s = d.score;
           const bar = Array.from({ length: 5 }, (_, n) => `<i class="${s != null && n < s ? "on" : ""}"></i>`).join("");
-          return `<div class="p">
+          return `<div class="p" data-dim="${DIMS[k].key}">
             <div class="ph"><span>${DIMS[k].label}<em>${DIMS[k].key}</em></span><b>${s == null ? "—" : s}/5</b></div>
             <div class="bar ${s == null ? "none" : ""}">${bar}</div>
             <dl>
@@ -567,7 +567,7 @@ export default function JobProfile({
                             lines: [`Analysis: ${d.analysis || d.why || "—"}`, `Evidence: ${d.evidence || "—"}`],
                           };
                         }),
-                        ...(knowledge ? [{ heading: "岗位能力依据 · " + knowledge.version, lines: [knowledge.summary, ...knowledge.entries.map(e => `${e.title}：${e.explanation}；有效证据：${e.validEvidence.join("；")}`), ...knowledge.sources.map(s => `${s.title} · ${s.url} · 发布：${s.publishedAt || "未知"} · 采集：${s.retrievedAt} · ${s.locator}`), knowledge.disclaimer, knowledge.attribution] }] : []),
+                        ...(knowledge ? [{ heading: "资料溯源 · Sources", lines: [...knowledge.entries.map(e => `${e.dimensionKey} · ${e.title}：${e.explanation}；有效证据：${e.validEvidence.join("；")} [${e.sourceIds.join(",")}]`), ...knowledge.sources.map(s => `[${s.id}] ${s.title} · ${s.platform || s.publisher} · ${s.url} · 发布：${s.publishedAt || "未知"} · 采集：${s.retrievedAt}`), knowledge.disclaimer] }] : []),
                       ],
 
                     })}

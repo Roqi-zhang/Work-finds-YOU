@@ -1,7 +1,7 @@
 export type KnowledgeSource = {
   id: string; tier: "occupational_standard" | "company_official" | "interview_reference";
   title: string; publisher: string; url: string; publishedAt: string | null;
-  retrievedAt: string; contentHash: string; excerpt: string; locator: string;
+  retrievedAt: string; contentHash: string; excerpt: string; locator: string; platform?: string;
 };
 export type KnowledgeEntry = {
   dimensionKey: string; title: string; explanation: string; behaviors: string[];
@@ -9,7 +9,7 @@ export type KnowledgeEntry = {
   strong: string; medium: string; weak: string;
   basis: "jd_supported_enrichment" | "general_reference" | "interview_reference";
 };
-export const ROLE_KNOWLEDGE_VERSION = "role-knowledge-v2";
+export const ROLE_KNOWLEDGE_VERSION = "role-knowledge-v3";
 export const ROLE_KEYS = ["skill", "business", "analysis", "delivery", "comm", "collab", "learning", "motive"];
 
 export function publicUrl(value: string): string | null {
@@ -30,6 +30,14 @@ export function roleFamily(title: string): string | null {
   return null;
 }
 
+/** Chinese and English keyword pairs, built only from public title/company/family. */
+export function researchQueries(title: string, company: string, family: string | null): { zh: string; en: string } {
+  const safe = (v: string) => v.replace(/https?:\/\/\S+|\S+@\S+|\+?\d[\d\s-]{6,}\d/g, "").replace(/["\n\r()]/g, " ").slice(0, 60).trim();
+  const c = company === "待确认" ? "" : safe(company);
+  const design = family?.includes("design");
+  return { zh: `${safe(title)} ${c} ${design ? "面经 作品集 能力要求" : "面经 能力要求"}`.trim(), en: `${safe(title)} ${c} ${design ? "interview portfolio skills" : "interview competencies skills"}`.trim() };
+}
+
 /** Never export raw JD, requirements or candidate data to search services. */
 export function researchQuery(title: string, company: string, family: string | null): string {
   const safe = (v: string) => v.replace(/https?:\/\/\S+|\S+@\S+|\+?\d[\d\s-]{6,}\d/g, "").replace(/["\n\r]/g, " ").slice(0, 80);
@@ -47,7 +55,7 @@ export function validateEntries(entries: KnowledgeEntry[], sources: KnowledgeSou
     const interviewOnly = sourceIds.some(id => bySource.get(id)?.tier === "interview_reference");
     return [{ ...e, sourceIds, requirementIds: interviewOnly ? [] : requirementIds,
       basis: interviewOnly ? "interview_reference" : requirementIds.length ? "jd_supported_enrichment" : "general_reference" } as KnowledgeEntry];
-  }).slice(0, 12);
+  }).slice(0, 16);
 }
 
 /** Changes explanations/anchors only where the JD already requires a dimension. */
