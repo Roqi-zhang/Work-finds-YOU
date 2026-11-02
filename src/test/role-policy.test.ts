@@ -12,3 +12,11 @@ describe("JD-first role knowledge rules", () => {
   it("搜索不发送联系方式", () => { expect(researchQuery("产品经理 test@example.org", "13800138000", "product")).not.toMatch(/test@example|13800138000/); });
   it("外部来源不能访问本地地址", () => { expect(publicUrl("http://127.0.0.1/a")).toBeNull(); expect(publicUrl("javascript:alert(1)")).toBeNull(); });
 });
+describe("multi-platform research queries", () => {
+  it("never sends contact details or URLs from title/company", async () => {
+    const { researchQueries } = await import("../../supabase/functions/_shared/role-policy");
+    const q = researchQueries("产品设计师 a@b.com https://x.cn/jd", "某公司 13800138000", "ui-design");
+    for (const v of [q.zh, q.en]) { expect(v).not.toMatch(/@|https?:|13800138000/); }
+    expect(q.zh).toContain("面经");
+  });
+});
