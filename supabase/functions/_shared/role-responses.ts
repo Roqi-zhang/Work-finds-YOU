@@ -1,5 +1,5 @@
 import { createOpenAI } from "npm:@ai-sdk/openai@3";
-import { streamText, type ModelMessage } from "npm:ai@6";
+import { streamText, Output, jsonSchema, type ModelMessage } from "npm:ai@6";
 
 import {
   createLovableAiGatewayRunIdFetch,
@@ -12,6 +12,7 @@ export function createResponsesCall(
   config: { baseURL: string; apiKey: string; model: string },
   messages: ModelMessage[],
   instructions?: string,
+  schema?: Record<string, unknown>,
 ) {
   const runIdFetch = createLovableAiGatewayRunIdFetch(getLovableAiGatewayRunId(request));
   const provider = createOpenAI({
@@ -27,6 +28,7 @@ export function createResponsesCall(
     ...(instructions ? { system: instructions } : {}),
     messages,
     abortSignal: request.signal,
+    ...(schema ? { output: Output.object({ schema: jsonSchema(schema) }) } : {}),
     providerOptions: {
       openai: {
         store: false,
@@ -43,6 +45,7 @@ export function createResponsesCall(
   });
   return {
     result,
+    getRunId: runIdFetch.getRunId,
     response: () =>
       withLovableAiGatewayRunIdHeader(result.toUIMessageStreamResponse({ sendReasoning: true }), runIdFetch),
   };
