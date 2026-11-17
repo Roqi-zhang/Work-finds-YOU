@@ -97,3 +97,4 @@ textarea{border-radius:18px}
 .d3 td{border-bottom:.5px solid var(--line-soft)}
 .d3 .verdict{border:0}
 .modal .box{border:.5px solid var(--line);border-radius:28px;padding:28px}
+.mark{border:0!important;padding:0!important}
