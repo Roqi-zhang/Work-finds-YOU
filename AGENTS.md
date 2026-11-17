@@ -8,3 +8,4 @@
 - Role knowledge renders fused into each job dimension's Analysis/Evidence rows with numbered footnotes and one trailing Sources list, never as a separate report section. Why: users need one coherent profile, with provenance kept traceable.
 - Role research requires source relevance, credibility and incremental-value assessments with verbatim supporting passages; snapshots expose only cited accepted sources and allow empty enrichment. Why: retrieval coverage must not manufacture useful conclusions or crowd out the JD.
 - Interview-experience links are searched on demand per delivery entry, ranked by pure rules in _shared/interview-policy.ts (AI only labels relevance), and stored per user in interview_searches. Why: ranking stays testable and reopening costs nothing.
+- Design values live in design-tokens.json (mirrored in src/styles/tokens.ts and swiss.css variables); update all three together. Why: one exportable source for Figma and code.
