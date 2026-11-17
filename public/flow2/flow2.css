@@ -56,3 +56,44 @@ a.src{text-decoration:underline;text-underline-offset:3px}
 .d3 th{text-align:left;font-weight:400;font-size:12px;opacity:.7;border-bottom:.5px solid var(--ink-strong);padding:8px}
 .d3 td{border-bottom:.5px solid var(--line);padding:10px 8px;vertical-align:top}
 .d3 .verdict{border-top:2px solid var(--ink-strong);border-bottom:.5px solid var(--line);padding:18px 0}
+/* ===== v2 restyle: follow live site — open, organic, pill-shaped ===== */
+.bar{border-bottom:0;background:transparent;backdrop-filter:none;position:static;padding:22px 56px}
+.bar button,.chip{border-radius:999px;font-size:12px;letter-spacing:.06em;padding:4px 14px}
+.bar nav button{border:0;padding:2px 8px;opacity:.55}
+.bar nav button.on{background:none;color:var(--ink-strong);opacity:1;border-bottom:1px solid var(--ink-strong);border-radius:0}
+h1{font-size:44px;line-height:1.15;letter-spacing:.01em}
+h2{font-size:24px}
+.box{border:0;padding:20px 0;border-top:.5px solid var(--line-soft)}
+.btn{border-radius:999px;padding:8px 22px;border-width:1px;font-size:14px;letter-spacing:.04em;transition:transform .3s var(--ease)}
+.btn:hover{transform:rotate(-2deg) scale(1.03)}
+.btn.ghost{border-color:var(--line)}
+.tag{border-radius:999px;padding:1px 9px}
+.demo{border-radius:999px;padding:1px 10px}
+.drop{border:1px dashed var(--ink);border-radius:46% 54% 48% 52%/52% 46% 54% 48%;padding:72px;max-width:520px;margin:28px auto!important}
+.drop:hover{border-radius:52% 48% 54% 46%/46% 54% 48% 52%;transition:border-radius 1.2s var(--ease)}
+textarea{border-radius:18px}
+.meter{height:auto;border:0}
+.meter svg{display:block;width:100%;height:10px}
+.li{border-bottom:0;padding:8px 0}
+.mark{opacity:.7}
+.lead{font-size:13px;opacity:.7;letter-spacing:.04em}
+.kicker{font-size:11px;letter-spacing:.18em;opacity:.55;text-transform:uppercase}
+.underl{background:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 10'><path d='M2 6 C 40 2, 80 9, 120 5 S 180 3, 198 6' fill='none' stroke='%230A0A0A' stroke-width='1.4' stroke-linecap='round'/></svg>") bottom/100% 8px no-repeat;padding-bottom:6px}
+[data-theme=dark] .underl{filter:invert(1)}
+.orbit{position:absolute;border:.5px solid var(--line);border-radius:50%;pointer-events:none}
+.page{position:relative;overflow:hidden}
+.bloom{display:flex;flex-direction:column;align-items:center;text-align:center;gap:6px}
+.scorering{width:150px;height:150px;position:relative;flex:none}
+.scorering svg{position:absolute;inset:0}
+.scorering b{position:absolute;inset:0;display:grid;place-items:center;font-size:40px;font-weight:400;color:var(--ink-strong)}
+.blob{border:.5px solid var(--line);border-radius:38% 62% 55% 45%/45% 40% 60% 55%;padding:34px 40px}
+.card-o{padding:28px 0}
+/* directions without boxes */
+.d1 .date{border-right:0}.d1 .margin{border-left:0}
+.d1 .note{border-left:0;font-size:22px;color:var(--ink-strong);line-height:1.5;padding:0}
+.d2 .side{border:0;border-right:.5px solid var(--line-soft);border-radius:0}
+.d2 .paper{border:0;background:transparent;padding:0 0 0 8px}
+.d3 th{border-bottom:.5px solid var(--line)}
+.d3 td{border-bottom:.5px solid var(--line-soft)}
+.d3 .verdict{border:0}
+.modal .box{border:.5px solid var(--line);border-radius:28px;padding:28px}
