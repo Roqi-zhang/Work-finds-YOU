@@ -1,4 +1,4 @@
-/* Swiss Style shared tokens for static previews */
+/* Swiss Style shared tokens — source of truth: /design-tokens.json (mirrored in src/styles/tokens.ts) */
 :root {
   --paper: #F1F1F1;
   --ink: #404040;

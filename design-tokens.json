@@ -1,0 +1,38 @@
+{
+  "$description": "Job Seek You design tokens (W3C format). Values mirror src/styles/swiss.css.",
+  "color": {
+    "light": {
+      "paper": {"$type":"color","$value":"#F1F1F1","$description":"Canvas background"},
+      "ink": {"$type":"color","$value":"#404040","$description":"Body text"},
+      "ink-strong": {"$type":"color","$value":"#0A0A0A","$description":"Headings, strong contrast"},
+      "line": {"$type":"color","$value":"#D4D4D4","$description":"Hairline dividers"},
+      "line-soft": {"$type":"color","$value":"rgba(64,64,64,0.08)","$description":"Soft helper lines"}
+    },
+    "dark": {
+      "paper": {"$type":"color","$value":"#0E0E0E"},
+      "ink": {"$type":"color","$value":"#C8C8C8"},
+      "ink-strong": {"$type":"color","$value":"#F5F5F5"},
+      "line": {"$type":"color","$value":"#2A2A2A"},
+      "line-soft": {"$type":"color","$value":"rgba(200,200,200,0.08)"}
+    }
+  },
+  "font": {
+    "family": {"hand": {"$type":"fontFamily","$value":["Patrick Hand","ZCOOL KuaiLe","cursive"]}},
+    "size": {
+      "caption": {"$type":"dimension","$value":"10px"},
+      "body": {"$type":"dimension","$value":"14px"},
+      "column-title": {"$type":"dimension","$value":"30px"}
+    },
+    "lineHeight": {"body": {"$type":"number","$value":1.7}}
+  },
+  "border": {"hairline": {"$type":"dimension","$value":"0.5px"}},
+  "motion": {
+    "duration": {"$type":"duration","$value":"600ms"},
+    "ease": {"$type":"cubicBezier","$value":[0.2,0.7,0.2,1]}
+  },
+  "space": {
+    "page-top": {"$type":"dimension","$value":"40px"},
+    "page-x": {"$type":"dimension","$value":"56px"},
+    "page-bottom": {"$type":"dimension","$value":"96px"}
+  }
+}
