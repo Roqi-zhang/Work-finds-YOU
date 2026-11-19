@@ -3,7 +3,7 @@ import { Loader2, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { researchRole, type RoleKnowledge as Knowledge } from "@/lib/roleKnowledge";
 
-const tier: Record<string, string> = { occupational_standard: "通用标准", company_official: "公司官方", interview_reference: "社区 / 面经参考" };
+const tier: Record<string, string> = { occupational_standard: "通用标准", company_official: "公司官方", interview_reference: "面经·仅供参考" };
 
 /** Numbers sources by first citation so footnotes read 1, 2, 3 down the profile. */
 export function footnoteOrder(data: Knowledge) {
@@ -52,12 +52,12 @@ export default function RoleKnowledge({ jobId, initial, onResult, onAdopt }: { j
   const callbacks = useRef({ onResult, onAdopt }); callbacks.current = { onResult, onAdopt };
   const requested = useRef("");
   const load = async () => {
-    setBusy(true); setError(""); setProgress("检索岗位资料…");
+    setBusy(true); setError(""); setProgress("正在补充职业库与面经…");
     try { const out = await researchRole(jobId, setProgress); setData(out); callbacks.current.onResult(out); }
     catch (e) { setError(e instanceof Error ? e.message : "资料整合暂不可用"); }
     finally { setBusy(false); setProgress(""); }
   };
-  useEffect(() => { if (requested.current === jobId) return; requested.current = jobId; const current = initial?.version === "role-knowledge-v5"; setData(current ? initial : null); if (!current) void load(); }, [jobId]);
+  useEffect(() => { if (requested.current === jobId) return; requested.current = jobId; const current = initial?.version === "role-knowledge-v6"; setData(current ? initial : null); if (!current) void load(); }, [jobId]);
   const order = useMemo(() => (data ? footnoteOrder(data) : []), [data]);
   useEffect(() => {
     if (!data) return;
@@ -71,7 +71,7 @@ export default function RoleKnowledge({ jobId, initial, onResult, onAdopt }: { j
   }, [data, order]);
 
   return <section className="sources text-foreground" aria-label="资料溯源">
-    {busy && <p className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" />{progress || "整合资料中…"}</p>}
+    {busy && <p className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" />{progress || "正在补充职业库与面经…"}</p>}
     {error && <p className="text-sm text-muted-foreground">{error} · 基础画像仍可使用</p>}
     {data && order.length > 0 && <>
       <div className="flex flex-wrap items-center justify-between gap-2">

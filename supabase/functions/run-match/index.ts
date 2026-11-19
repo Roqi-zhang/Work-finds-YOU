@@ -21,6 +21,7 @@ import {
   GUEST_LIMIT,
   QUOTA_MESSAGE,
 } from "../_shared/quota.ts";
+import { matchReferenceBlock } from "../_shared/role-policy.ts";
 
 const SYSTEM = `你是资深招聘官，对比候选人画像与岗位要求，输出一份可追溯的匹配分析。
 规则：
@@ -41,6 +42,7 @@ const SYSTEM = `你是资深招聘官，对比候选人画像与岗位要求，�
    - 每条 title 简短，desc 一句话概述该步骤。未使用的 mindset 填空字符串。
 
 5. decision_factors 为影响结论的关键因子（不超过 6 条），rationale_summary 为一句话结论依据；不要输出模型的完整内部推演过程。
+5.1 若提供【岗位背景参考】：它来自职业库与近两年面经，只能用于 judgements 的 reasoning/impact 补充说明和 steps（尤其 interview 的准备要点，可写「近期面经常问……，你可以用简历中的……回答」）；**严禁**据此改变任何 dimension_matches 的 gapType，也不能把面经写成录用硬门槛；提及时标注「面经参考」。
 6. 不要输出任何分数，分数由系统按固定公式计算。
 维度：${DIMS.map((d) => `${d.key}=${d.label}`).join("、")}`;
 
@@ -171,6 +173,9 @@ Deno.serve(async (req) => {
       ? `【岗位要求条目】\n${JSON.stringify(job.requirement_records)}\n\n【岗位要求信号】\n${JSON.stringify(job.requirement_signals)}\n\n【理想候选人画像】\n${JSON.stringify(job.ideal_profile)}`
       : `【岗位维度要求】\n${JSON.stringify(job.dimensions)}\n\n【岗位要求条目】\n${JSON.stringify(job.requirements)}`;
 
+    const { data: snap } = await admin.from("job_knowledge_snapshots").select("payload").eq("job_profile_id", job.id).order("created_at", { ascending: false }).limit(1).maybeSingle();
+    const reference = matchReferenceBlock(snap?.payload as any);
+
     const { data, usage, model, latencyMs } = await callAIJson<MatchOut>({
       messages: [
         { role: "system", content: SYSTEM },
@@ -182,7 +187,8 @@ Deno.serve(async (req) => {
               text:
                 `${candidateBlock}\n\n【候选人分段】\n${JSON.stringify(profile.sections)}\n\n` +
                 `【岗位】${job.company} · ${job.title} · ${job.location}\n${jobBlock}\n\n` +
-                `【候选人原文证据】\n${JSON.stringify(resumeEvidence)}\n\n【岗位原文证据】\n${JSON.stringify(jdEvidence)}`,
+                `【候选人原文证据】\n${JSON.stringify(resumeEvidence)}\n\n【岗位原文证据】\n${JSON.stringify(jdEvidence)}` +
+                (reference ? `\n\n${reference}` : ""),
             },
           ],
         },

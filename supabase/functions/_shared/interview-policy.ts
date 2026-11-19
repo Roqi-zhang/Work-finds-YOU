@@ -18,6 +18,12 @@ export const MAX_LINKS = 10;
 const safe = (v: string, max = 60) =>
   v.replace(/https?:\/\/\S+|\S+@\S+|\+?\d[\d\s-]{6,}\d/g, "").replace(/["\n\r()]/g, " ").replace(/\s+/g, " ").slice(0, max).trim();
 
+/** Drops recruiting suffixes so searches hit real posts: "软件产品经理（创意模板方向）-2027校招" → "软件产品经理". */
+export function coreTitle(title: string) {
+  const t = title.replace(/[（(【\[].*?[）)】\]]/g, " ").replace(/[-–—_·|/]?\s*(20\d{2}届?|校招|社招|实习生?|校园招聘|急招)+.*$/g, " ").replace(/\s+/g, " ").trim();
+  return t || title;
+}
+
 /** Only company + job title ever leave the app. */
 export function interviewQueries(title: string, company: string) {
   const t = safe(title), c = company && company !== "—" && company !== "待确认" ? safe(company, 40) : "";

@@ -9,3 +9,4 @@
 - Role research requires source relevance, credibility and incremental-value assessments with verbatim supporting passages; snapshots expose only cited accepted sources and allow empty enrichment. Why: retrieval coverage must not manufacture useful conclusions or crowd out the JD.
 - Interview-experience links are searched on demand per delivery entry, ranked by pure rules in _shared/interview-policy.ts (AI only labels relevance), and stored per user in interview_searches. Why: ranking stays testable and reopening costs nothing.
 - Design values live in design-tokens.json (mirrored in src/styles/tokens.ts and swiss.css variables); update all three together. Why: one exportable source for Figma and code.
+- Role research has three layers (JD core, occupational standards, interview posts ≤24 months); match reports receive accepted entries only as explanation context and never let them change gap types. Why: scores stay reproducible from JD and resume alone.

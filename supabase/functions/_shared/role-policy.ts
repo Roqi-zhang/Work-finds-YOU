@@ -9,7 +9,7 @@ export type KnowledgeEntry = {
   strong: string; medium: string; weak: string;
   basis: "jd_supported_enrichment" | "general_reference" | "interview_reference";
 };
-export const ROLE_KNOWLEDGE_VERSION = "role-knowledge-v5";
+export const ROLE_KNOWLEDGE_VERSION = "role-knowledge-v6";
 export type SourceAssessment = {
   sourceId: string; relevant: boolean; credible: boolean; addsValue: boolean;
   reason: string; quote: string;
@@ -99,4 +99,26 @@ export function enrichRubric<T extends { version: string; benchmark_ref: string 
   }
   if (changed) { next.version = `${base.version}+${ROLE_KNOWLEDGE_VERSION}`; next.benchmark_ref = version; }
   return next;
+}
+export const INTERVIEW_MAX_MONTHS = 24;
+/** Interview references older than 24 months are dropped; undated ones stay but are shown as 日期未知. */
+export function freshSources(sources: KnowledgeSource[], now = new Date()): KnowledgeSource[] {
+  const limit = new Date(now); limit.setMonth(limit.getMonth() - INTERVIEW_MAX_MONTHS);
+  return sources.filter(s => {
+    if (s.tier !== "interview_reference" || !s.publishedAt) return true;
+    const t = Date.parse(s.publishedAt);
+    return isNaN(t) || t >= limit.getTime();
+  });
+}
+
+/** Reference context for match explanations. Never carries scoring weight. */
+export function matchReferenceBlock(payload: { entries?: KnowledgeEntry[]; sources?: KnowledgeSource[] } | null | undefined): string {
+  const entries = payload?.entries || [];
+  if (!entries.length) return "";
+  const src = new Map((payload?.sources || []).map(s => [s.id, s]));
+  const lines = entries.map(e => {
+    const refs = e.sourceIds.map(id => src.get(id)).filter(Boolean).map(s => `${s!.platform || s!.publisher}${s!.tier === "interview_reference" ? "·面经" : ""}${s!.publishedAt ? "·" + s!.publishedAt.slice(0, 7) : ""}`);
+    return `- [${e.dimensionKey}] ${e.explanation}（来源：${refs.join("、") || "未知"}）`;
+  });
+  return `【岗位背景参考（职业库/近两年面经，仅用于解释与准备建议，不得影响任何 gapType 判定）】\n${lines.join("\n")}`;
 }

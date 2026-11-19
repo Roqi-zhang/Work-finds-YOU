@@ -16,8 +16,6 @@ export const SOURCE_GROUPS = [
   { platform: "牛客 / 看准 / 脉脉", sites: ["nowcoder.com", "kanzhun.com", "maimai.cn"], lang: "zh" },
   { platform: "BOSS直聘 / 拉勾 / 猎聘", sites: ["zhipin.com", "lagou.com", "liepin.com"], lang: "zh" },
   { platform: "百度", sites: [], lang: "zh" },
-  { platform: "Glassdoor / Levels.fyi", sites: ["glassdoor.com", "levels.fyi"], lang: "en" },
-  { platform: "Reddit / Blind / LinkedIn", sites: ["reddit.com", "teamblind.com", "linkedin.com"], lang: "en" },
   { platform: "Google", sites: [], lang: "en" },
   { platform: "O*NET", sites: ["onetonline.org"], lang: "en" },
 ] as const;
@@ -39,23 +37,24 @@ export function groupQueries(zh: string, en: string) {
 /** Runs every channel in parallel; a failed channel is recorded, not fatal. */
 export async function multiSearch(zh: string, en: string): Promise<{ sources: KnowledgeSource[]; missing: string[] }> {
   const queries = groupQueries(zh, en);
-  const results = await Promise.all(queries.map(q => firecrawlSearch(q.query, 2, q.lang).catch(e => { if (e instanceof ResearchError && (e.status === 402 || e.status === 403)) throw e; console.error("channel failed", q.platform, String(e)); return []; })));
+  const results = await Promise.all(queries.map(q => firecrawlSearch(q.query, 2, q.lang).catch(e => { if (e instanceof ResearchError && (e.status === 402 || e.status === 403)) throw e; console.error("channel failed", q.platform, String(e)); return e instanceof ResearchError && e.status === 429 ? null : []; })));
   const sources: KnowledgeSource[] = [];
   const missing: string[] = [];
   results.forEach((rows, i) => {
+    if (rows === null) { missing.push(`${queries[i].platform}（限流）`); return; }
     if (!rows.length) missing.push(queries[i].platform);
     for (const r of rows) if (!sources.some(s => s.url === r.url)) sources.push({ ...r, id: `web-${sources.length + 1}` });
   });
   return { sources, missing };
 }
 
-export async function firecrawlSearch(query: string, limit = 4, lang = "zh"): Promise<KnowledgeSource[]> {
+export async function firecrawlSearch(query: string, limit = 4, lang = "zh", tbs?: string, forceTier?: KnowledgeSource["tier"]): Promise<KnowledgeSource[]> {
   const key = Deno.env.get("FIRECRAWL_API_KEY");
   const aiKey = Deno.env.get("LOVABLE_API_KEY");
   if (!key || !aiKey) throw new ResearchError(503, "可靠检索服务尚未配置");
   const response = await fetch("https://connector-gateway.lovable.dev/firecrawl/v2/search", {
     method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${aiKey}`, "X-Connection-Api-Key": key },
-    body: JSON.stringify({ query, limit, lang, scrapeOptions: { formats: ["markdown"] } }),
+    body: JSON.stringify({ query, limit, lang, ...(tbs ? { tbs } : {}), scrapeOptions: { formats: ["markdown"] } }),
   });
   if (!response.ok) throw new ResearchError(response.status, (await response.text()).slice(0, 1500));
   const raw = await response.json();
@@ -71,7 +70,7 @@ export async function firecrawlSearch(query: string, limit = 4, lang = "zh"): Pr
     const host = new URL(url).hostname;
     const official = host === "www.onetonline.org" && /^\/link\/summary\/\d{2}-\d{4}\.\d{2}$/.test(new URL(url).pathname);
     // Unknown web publishers stay contextual. AI cannot relabel them as official.
-    sources.push({ id: `web-${sources.length + 1}`, tier: official ? "occupational_standard" : "interview_reference",
+    sources.push({ id: `web-${sources.length + 1}`, tier: forceTier || (official ? "occupational_standard" : "interview_reference"),
       title: String(row.title || host), publisher: host, platform: platformOf(host), url, excerpt,
       publishedAt: typeof row.metadata?.publishedTime === "string" ? row.metadata.publishedTime : null,
       retrievedAt: now, contentHash: await sha256Hex(fullText), locator: "公开网页正文 · 摘录前6500字符，哈希覆盖获取正文" });
@@ -92,4 +91,30 @@ export async function standardSources(family: string | null): Promise<KnowledgeS
   return [{ id: "esco-occupation", tier: "occupational_standard", title: design ? "ESCO · User interface designer" : "ESCO · ICT product manager",
     publisher: "European Commission · ESCO", url, publishedAt: null, retrievedAt: snapshot.retrievedAt,
     contentHash: await canonicalHash(data), excerpt, locator: `${uri} · selectedVersion=v1.2.1` }];
+}
+// Two combined queries keep the whole research run under the search rate limit (~10 req/min).
+const INTERVIEW_GROUPS = [
+  { platform: "小红书 / 牛客 / 知乎 / 看准 / 脉脉 / BOSS", sites: ["xiaohongshu.com", "nowcoder.com", "zhihu.com", "kanzhun.com", "maimai.cn", "zhipin.com"], lang: "zh", limit: 5 },
+  { platform: "Glassdoor / Reddit / Blind", sites: ["glassdoor.com", "reddit.com", "teamblind.com"], lang: "en", limit: 3 },
+] as const;
+
+/** Recent (≤24 months) interview experiences for company + title only. */
+export async function interviewSearch(zh: string, en: string, now = new Date()): Promise<{ sources: KnowledgeSource[]; missing: string[] }> {
+  const from = new Date(now); from.setMonth(from.getMonth() - 24);
+  const mdy = (d: Date) => `${d.getMonth() + 1}/${d.getDate()}/${d.getFullYear()}`;
+  const tbs = `cdr:1,cd_min:${mdy(from)},cd_max:${mdy(now)}`;
+  // Date-restricted first; if nothing comes back, retry unrestricted and let freshSources drop old dated posts.
+  const run = async (g: typeof INTERVIEW_GROUPS[number]) => {
+    const q = `${g.lang === "zh" ? zh : en} (${g.sites.map(d => `site:${d}`).join(" OR ")})`;
+    const rows = await firecrawlSearch(q, g.limit, g.lang, tbs, "interview_reference");
+    return rows.length ? rows : firecrawlSearch(q, g.limit, g.lang, undefined, "interview_reference");
+  };
+  const results = await Promise.all(INTERVIEW_GROUPS.map(g => run(g).catch(e => { if (e instanceof ResearchError && (e.status === 402 || e.status === 403)) throw e; console.error("interview channel failed", g.platform, String(e)); return e instanceof ResearchError && e.status === 429 ? null : []; })));
+  const sources: KnowledgeSource[] = [], missing: string[] = [];
+  results.forEach((rows, i) => {
+    if (rows === null) { missing.push(`面经·${INTERVIEW_GROUPS[i].platform}（限流）`); return; }
+    if (!rows.length) missing.push(`面经·${INTERVIEW_GROUPS[i].platform}`);
+    for (const r of rows) if (!sources.some(s => s.url === r.url)) sources.push({ ...r, id: `int-${sources.length + 1}` });
+  });
+  return { sources, missing };
 }

@@ -34,3 +34,8 @@ describe("interview link ranking", () => {
     expect(q.zh).not.toMatch(/http|@|13800138000/);
   });
 });
+import { coreTitle } from "../../supabase/functions/_shared/interview-policy";
+describe("面经搜索词", () => {
+  it("去掉方向括号和校招后缀", () => { expect(coreTitle("软件产品经理（创意模板方向）-2027校招")).toBe("软件产品经理"); });
+  it("普通岗位名不变", () => { expect(coreTitle("AI 产品经理")).toBe("AI 产品经理"); });
+});
