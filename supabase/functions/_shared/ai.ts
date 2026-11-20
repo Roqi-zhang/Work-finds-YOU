@@ -1,21 +1,14 @@
 // AI helper (server only).
-// Default: the user's own OpenAI-compatible endpoint (Qwen / 阿里云百炼 MaaS).
-// Fallback: Lovable AI Gateway when no custom key is configured.
+// All active analysis uses the verified Lovable gateway; legacy custom secrets remain untouched.
 import { accessScope, blockedAccess, blockAccess } from "./ai-access.ts";
 import { providerErrorMessage } from "./ai-error-policy.ts";
+import { AI_MODELS, textRequestOptions } from "./ai-config.ts";
 
 const LOVABLE_GATEWAY = "https://ai.gateway.lovable.dev/v1/chat/completions";
-const LOVABLE_MODEL = "openai/gpt-5.6-sol";
-export const OCR_MODEL = "google/gemini-3.6-flash";
+const LOVABLE_MODEL = AI_MODELS.analysis;
+export const OCR_MODEL = AI_MODELS.ocr;
 
-function customBase() {
-  const base = Deno.env.get("CUSTOM_AI_BASE_URL");
-  if (!base) return "";
-  // Aliyun MaaS exposes the OpenAI-compatible route under /compatible-mode/v1.
-  return base.replace(/\/+$/, "").replace(/\/api\/v1$/, "/compatible-mode/v1");
-}
-
-export const MODEL = Deno.env.get("CUSTOM_AI_MODEL") || LOVABLE_MODEL;
+export const MODEL = LOVABLE_MODEL;
 
 export type ContentBlock =
   | { type: "text"; text: string }
@@ -41,7 +34,7 @@ export async function callAIText(opts: {
   timeoutMs?: number;
   maxTokens?: number;
 }): Promise<{ text: string; usage: Record<string, number>; model: string; latencyMs: number }> {
-  const ep = endpoint(opts.gateway === "lovable");
+  const ep = endpoint();
   const model = opts.model || ep.model;
   const scope = ep.custom ? "custom-provider" : await accessScope(ep.url, model);
   const denied = await blockedAccess(scope);
@@ -50,16 +43,8 @@ export async function callAIText(opts: {
   const body: Record<string, unknown> = {
     model,
     messages: opts.messages,
-    max_tokens: opts.maxTokens ?? 2500,
+    ...textRequestOptions(model, opts.maxTokens ?? 2500),
   };
-  if (!ep.custom) {
-    body.reasoning_effort = "none";
-  } else {
-    body.enable_thinking = false;
-    body.temperature = 0;
-    body.top_p = 1;
-    body.seed = 7;
-  }
 
   let res: Response;
   try {
@@ -96,16 +81,7 @@ export async function callAIText(opts: {
   };
 }
 
-function endpoint(forceLovable = false) {
-  const key = Deno.env.get("CUSTOM_AI_API_KEY");
-  if (!forceLovable && key && customBase()) {
-    return {
-      url: `${customBase()}/chat/completions`,
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
-      model: Deno.env.get("CUSTOM_AI_MODEL") || "qwen3.7-plus",
-      custom: true,
-    };
-  }
+function endpoint() {
   const lk = Deno.env.get("LOVABLE_API_KEY");
   if (!lk) throw new AIError(500, "Missing AI credentials");
   return {
@@ -134,7 +110,7 @@ export async function callAIJson<T>(opts: {
   timeoutMs?: number;
   maxTokens?: number;
 }): Promise<{ data: T; usage: Record<string, number>; model: string; latencyMs: number }> {
-  const ep = endpoint(opts.gateway === "lovable");
+  const ep = endpoint();
   const model = opts.model || ep.model;
   const scope = ep.custom ? "custom-provider" : await accessScope(ep.url, model);
   const denied = await blockedAccess(scope);
