@@ -1,5 +1,6 @@
 export function providerErrorMessage(status: number, raw: string): string {
   if (status === 403) {
+    if (raw.startsWith("AI 模型服务")) return raw;
     try {
       const body = JSON.parse(raw);
       const error = body.error ?? body;
@@ -14,4 +15,8 @@ export function providerErrorMessage(status: number, raw: string): string {
 
 export function canRetryAI(status: number): boolean {
   return status === 429 || status >= 500;
+}
+
+export function aiFailureStatus(status?: number): number {
+  return status && status >= 400 && status <= 599 ? status : 500;
 }

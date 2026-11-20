@@ -1,4 +1,5 @@
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
+import { aiFailureStatus } from "../_shared/ai-error-policy.ts";
 import { adminClient, getUser, logCall } from "../_shared/req.ts";
 import { callAIJson, MODEL } from "../_shared/ai.ts";
 import { DIMS, computeScore, decisionFlag } from "../_shared/scoring.ts";
@@ -345,7 +346,7 @@ Deno.serve(async (req) => {
   } catch (e) {
     const err = e as { status?: number; message?: string };
     console.error("run-match failed", err);
-    const status = err.status === 429 || err.status === 402 ? err.status : 500;
+    const status = aiFailureStatus(err.status);
     return json({ error: err.message || "分析失败" }, status);
   }
 });

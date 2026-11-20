@@ -1,4 +1,5 @@
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
+import { aiFailureStatus } from "../_shared/ai-error-policy.ts";
 import { adminClient, bufferToBlock, decodeBase64, fileToBlock, getUser, logCall } from "../_shared/req.ts";
 import { callAIJson, callAIText, MODEL, OCR_MODEL, type ContentBlock } from "../_shared/ai.ts";
 import { DIMS, computeScore } from "../_shared/scoring.ts";
@@ -424,7 +425,7 @@ Deno.serve(async (req) => {
   } catch (e) {
     const err = e as { status?: number; message?: string };
     console.error("parse-jd failed", err);
-    const status = err.status === 429 || err.status === 402 || err.status === 504 ? err.status : 500;
+    const status = aiFailureStatus(err.status);
     return json({ error: err.message || "解析失败" }, status);
   }
 });

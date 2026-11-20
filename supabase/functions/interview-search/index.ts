@@ -1,5 +1,6 @@
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import { AIError, callAIJson, callAIText } from "../_shared/ai.ts";
+import { blockedAccess } from "../_shared/ai-access.ts";
 import { adminClient, getUser } from "../_shared/req.ts";
 import { publicUrl } from "../_shared/role-policy.ts";
 import { platformOf } from "../_shared/role-sources.ts";
@@ -91,6 +92,11 @@ Deno.serve(async (req) => {
     const action = body?.action === "summarize" ? "summarize" : "search";
     if (!appKey || !title) return json({ error: "岗位信息不完整" }, 400);
     const db = adminClient();
+    // Stop the whole search/scrape chain before paid retrieval when its AI provider is paused.
+    if (Deno.env.get("CUSTOM_AI_API_KEY") && Deno.env.get("CUSTOM_AI_BASE_URL")) {
+      const denied = await blockedAccess("custom-provider");
+      if (denied) throw new AIError(403, denied);
+    }
 
     if (action === "summarize") {
       const { data: row } = await db.from("interview_searches").select("*").eq("user_id", user.id).eq("app_key", appKey).maybeSingle();

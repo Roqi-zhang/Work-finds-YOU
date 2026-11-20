@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Loader2, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { researchRole, type RoleKnowledge as Knowledge } from "@/lib/roleKnowledge";
+import { researchRole, RoleResearchError, type RoleKnowledge as Knowledge } from "@/lib/roleKnowledge";
 
 const tier: Record<string, string> = { occupational_standard: "通用标准", company_official: "公司官方", interview_reference: "面经·仅供参考" };
 
@@ -49,12 +49,13 @@ export default function RoleKnowledge({ jobId, initial, onResult, onAdopt }: { j
   const [progress, setProgress] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [denied, setDenied] = useState(false);
   const callbacks = useRef({ onResult, onAdopt }); callbacks.current = { onResult, onAdopt };
   const requested = useRef("");
   const load = async () => {
     setBusy(true); setError(""); setProgress("正在补充职业库与面经…");
     try { const out = await researchRole(jobId, setProgress); setData(out); callbacks.current.onResult(out); }
-    catch (e) { setError(e instanceof Error ? e.message : "资料整合暂不可用"); }
+    catch (e) { setError(e instanceof Error ? e.message : "资料整合暂不可用"); setDenied(e instanceof RoleResearchError && e.status === 403); }
     finally { setBusy(false); setProgress(""); }
   };
   useEffect(() => { if (requested.current === jobId) return; requested.current = jobId; const current = initial?.version === "role-knowledge-v6"; setData(current ? initial : null); if (!current) void load(); }, [jobId]);
@@ -76,7 +77,7 @@ export default function RoleKnowledge({ jobId, initial, onResult, onAdopt }: { j
     {data && order.length > 0 && <>
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h4>Sources · 资料溯源</h4>
-        <Button variant="ghost" size="sm" disabled={busy} onClick={load} aria-label="重新核对岗位资料"><RefreshCw />核对资料</Button>
+        <Button variant="ghost" size="sm" disabled={busy || denied} onClick={load} aria-label="重新核对岗位资料"><RefreshCw />核对资料</Button>
       </div>
       <ol>{order.map((id, i) => { const s = data.sources.find(x => x.id === id); if (!s) return null; return <li key={id} id={`src-${i + 1}`}>
         <span>[{i + 1}]</span>
