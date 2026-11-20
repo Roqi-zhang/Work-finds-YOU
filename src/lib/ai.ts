@@ -1,6 +1,9 @@
 import { supabase } from "@/integrations/supabase/client";
 import { track, trackStep } from "@/lib/analytics";
 import { getGuestKey } from "@/lib/guest";
+import { providerErrorMessage, canRetryAI } from "../../supabase/functions/_shared/ai-error-policy";
+
+export { canRetryAI };
 
 export type Level = "strong" | "medium" | "weak" | "missing";
 
@@ -42,6 +45,7 @@ export function isJobProfileId(value: unknown): value is string {
 export function aiMessage(e: unknown) {
   const err = e as AiError;
   if (err?.status === 401) return "请先登录后再使用 AI 分析";
+  if (err?.status === 403) return providerErrorMessage(403, err.message);
   if (err?.status === 429) return "请求过于频繁，请稍后再试";
   if (err?.status === 402) return err?.message || "免费额度已用完，付费档位即将开放";
   return err?.message || "分析失败，请重试";

@@ -12,7 +12,7 @@ import {
   setUI,
   type Job,
 } from "@/lib/wfy";
-import { compareSummary, aiMessage } from "@/lib/ai";
+import { compareSummary, aiMessage, AiError, canRetryAI } from "@/lib/ai";
 import "@/styles/pages/compare.css";
 
 const RINGS = [140, 220, 290];
@@ -58,7 +58,7 @@ export default function Compare() {
   const [selected, setSelected] = useState<string[]>([]);
   const [comparing, setComparing] = useState(false);
   const [hover, setHover] = useState<{ id: string; x: number; y: number } | null>(null);
-  const [summary, setSummary] = useState<{ state: "idle" | "loading" | "ok" | "err"; text: string }>({ state: "idle", text: "" });
+  const [summary, setSummary] = useState<{ state: "idle" | "loading" | "ok" | "err"; text: string; retryable?: boolean }>({ state: "idle", text: "" });
   const [, bump] = useState(0);
   const [editReason, setEditReason] = useState<{ id: string; value: string } | null>(null);
   const [editLink, setEditLink] = useState<{ id: string; value: string } | null>(null);
@@ -94,7 +94,7 @@ export default function Compare() {
       setSummary({ state: "ok", text });
     } catch (e) {
       if (seq !== reqSeq.current) return;
-      setSummary({ state: "err", text: aiMessage(e) });
+      setSummary({ state: "err", text: aiMessage(e), retryable: e instanceof AiError && canRetryAI(e.status) });
     }
   }
 
@@ -220,7 +220,7 @@ export default function Compare() {
                 {summary.state === "err" && (
                   <p className="cmp-err">
                     {summary.text}{" "}
-                    <button type="button" className="link" onClick={() => loadSummary(chosen)}>重试</button>
+                    {summary.retryable && <button type="button" className="link" onClick={() => loadSummary(chosen)}>重试</button>}
                   </p>
                 )}
               </div>

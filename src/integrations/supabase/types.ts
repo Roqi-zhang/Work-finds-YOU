@@ -56,6 +56,27 @@ export type Database = {
         }
         Relationships: []
       }
+      ai_provider_access_blocks: {
+        Row: {
+          blocked_at: string
+          message: string
+          scope: string
+          status: number
+        }
+        Insert: {
+          blocked_at?: string
+          message: string
+          scope: string
+          status: number
+        }
+        Update: {
+          blocked_at?: string
+          message?: string
+          scope?: string
+          status?: number
+        }
+        Relationships: []
+      }
       analytics_events: {
         Row: {
           created_at: string

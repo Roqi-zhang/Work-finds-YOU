@@ -1,6 +1,8 @@
 // AI helper (server only).
 // Default: the user's own OpenAI-compatible endpoint (Qwen / 阿里云百炼 MaaS).
 // Fallback: Lovable AI Gateway when no custom key is configured.
+import { accessScope, blockedAccess, blockAccess } from "./ai-access.ts";
+import { providerErrorMessage } from "./ai-error-policy.ts";
 
 const LOVABLE_GATEWAY = "https://ai.gateway.lovable.dev/v1/chat/completions";
 const LOVABLE_MODEL = "openai/gpt-5.6-sol";
@@ -41,6 +43,9 @@ export async function callAIText(opts: {
 }): Promise<{ text: string; usage: Record<string, number>; model: string; latencyMs: number }> {
   const ep = endpoint(opts.gateway === "lovable");
   const model = opts.model || ep.model;
+  const scope = ep.custom ? "custom-provider" : await accessScope(ep.url, model);
+  const denied = await blockedAccess(scope);
+  if (denied) throw new AIError(403, denied);
   const started = Date.now();
   const body: Record<string, unknown> = {
     model,
@@ -74,7 +79,9 @@ export async function callAIText(opts: {
   if (!res.ok) {
     const responseBody = await res.text();
     console.error(`AI text call failed [${res.status}]: ${responseBody}`);
-    throw new AIError(res.status, responseBody);
+    const message = providerErrorMessage(res.status, responseBody);
+    if (res.status === 403) await blockAccess(scope, message);
+    throw new AIError(res.status, message);
   }
 
   const json = await res.json();
@@ -129,6 +136,9 @@ export async function callAIJson<T>(opts: {
 }): Promise<{ data: T; usage: Record<string, number>; model: string; latencyMs: number }> {
   const ep = endpoint(opts.gateway === "lovable");
   const model = opts.model || ep.model;
+  const scope = ep.custom ? "custom-provider" : await accessScope(ep.url, model);
+  const denied = await blockedAccess(scope);
+  if (denied) throw new AIError(403, denied);
   const started = Date.now();
   const budget = opts.timeoutMs ?? 55_000;
 
@@ -198,7 +208,9 @@ export async function callAIJson<T>(opts: {
   if (!res.ok) {
     const body = await res.text();
     console.error(`AI call failed [${res.status}]: ${body}`);
-    throw new AIError(res.status, body);
+    const message = providerErrorMessage(res.status, body);
+    if (res.status === 403) await blockAccess(scope, message);
+    throw new AIError(res.status, message);
   }
 
   const json = await res.json();
